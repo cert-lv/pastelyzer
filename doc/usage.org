@@ -1,0 +1,836 @@
+#+TITLE: Pastelyzer
+#+SUBTITLE: User manual
+#+AUTHOR: Jānis Džeriņš
+#+EMAIL: janis.dzerins@cert.lv
+#+OPTIONS: toc:3 H:4 num:t ':t ^:nil tags:nil
+
+#+LATEX_COMPILER: xelatex
+#+LATEX_HEADER: \hypersetup{colorlinks,allcolors=,urlcolor=blue}
+#+LATEX_HEADER: \usepackage{fontspec}
+#+LATEX_HEADER: \setmonofont[Scale=0.85,BoldFont=* Semibold,BoldItalicFont=* Semibold Italic]{Iosevka Custom}
+
+#+BIND: org-latex-listings minted
+#+BIND: org-latex-packages-alist (("newfloat,outputdir=/tmp/tex" "minted"))
+
+* Introduction
+
+~pastelyzer~ is a tool that analyses text documents and looks for security and
+privacy related "items" (called /artefacts/ in this document).  A
+distinguishing feature of the tool is that embedded binary content (e.g.,
+base64-encoded) is detected and decoded.  The decoded content is then
+recursively processed (see section [[Binary artefacts]]).
+
+# The goals of this project are:
+
+# - Minimize human attention requirements.
+# - Don't try to do everything—allow integration with other tools.
+# -
+
+*IMPORTANT*: This software is a work-in-progress, and is expected to change.
+Make sure you consult the documentation that corresponds to the version of
+~pastelyzer~ you're using.
+
+* Running ~pastelyzer~
+
+~pastelyzer~ can be run in two modes:
+
+- interactively as an ordinary command-line utility, and
+- as a background service with no user interaction.
+
+Both of these modes are described in the following sections.
+
+** Interesting artefacts
+
+In order to keep the amount of information presented to the user manageable
+not all discovered artefacts are shown.  For example not all groups of four
+numbers separated with periods are IP addresses — more commonly than not the
+numbers are actually version numbers.  To make the IP address extraction
+useful there is an option to only show the IP addresses that fall into
+specific networks (see section [[#common-cli-options][~--networks-file~
+option]]).  In this case we say that the IP addresses that belong to the
+specified networks are "interesting."  Similarly for top-level domains and
+bank cards.
+
+There are still some cases hard-coded in the system.  The intention is to make
+the configuration facility flexible enough so that these can be removed from
+the code and into the configuration.
+
+** Common command-line options
+:PROPERTIES:
+:CUSTOM_ID: common-cli-options
+:END:
+
+The following options affect artefact extraction and apply in both CLI and
+standalone mode:
+
+- ~-h, --help~ ::
+  Show short usage information.
+
+- ~-v, --version~ ::
+  Show version.
+
+- ~--networks-file~ ::
+  Path to a file that contains networks (in
+  [[https://tools.ietf.org/html/rfc4632#section-3.1][CIDR notation]]), one per
+  line.  Empty lines and lines starting with a ~#~ character are ignored.  See
+  https://nic.lv/local.net for an example of such a file.
+
+- ~--tlds-file~ ::
+  Path to a file containing valid Top Level Domains (e.g.,
+  https://data.iana.org/TLD/tlds-alpha-by-domain.txt).  Empty lines and lines
+  starting with ~#~ character are ignored.  Used to reduce the number of false
+  positives.
+
+- ~--interesting-tlds~ ::
+  A comma-separated list of TLDs that should be considered interesting.  These
+  are used by comparing the domains from the end, so the period should be
+  included to compare the complete TLD.  Example: ~.abc,.xyz~.
+
+- ~--important-cc-bins~ ::
+  Path to a file containing important bank card
+  [[https://en.wikipedia.org/wiki/Payment_card_number][BINs]].  The format of
+  the file is described [[#important-cc-bins-file][below]].
+
+*** Important bank card BINs file
+:PROPERTIES:
+:CUSTOM_ID: important-cc-bins-file
+:END:
+
+Each line of the file can be one of the following:
+
+- A comment line, starting with a ~#~ character.  There can be multiple
+  consecutive comment lines.  The last comment line preceding a BIN
+  specification is used as a note for that BIN.
+- An empty line, clears the note.
+- A BIN specification.  The format is: digit characters followed by number
+  placeholder characters.  The number of digit and placeholder characters
+  should match the number of bank card digits corresponding to the bin (e.g.,
+  16 for Visa and Mastercard).  Spaces are ignored (in both prefix and
+  placeholder parts).
+
+The following example file defines 5 bins for 2 banks.  The first bank uses
+16-digit numbers that start with ~123456~, ~424242~ and ~111122~.  The second
+bank uses 15-digit numbers that start with ~23~ and ~32~.
+
+#+CAPTION: Sample important BIN file
+#+NAME: sample-bin-file
+#+begin_src text
+  # This is just an example.
+
+  # National bank
+  1234 56xx xxxx xxxx
+  424242 xx xxxx xxxx
+  111122xxxxxxxxxx
+
+  # Other bank
+  23xx xxxxxx xxxxx
+  32xxxxxxxxxxxxx
+#+end_src
+
+** Interactive mode
+
+The simplest way to use ~pastelyzer~ is to pass it one or more file names.
+~pastelyzer~ will analyze given files and print all detected artefacts in a
+tree structure (see figure [[cli-usage-sample][below]]).
+
+#+CAPTION: Sample CLI usage
+#+NAME: cli-usage-sample
+#+ATTR_HTML: :width 100%
+#+ATTR_LATEX: :width 0.95\textwidth :float nil
+[[file:img/cli-33E400e1.png]]
+
+Currently in this mode it is only possible to view what and where ~pastelyzer~
+can detect.  In the future it will be possible to control what is extracted
+(i.e., limit output to a subset of "interesting" artefact classes) and what to
+do with the results (i.e,. write to a file, or generate JSON).
+
+** Standalone mode
+
+In standalone mode ~pastelyzer~ receives documents from a feed[fn:1], stores
+them in database and analyzes them.  It is possible to control what to do with
+the discovered artefacts using filters (see section [[Configuration]]).  A
+sample systemd service file is provided in
+[[file:../support/pastelyzer.service][support/pastelyzer.service]] file.
+
+*** Prerequisites
+
+~pastelyzer~ stores all received documents in a PostgreSQL (version *9.5* or
+later) database.  The database schema is provided in the source distribution
+[[file:../support/schema.sql][support/schema.sql]] file.
+
+*** Options
+
+- ~-c, --config~ ::
+  Path to configuration file (see section [[Configuration]]).
+
+- ~-w, --workers~ ::
+  Number of threads to use for document processing (default: ~4~).
+
+- ~--server-port~ ::
+  Port number where to expose the dashboard.  If the port is not given then
+  the web server is not started.
+
+- ~--server-ext-host~, ~--server-ext-port~ ::
+  Web server host and port to use when generating links to documents in
+  emails.  If not specified, links of the form ~http://localhost/...~ will be
+  generated.
+
+- ~--[no-]process-broken~ ::
+  Process pastes with broken UTF-8 content[fn:2] (in addition to trying to fix
+  them; defaults to yes).  Specific sites can be blacklisted using an
+  environment variable (see [[Environment variables][~IGNORED_PASTESITES~]]).
+
+*** Environment variables
+
+- ~DB_NAME~ ::
+  Database name.  Default: ~pastelyzer~.
+
+- ~DB_USER~ ::
+  Database user.  Default: ~pastelyzer~.
+
+- ~DB_PASS~ ::
+  Database password.  Default: empty.
+
+- ~DB_HOST~ ::
+  Database host.  Default: ~localhost~.
+
+- ~DB_PORT~ ::
+  Database port.  Default: ~5432~.
+
+- ~CIRCL_ZMQ_ADDRESS~ ::
+  Paste feed endpoint[fn:3].  Default: ~tcp://crf.circl.lu:5556~.
+
+- ~IGNORED_PASTESITES~ ::
+  Comma-separated list of paste sites to not re-fetch broken pastes from.  It
+  is a good idea to have at least ~pastebin.com~ in this list.
+
+- ~HTTP_USER_AGENT~ ::
+  User agent to use when fetching web pages.  This will be used verbatim as
+  the HTTP ~User-Agent~ header value.
+
+*** Static web server files
+
+The ~public~ directory in the source distribution is expected to be located in
+the same directory where the ~pastelyzer~ binary is run from.
+
+* Configuration
+
+Currently configuration file is used only when running in [[Standalone
+mode][standalone mode]].  By default received documents are stored in the
+database, processed, and the summary of findings (what kind of artefacts and
+how many) also stored in the database.  [[Sinks][Sinks]] are additional
+destinations where artefacts can be collected, and [[Filters][filters]] are
+used to control what artefacts end up in which sinks.
+
+Current sink and filter implementation is good enough to support basic use
+cases.  But the implementation is expected to change to accommodate additional
+cases.
+
+** Syntax overview
+
+Configuration is written using
+[[https://en.wikipedia.org/wiki/S-expression][S-expressions]].  The most
+unusual thing about this notation might be the prefix notation, but it can
+also be thought of as XML simplified (i.e., no need for closing tags).  Please
+refer to [[https://en.wikipedia.org/wiki/S-expression][Wikipedia page]] for a
+more verbose introduction.
+
+Syntax used in ~pastelyzer~ configuration file have an extension: square
+brackets can be used to specify byte-vectors.  The elements between opening
+and closing square are expected to be space-separate hexadecimal 8-bit numbers
+(case-insensitive).  Example: ~[7f 45 4c 46]~.
+
+Currently there are two recognized configuration directives (described in
+following sections): ~define-sink~ and ~define-artefact-filter~.  The word
+~define~ in both of them is there to let text editors that have support for
+lisp-like languages recognize and treat these expressions specially (i.e., for
+syntax highlighting and automatic indentation).
+
+** Sinks
+
+~define-sink~ directive is used to define a sink.  The syntax is as follows:
+
+#+begin_src sexpr
+  (define-sink <name> (<parent>) <attribute>*)
+#+end_src
+
+~<name>~ is the name of sink being defined and will be used to refer to it in
+[[Filters][filters]] or as a parent in another sink.
+
+~<parent>~ should be either one of the built-in sink implementations
+(described in the following sections), or another thing that has been defined
+previously.  Even though a sink can only have one parent it has to be
+specified as a single-element list (i.e., it has to be surrounded by
+parenthesis).
+
+There can be zero or more ~<attribute>~ specifications of the following form:
+
+#+begin_src sexpr
+  (<name> <parameter>*)
+#+end_src
+
+Attribute ~<name>~ will usually be a keyword (i.e., a symbol starting with a
+colon).  Each sink implementation has a different set of supported attributes
+described in corresponding section below.
+
+*** Specifying values
+
+Attribute values have types.  This means that if a ~string~ value is required,
+the value must be enclosed in double quotes (i.e., ~"this is a string"~).
+
+Values can also be forms:
+
+- ~<string>~ ::
+  A string value stands for itself.
+
+- ~yes~, ~true~ ::
+  A boolean true value.
+
+- ~no~, ~false~ ::
+  A boolean false value.
+
+- ~(env <string>)~ ::
+  Returns the value of process environment variable named by given string.
+
+- ~(file-contents <string>)~ ::
+  Returns the contents of a file named by the given string.
+
+- ~(or <form>+)~ ::
+  Returns the first form from the given list that has a value.  For example,
+  the form ~(or (env "SOME_VAR" "undefined"))~ will return
+  the value of ~SOME_VAR~ environment variable, or the string ~"undefined"~ if
+  there is no such environment variable.
+
+*** Templates
+
+If an attribute is specified to be a template, the value of an attribute will
+be generated using forms provided in the attribute.
+
+- ~:nl~ ::
+  New line: outputs a newline character, unconditionally.
+
+- ~:fl~ ::
+  Fresh line: outputs a newline only if the last character was not a newline.
+
+- ~(extract <field>)~ ::
+  Extracts ~field~ from the context variable.  See
+  [[#sink-field-extractors][sink]] and [[#item-field-extractors][item]] field
+  extractors below.
+
+- ~(fmt <format-string> <form>+)~ ::
+  Formats given parameters using Common-lisp
+  [[http://www.lispworks.com/documentation/HyperSpec/Body/f_format.htm][format]]
+  function.  For advanced users only.
+
+- ~(unique-count <artefact-class>)~ ::
+  Not really a filter function or an extractor, but can be used in sink
+  attribute [[Templates][templates]] to calculate the number unique artefacts
+  of the given ~artefact-class~ in a document currently being processed.
+  Note: this is a hack, and most probably will change once we come up with a
+  more general way to access this information.
+
+**** Sink (document) level field extractors:
+:PROPERTIES:
+:CUSTOM_ID: sink-field-extractors
+:END:
+
+- ~source-url~ ::
+  Source site of the document being processed.  E.g., ~pastebin.com~.
+
+- ~remote-url~ ::
+  The URL of the document being processed (if available).
+
+- ~remote-raw-url~ ::
+  The URL to the raw contents of the document being processed (if available).
+
+- ~local-url~ ::
+  The URL to the local copy of the document being processed.  See
+  ~--server-ext-host~ and ~--server-ext-port~ command line
+  [[Options][options]].
+
+- ~artefact-descriptions~ ::
+  Generates a summary of all artefacts collected in a sink, grouped by
+  artefact class, one per line.
+
+- ~artefact-summary-by-class~ ::
+  Generates a comma-separated string with artefact class and the number of
+  artefacts with this class collected in the sink.
+
+**** Item (artefact) level field extractors:
+:PROPERTIES:
+:CUSTOM_ID: item-field-extractors
+:END:
+
+- ~digits~ ::
+  The digits of a bank card number with no separators.
+
+- ~note~ ::
+  Note associated with an artefact.  For
+  [[~IMPORTANT-CARD-NUMBER~][~important-card-number~]] it is the comment
+  associated with the BIN.  See ~--important-cc-bins~
+  [[#common-cli-options][option]].
+
+*** ~WEB-SINK~
+
+This is the simplest sink.  It does not have any parameters.
+
+Example:
+
+#+begin_src sexpr
+  (define-sink dashboard (web-sink))
+#+end_src
+
+*** ~SMTP-SINK~
+
+This sink is used to send emails.  Attributes:
+
+- ~(:server <string>)~ ::
+  Sets the outgoing SMTP server to the given string.
+
+- ~(:from <string>)~ ::
+  Sets the sender ("From" field) of the outgoing emails.
+
+- ~(:subject <form>+)~ ::
+  [[Templates][Template]] attribute to generate subject line of the outgoing
+  email.
+
+- ~(:body <form>+)~ ::
+  [[Templates][Template]] attribute to generate the body of the outgoing
+  email.
+
+- ~(:recipients <string>+)~ ::
+  A list of strings, each being an email address to send the email to.
+
+*** ~MISP-SINK~
+
+- ~(:server <string>)~ ::
+  Sets the MISP instance URL.
+
+- ~(:api-key <string>)~ ::
+  The API key to use when communicating with the instance.
+
+- ~(:ca-cert <string>)~ ::
+  Path to a custom CA certificate.
+
+- ~(:user-cert <string>)~ ::
+  Path to PEM-encoded user certificate.
+
+- ~(:user-key <string>)~ ::
+  Path to PEM encoded private key matching the certificate given in
+  ~:user-cert~ attribute.
+
+- ~(:user-key-pass <string>)~ ::
+  Passphrase to use to decrypt the private key specified with ~:user-key~
+  attribute.
+
+- ~(:alert <boolean>)~ ::
+  [[Specifying values][Boolean]] value specifying whether this MISP event is
+  or is not an alert.
+
+- ~(:publish <boolean>)~ ::
+  [[Specifying values][Boolean]] value specifying whether to automatically
+  publish this event.
+
+- ~(:title <form>+)~ ::
+  [[Templates][Template]] attribute to generate the title of MISP event.
+
+- ~(:sharing-group <string>)~ ::
+  Currently the only sharing option is a sharing group.  Given value should be
+  the name of the sharing group to use (the ID will be automatically looked up
+  using the API).
+
+- ~(:document-action <form>)~ ::
+  An action to perform once the MISP event is created.  Currently the
+  following actions are supported:
+
+  - ~(add-tags <string>+)~ ::
+    Tag the event with the given tags.
+
+  - ~(add-attribute :category <string> :type <string> :value <string> :comment <string>)~ ::
+    Add an attribute to the event with the given ~category~, ~type~, ~value~
+    and ~comment~ (optional).  The subject of the action is sink (document).
+
+- ~(:item-action <form>)~ ::
+  An action to perform after the MISP event is created, and all document
+  actions are performed.  Each item action is performed once for every
+  artefact collected in the sink.  The only supported action is
+  ~add-attribute~:
+
+  - ~(add-attribute :category <string> :type <string> :value <string> :comment <string>)~ ::
+    Add an attribute to the event with the given ~category~, ~type~, ~value~
+    and ~comment~ (optional).  The subject of the action is an artefact.
+
+** Filters
+
+~define-artefact-filter~ directive is used to define a filter.  The syntax is
+as follows:
+
+#+begin_src sexpr
+  (define-artefact-filter <name> <filter-expression> <action>+)
+#+end_src
+
+~<name>~ is the name of the filter.  Generally unimportant, but useful for
+debugging.  Whenever an artefact is detected, ~<filter-expression>~ of every
+filter is executed.  If the result is true (i.e., the filter matches), all
+~<action>~ items are executed in order.  Currently the only supported action
+is to collect the artefact into a sink.
+
+Actions have the following syntax: ~(collect-into <sink-name>)~.
+
+Filter expressions have an implicit argument: an artefact.  The following
+filter expressions are supported:
+
+- ~(type? <class>)~ ::
+  True if the artefact is of the given class.  See section [[Artefact
+  classes]].
+
+- ~(and <filter-expression>+)~ ::
+  True if all enclosed filter expressions are true, false otherwise.
+
+- ~(or <filter-expression>+)~ ::
+  True if any of the enclosed filter expressions is true, false otherwise.
+
+- ~(not <filter-expression>)~ ::
+  False if the given filter expression is true, false otherwise.
+
+- ~(extract <field>)~ ::
+  Extract given field from the current context value, usually an artefact.
+  Extractors applicable to particular artefacts are documented in the
+  corresponding [[Artefact classes][artefact class]] section.
+
+- ~(-> <filter-expression>+)~ ::
+  Replaces the context of each consecutive filter expression with the value of
+  the previous expression.  Consider the following example:
+
+  #+begin_src sexpr
+    (and (type? embedded-binary)
+         (-> (extract embedded-binary-bytes)
+             (or (starts-with? [4D 5A])
+                 (starts-with? [7f 45 4c 46]))))
+  #+end_src
+
+  The ~and~ expression has two enclosed filter expressions.  For it to return
+  true both of them have to be true.  So if the class of the artefact is not
+  [[~EMBEDDED-BINARY~]], the value of ~and~ will be false (and the second form
+  will not even be considered).  But if the context of the filter is indeed an
+  [[~EMBEDDED-BINARY~]] then the second form: ~->~.
+
+  First it calls ~(extract embedded-binary-bytes)~ (see below), and replaces
+  the current context with returned value.  The next form is ~or~, and for
+  this form the context is the binary bytes of the current artefact (which we
+  know is an [[~EMBEDDED-BINARY~]]).  The forms enclosed in ~or~ are executed
+  in order, if any of them returns true the value of the ~or~ form is also
+  true.  In any case, the value of ~->~ form will be the value of the ~or~
+  form applied to the byte content of the [[~EMBEDDED-BINARY~]] artefact.
+
+- ~(length)~ ::
+  Returns the length of current context value.
+
+- ~(= <number>)~ ::
+  True if the current context value is equal to the given number.
+
+- ~(< <number>)~ ::
+  True if the current context value is less than the given number.
+
+- ~(> <number>)~ ::
+  True if the current context value is greater than the given number.
+
+- ~(starts-with? <subsequence>)~ ::
+  True if the context value is a sequence that starts with the given
+  subsequence.
+
+- ~(ends-with? <subsequence>)~ ::
+  True if the context value is a sequence that ends with the given
+  subsequence.
+
+- ~(contains? <subsequence>)~ ::
+  True if the context value is a sequence that contains the given subsequence.
+
+** Example configuration
+
+#+begin_src sexpr
+  (define-sink dashboard (web-sink))
+
+  (define-artefact-filter web
+      ;; Everything except playlist entries and PNG images.
+      (not (or (type? m3u-entry)
+               (and (type? embedded-binary)
+                    (-> (extract embedded-binary-bytes)
+                        (starts-with? [89 50 4E 47])))))
+    (collect-into dashboard))
+
+  (define-sink local-misp (misp-sink)
+    (:server "https://127.0.0.1:5000/")
+    (:api-key (env "MISP_API_KEY"))
+    (:ca-cert (or (env "MISP_CA_CERT")
+                  "misp/ca.pem"))
+    (:user-cert (or (env "MISP_USER_CERT")
+                    "misp/misp.crt.pem"))
+    (:user-key (or (env "MISP_USER_KEY")
+                   "misp/misp.key.pem"))
+    (:user-key-pass (env "MISP_USER_KEY_PASS")))
+
+  (define-sink misp-cc-event (local-misp)
+    (:alert yes)
+    (:publish yes)
+    (:title
+     (fmt "~@[~A: ~]~A probable card number~:P"
+          (extract source-url)
+          (unique-count important-card-number)))
+    (:sharing-group "Finance")
+    (:document-action
+     (add-tags "CardFraud" "tlp:amber"))
+    (:document-action
+     (add-attribute :category "External analysis"
+                    :type "url"
+                    :value (extract source-url)))
+    (:item-action
+     (add-attribute :category "Financial fraud"
+                    :type "cc-number"
+                    :value (extract digits)
+                    :comment (extract note))))
+
+  (define-sink email (smtp-sink)
+    (:server "smtp.your.org")
+    (:from "pastelyzer@your.org")
+    (:subject (extract artefact-summary-by-class))
+    (:body "URL: " (extract local-url) :fl
+           "Origin: " (extract remote-url) :fl
+           "Origin (raw): " (extract remote-raw-url) :fl
+           (extract artefact-descriptions))
+    (:recipients "pastelyzer-notifications@your.org"))
+
+  (define-artefact-filter important-cc
+      (type? important-card-number)
+    (collect-into misp-cc-event)
+    (collect-into dashboard)
+    (collect-into email))
+#+end_src
+
+* Artefact classes
+
+The list of artefact classes recognized by ~pastelyzer~ and their
+relationships are shown [[artefact-class-tree][below]].  These artefact
+classes are described in the following sections.
+
+#+CAPTION: Artefact relationships
+#+NAME: artefact-class-tree
+#+BEGIN_SRC text
+  ARTEFACT
+  ├─ BINARY-ARTEFACT
+  │  ├─ COMPRESSED-BLOB
+  │  └─ ENCODED-STRING
+  └─ STRING-ARTEFACT
+     ├─ BANK-CARD-NUMBER
+     │  └─ IMPORTANT-CARD-NUMBER
+     ├─ CREDENTIAL
+     ├─ DOMAIN
+     │  └─ ONION
+     ├─ EMAIL
+     ├─ EMBEDDED-BINARY
+     │  ├─ BASE64-BLOB
+     │  ├─ HEX-BLOB
+     │  └─ BINARY-BLOB
+     ├─ IP-ADDRESS
+     │  └─ RESOLVED-IP-ADDRESS
+     ├─ M3U-ENTRY
+     ├─ URI
+     └─ WINDOWS-INTERNAL
+#+END_SRC
+
+# TODO: Currently these types of artefacts are recognized and it is not
+# possible to disable any of them (except by editing source code).  But it is
+# possible to not report them in any way: see [[Configuration]].
+
+** Binary artefacts
+
+~BINARY-ARTEFACT~ is the superclass for artefacts that are represented as
+binary data (i.e. sequence of 8-bit bytes).  If the input data is not known to
+be text then it is processed as binary data.  In most cases this means that
+the data will be detected as being text in UTF-8 encoding and processed as
+text.
+
+*** ~COMPRESSED-BLOB~
+
+Created if the ~BINARY-ARTEFACT~ bytes can be decompressed using gzip, zlib or
+deflate methods.
+
+*** ~ENCODED-STRING~
+
+Created if the ~BINARY-ARTEFACT~ bytes can be decoded as UTF-8 or UTF-16
+(little- or big-endian) string.
+
+** String artefacts
+
+~STRING-ARTEFACT~ is the superclass of all artefacts represented as text
+(i.e. most of them, described below).
+
+*** ~BANK-CARD-NUMBER~
+
+~pastelyzer~ currently recognizes bank card numbers that correspond to the
+following patterns:
+
+#+CAPTION: Bank card number patterns
+#+NAME: bank-card-patterns
+| Pattern               | Description                  |
+|-----------------------+------------------------------|
+| ~AXXXXXXXXXXXXZ~      | 14 consecutive digits        |
+| ~AXXXXXXXXXXXXXZ~     | 15 consecutive digits        |
+| ~AXXXXXXXXXXXXXXZ~    | 16 consecutive digits        |
+| ~AXXX-XXXX-XXXX-XXXZ~ | 16 digits in groups of 4     |
+| ~AXXX-XXXXXX-XXXXZ~   | 15 digits in groups of 4-6-5 |
+
+In the latter two cases the separator can be single or double space or dash.
+In all cases the first digit is expected to be non-zero, and the last digit is
+expected to be the checksum digit (according to
+[[https://en.wikipedia.org/wiki/Luhn_algorithm][Luhn algorithm]]).
+
+These rules are very lax and are expected to generate false-positives.  This
+is because the [[https://en.wikipedia.org/wiki/Payment_card_number][BINs]]
+change, and we want to avoid updating the software when they do.  In the
+future we expect to allow specifying the BINs in an external file.
+
+Applicable extractors:
+
+- ~digits~ ::
+  A string of all the bank card digits with separators removed.
+
+*** ~IMPORTANT-CARD-NUMBER~
+
+Artefact class of bank card number (see section [[~BANK-CARD-NUMBER~]]) whose
+BIN (prefix) is listed in the important bank card BIN file (see
+[[#common-cli-options][~--important-cc-bins~]] option).
+
+Applicable extractors:
+
+- ~digits~ ::
+  Inherited from [[~BANK-CARD-NUMBER~][~BANK-CARD-NUMBER~]].
+- ~note~ ::
+  Comment associated with the bin this artefact has been matched to.  See
+  section [[#important-cc-bins-file]].
+
+*** ~CREDENTIAL~
+
+An username/passphrase pair, separated by colon (~:~), semicolon (~;~),
+vertical bar (~|~), comma (~,~) or tab character.  At the moment regular
+expressions are used to match both.  Even though the character repertoire for
+passphrases is quite generous, there are some limitations:
+
+- Only credentials with emails (see [[~EMAIL~]]) as usernames are detected.
+- Non-ASCII characters are not matched.
+- Space (and tab) characters are not matched.
+
+We plan to improve credential extraction to work around these limitations in
+the future.
+
+*** ~DOMAIN~
+
+Everything that looks like words separated with periods, with some additional
+restrictions (documented in [[https://www.ietf.org/rfc/rfc1035.txt][RFC1035]])
+and other heuristics.
+
+We strongly suggest to provide the valid TLD file (see the
+[[#common-cli-options][~--tlds-file~]] option) to filter out most false
+positives.
+
+*** ~ONION~
+
+A pseudo-domain consisting of two parts separated by a period.  The first part
+being 16 or 56 alphanumeric characters (consistency not checked), the second
+being ~onion~ (see [[https://en.wikipedia.org/wiki/.onion][Wikipedia entry]]).
+
+*** ~EMAIL~
+
+Strings of the form ~username@domain~ are recognized as emails using a
+simple regular expression.  Only alphanumeric characters plus a period (~.~),
+underscore (~_~), percent sign (~%~), plus (~+~) and minus (~-~) are
+considered in the username part.  Period-separated sequences of alphanumeric
+characters are accepted as domain part.
+
+*** ~EMBEDDED-BINARY~
+
+All embedded binary artefacts (currently [[~BASE64-BLOB~][~BASE64-BLOB~]],
+[[~HEX-BLOB~][~HEX-BLOB~]] and [[~BINARY-BLOB~][~BINARY-BLOB~]]) are
+specializations of this artefact class.  The textual representation is
+processed and resulting binary data is available as the ~BYTES~ field (see
+section [[Filters]]).
+
+The bytes are processed, and if it turns out they represent text or compressed
+data, the corresponding [[Binary artefacts][~BINARY-ARTEFACT~]] instance is
+created.
+
+Applicable extractors:
+
+- ~embedded-binary-bytes~ ::
+  The bytes of the artefact after decoding.  Note: this will most likely be
+  renamed to just ~bytes~ in near future.
+
+**** ~BASE64-BLOB~
+
+Base64-encoded (see [[https://en.wikipedia.org/wiki/Base64][Wikipedia]])
+sequence of bytes.  Example: ~TVqQ~.
+
+**** ~HEX-BLOB~
+
+A sequence of hexadecimal digit pairs, each pair representing one 8-bit byte.
+Example: ~4D5A90~.
+
+This artefact is also created for sequences of bytes written using C-syntax
+for hexadecimal numbers, separated by comma and optional white-space.
+Example: ~0x4d, 0x5a, 0x90~.
+
+**** ~BINARY-BLOB~
+
+Just ones and zeroes in groups of 8 (i.e., the total number of digits must be
+a multiple of 8).  Example: ~010011010101101010010000~.
+
+*** ~IP-ADDRESS~
+
+Artefact class for IPv4 addresses.  Only addresses that belong to one of the
+"interesting networks" are considered "interesting" (see
+[[#common-cli-options][~--networks-file~]] option).
+
+*** ~RESOLVED-IP-ADDRESS~
+
+A specialization of [[~IP-ADDRESS~][~IP-ADDRESS~]] artefact class for IPv4
+addresses that are obtained by resolving domain names using system resolver
+(see [[~DOMAIN~][~DOMAIN~]]).
+
+*** ~M3U-ENTRY~
+
+Titles of playlist entries (lines starting with ~#EXTINF:~).
+
+*** ~URI~
+
+URIs matched using the syntax provided in
+[[https://tools.ietf.org/html/rfc3986#appendix-A][RFC3986, appendix A]].
+
+*** ~WINDOWS-INTERNAL~
+
+One of the strings from the following [[windows-internals][table]]:
+
+#+CAPTION: Low-level Windows functions
+#+NAME: windows-internals
+| ~CreateProcess~                 | ~NtUnmapViewOfSection~ |
+| ~CreateRemoteThread~            | ~NtWriteVirtualMemory~ |
+| ~DefineDynamicAssembly~         | ~PointFunctionCall~    |
+| ~GetDelegateForFunctionPointer~ | ~QueueUserAPC~         |
+| ~GetModuleHandle~               | ~ResumeThread~         |
+| ~GetProcAddress~                | ~SetThreadContext~     |
+| ~GetThreadContext~              | ~VirtualAlloc~         |
+| ~NtAllocateVirtualMemory~       | ~VirtualAllocEx~       |
+| ~NtCreateUserProcess~           | ~WriteProcessMemory~   |
+| ~NtGetContextThread~            |                        |
+
+# Taken out of context there is nothing wrong about these functions, but they
+# might raise suspicion if encountered together with other binary artefacts
+# (usually shell-code).
+
+* Footnotes
+
+[fn:1] Currently only CIRCL.LU AIL paste feed is supported.
+
+[fn:2] This will not be necessary once the CIRCL.LU AIL paste feed is fixed.
+
+[fn:3] You need to contact CIRCL.LU support to whitelist the external IP
+address of the machine running ~pastelyzer~.

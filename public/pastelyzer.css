@@ -1,0 +1,53 @@
+li.artefact-group { list-style-type: none; }
+li.artefact { list-style-type: none; }
+
+/* Colors borrowed (mostly) from Zenburn. */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: #336633 #3F3F3F;
+}
+
+body {
+  color: #DCDCCC;
+  background-color: #3F3F3F;
+  font-family: sans-serif;
+}
+span.description {
+  display: block;
+  color: #CCEECC;
+  background-color: #336633;
+  padding: 0.3em;
+  border-radius: 0.3em;
+}
+span.description a {
+  color: #F0DFAF;
+  text-decoration: none;
+}
+span.description a:visited {
+  color: #909090;
+}
+.artefact {
+  font-family: monospace;
+}
+.artefact .source-string {
+  color: #DFAF8F;
+  font-weight: bold;
+}
+.artefact.important  .source-string{
+  color: #FF5050;
+  font-weight: bold;
+}
+.hit {
+  transform-origin: top;
+}
+.fragment-artefacts {
+  /* By default UL element has margin set, but margins are not included
+   * when calculating element dimensions (there's no box-sizing
+   * property value that would help), so we remove the margins and use
+   * padding instead.
+   */
+  margin-top: 0px;
+  padding-top: 1ex;
+  margin-bottom: 0px;
+  padding-bottom: 1ex;
+}

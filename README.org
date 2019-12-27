@@ -1,0 +1,119 @@
+#+TITLE: Pastelyzer
+
+* Introduction
+
+This is ~pastelyzer~: the paste analyzer.  There is a
+[[file:doc/usage.org][user manual]] in ~doc~ directory.
+
+The easiest way to run ~pastelyzer~ is by using the provided binary.
+
+* Runtime dependencies
+** Libraries
+
+The following libraries must be installed on the target system:
+
+- ~libssl~
+- ~libzmq~ (version 3+)
+
+*** Ubuntu Bionic (18.04), Eoan (19.10) packages
+
+- ~libssl1.1~
+- ~libzmq5~
+
+** Database
+
+To run ~pastelyzer~ in standalone mode a PostgreSQL database (at least version
+*9.5*) is required.  Use the SQL script in
+[[file:../support/schema.sql][support/schema.sql]] to initialize the database:
+
+#+BEGIN_EXAMPLE
+  $ psql -d pastelyzer < support/schema.sql
+#+END_EXAMPLE
+
+* Compilation
+** Set up a working Common Lisp environment
+
+~pastelyzer~ works with SBCL and ClozureCL:
+
+   - http://sbcl.org/
+   - https://ccl.clozure.com/
+
+We strongly suggest using SBCL (which is also the implementation used in the
+examples below).  Most Linux distributions already have an ~sbcl~ package
+available.
+
+** Install system packages
+
+To follow the instructions below you'll need the following software:
+
+- C compiler (~gcc~).
+- ~curl~ (to download Quicklisp).
+- ~git~ (to clone ~pastelyzer~).
+- Header files for ~libssl~ and ~libzmq~.
+
+If you're using Ubuntu, you can install all of the above using the following
+command:
+
+#+BEGIN_EXAMPLE
+  # apt install build-essential curl git libssl-dev libzmq3-dev sbcl
+#+END_EXAMPLE
+
+** Install Quicklisp
+
+An abridged version of the official
+[[https://www.quicklisp.org/beta/#installation][Quicklisp install
+instructions]]:
+
+#+BEGIN_EXAMPLE
+  $ curl -O https://beta.quicklisp.org/quicklisp.lisp
+  $ sha256sum quicklisp.lisp
+  4a7a5c2aebe0716417047854267397e24a44d0cce096127411e9ce9ccfeb2c17  quicklisp.lisp
+  $ sbcl --load quicklisp.lisp \
+         --eval '(quicklisp-quickstart:install)' \
+         --quit
+#+END_EXAMPLE
+
+** Clone the source repository
+
+#+BEGIN_EXAMPLE
+  $ git clone --recurse-submodules https://github.com/cert-lv/pastelyzer.git
+  $ cd pastelyzer
+#+END_EXAMPLE
+
+** Install dependencies
+
+This has to be done only once (whenever the lisp library dependencies
+change).  In the ~pastelyzer~ directory run the ~bin/build.sh~ script with
+~load-deps~ command:
+
+#+BEGIN_EXAMPLE
+  $ bin/build.sh load-deps
+#+END_EXAMPLE
+
+** Run the test suite (optional)
+
+#+BEGIN_EXAMPLE
+  $ bin/build.sh test
+#+END_EXAMPLE
+
+** Build an executable
+
+Run ~bin/build.sh~ script with no parameters in ~pastelyzer~ directory:
+
+#+BEGIN_EXAMPLE
+  $ bin/build.sh
+#+END_EXAMPLE
+
+* Copyright and License
+
+~pastelyzer~ is released under the terms of zlib/libpng license.  See
+[[file:LICENSE]] file.
+
+* Acknowledgements
+
+This work was partially funded by CEF (Connecting Europe Facility) funding
+under "Improving Cyber Security Capacities in Latvia"
+(INEA/CEF/ICT/A2017/1528784).
+
+#+ATTR_HTML: :height 100px :align center
+[[file:doc/img/en_square_cef_logo.png]]

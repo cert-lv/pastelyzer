@@ -1,0 +1,1425 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2019-12-27 Fri 12:46 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pastelyzer</title>
+<meta name="generator" content="Org mode" />
+<meta name="author" content="Jānis Džeriņš" />
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #ccc;
+    box-shadow: 3px 3px 3px #eee;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: visible;
+    padding-top: 1.2em;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    background-color: white;
+    top: -10px;
+    right: 10px;
+    padding: 3px;
+    border: 1px solid black;
+  }
+  pre.src:hover:before { display: inline;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .equation-container {
+    display: table;
+    text-align: center;
+    width: 100%;
+  }
+  .equation {
+    vertical-align: middle;
+  }
+  .equation-label {
+    display: table-cell;
+    text-align: right;
+    vertical-align: middle;
+  }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { width: 90%; }
+  /*]]>*/-->
+</style>
+<script type="text/javascript">
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012-2019 Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+</head>
+<body>
+<div id="content">
+<h1 class="title">Pastelyzer
+<br />
+<span class="subtitle">User manual</span>
+</h1>
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#org437f225">1. Introduction</a></li>
+<li><a href="#org740e73c">2. Running <code>pastelyzer</code></a>
+<ul>
+<li><a href="#orgcad0248">2.1. Interesting artefacts</a></li>
+<li><a href="#common-cli-options">2.2. Common command-line options</a>
+<ul>
+<li><a href="#important-cc-bins-file">2.2.1. Important bank card BINs file</a></li>
+</ul>
+</li>
+<li><a href="#org4159c5e">2.3. Interactive mode</a></li>
+<li><a href="#org073fe74">2.4. Standalone mode</a>
+<ul>
+<li><a href="#org9c33624">2.4.1. Prerequisites</a></li>
+<li><a href="#org7c40724">2.4.2. Options</a></li>
+<li><a href="#org40f5c64">2.4.3. Environment variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#org9ad5729">3. Configuration</a>
+<ul>
+<li><a href="#org8da503c">3.1. Syntax overview</a></li>
+<li><a href="#org6cb6fc6">3.2. Sinks</a>
+<ul>
+<li><a href="#org5db3f13">3.2.1. Specifying values</a></li>
+<li><a href="#org489f412">3.2.2. Templates</a></li>
+<li><a href="#org586818b">3.2.3. <code>WEB-SINK</code></a></li>
+<li><a href="#orgde4d40b">3.2.4. <code>SMTP-SINK</code></a></li>
+<li><a href="#orgf726ca9">3.2.5. <code>MISP-SINK</code></a></li>
+</ul>
+</li>
+<li><a href="#org841e6ad">3.3. Filters</a></li>
+<li><a href="#org71c736e">3.4. Example configuration</a></li>
+</ul>
+</li>
+<li><a href="#orgc9cbf97">4. Artefact classes</a>
+<ul>
+<li><a href="#orgd7d5619">4.1. Binary artefacts</a>
+<ul>
+<li><a href="#org7b6cb15">4.1.1. <code>COMPRESSED-BLOB</code></a></li>
+<li><a href="#orgad45181">4.1.2. <code>ENCODED-STRING</code></a></li>
+</ul>
+</li>
+<li><a href="#org8705b83">4.2. String artefacts</a>
+<ul>
+<li><a href="#orge02f268">4.2.1. <code>BANK-CARD-NUMBER</code></a></li>
+<li><a href="#orgf3a0700">4.2.2. <code>IMPORTANT-CARD-NUMBER</code></a></li>
+<li><a href="#org10ea71e">4.2.3. <code>CREDENTIAL</code></a></li>
+<li><a href="#orgcfdaf86">4.2.4. <code>DOMAIN</code></a></li>
+<li><a href="#org3488881">4.2.5. <code>ONION</code></a></li>
+<li><a href="#org7cdf383">4.2.6. <code>EMAIL</code></a></li>
+<li><a href="#org78c36a1">4.2.7. <code>EMBEDDED-BINARY</code></a></li>
+<li><a href="#orge0e9c7c">4.2.8. <code>IP-ADDRESS</code></a></li>
+<li><a href="#orgab0e8bf">4.2.9. <code>RESOLVED-IP-ADDRESS</code></a></li>
+<li><a href="#orge6d6555">4.2.10. <code>M3U-ENTRY</code></a></li>
+<li><a href="#orgf4d0f4d">4.2.11. <code>URI</code></a></li>
+<li><a href="#orgeaf8f96">4.2.12. <code>WINDOWS-INTERNAL</code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-org437f225" class="outline-2">
+<h2 id="org437f225"><span class="section-number-2">1</span> Introduction</h2>
+<div class="outline-text-2" id="text-1">
+<p>
+<code>pastelyzer</code> is a tool that analyses text documents and looks for security and
+privacy related &ldquo;items&rdquo; (called <i>artefacts</i> in this document).  A
+distinguishing feature of the tool is that embedded binary content (e.g.,
+base64-encoded) is detected and decoded.  The decoded content is then
+recursively processed (see section <a href="#orgd7d5619">4.1</a>).
+</p>
+
+<p>
+<b>IMPORTANT</b>: This software is a work-in-progress, and is expected to change.
+Make sure you consult the documentation that corresponds to the version of
+<code>pastelyzer</code> you&rsquo;re using.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org740e73c" class="outline-2">
+<h2 id="org740e73c"><span class="section-number-2">2</span> Running <code>pastelyzer</code></h2>
+<div class="outline-text-2" id="text-2">
+<p>
+<code>pastelyzer</code> can be run in two modes:
+</p>
+
+<ul class="org-ul">
+<li>interactively as an ordinary command-line utility, and</li>
+<li>as a background service with no user interaction.</li>
+</ul>
+
+<p>
+Both of these modes are described in the following sections.
+</p>
+</div>
+
+<div id="outline-container-orgcad0248" class="outline-3">
+<h3 id="orgcad0248"><span class="section-number-3">2.1</span> Interesting artefacts</h3>
+<div class="outline-text-3" id="text-2-1">
+<p>
+In order to keep the amount of information presented to the user manageable
+not all discovered artefacts are shown.  For example not all groups of four
+numbers separated with periods are IP addresses — more commonly than not the
+numbers are actually version numbers.  To make the IP address extraction
+useful there is an option to only show the IP addresses that fall into
+specific networks (see section <a href="#common-cli-options"><code>--networks-file</code>
+option</a>).  In this case we say that the IP addresses that belong to the
+specified networks are &ldquo;interesting.&rdquo;  Similarly for top-level domains and
+bank cards.
+</p>
+
+<p>
+There are still some cases hard-coded in the system.  The intention is to make
+the configuration facility flexible enough so that these can be removed from
+the code and into the configuration.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org211cbfb" class="outline-3">
+<h3 id="common-cli-options"><span class="section-number-3">2.2</span> Common command-line options</h3>
+<div class="outline-text-3" id="text-common-cli-options">
+<p>
+The following options affect artefact extraction and apply in both CLI and
+standalone mode:
+</p>
+
+<dl class="org-dl">
+<dt><code>-h, --help</code></dt><dd>Show short usage information.</dd>
+
+<dt><code>-v, --version</code></dt><dd>Show version.</dd>
+
+<dt><code>--networks-file</code></dt><dd>Path to a file that contains networks (in
+<a href="https://tools.ietf.org/html/rfc4632#section-3.1">CIDR notation</a>), one per
+line.  Empty lines and lines starting with a <code>#</code> character are ignored.  See
+<a href="https://nic.lv/local.net">https://nic.lv/local.net</a> for an example of such a file.</dd>
+
+<dt><code>--tlds-file</code></dt><dd>Path to a file containing valid Top Level Domains (e.g.,
+<a href="https://data.iana.org/TLD/tlds-alpha-by-domain.txt">https://data.iana.org/TLD/tlds-alpha-by-domain.txt</a>).  Empty lines and lines
+starting with <code>#</code> character are ignored.  Used to reduce the number of false
+positives.</dd>
+
+<dt><code>--interesting-tlds</code></dt><dd>A comma-separated list of TLDs that should be considered interesting.  These
+are used by comparing the domains from the end, so the period should be
+included to compare the complete TLD.  Example: <code>.abc,.xyz</code>.</dd>
+
+<dt><code>--important-cc-bins</code></dt><dd>Path to a file containing important bank card
+<a href="https://en.wikipedia.org/wiki/Payment_card_number">BINs</a>.  The format of
+the file is described <a href="#important-cc-bins-file">below</a>.</dd>
+</dl>
+</div>
+
+<div id="outline-container-org8b2a380" class="outline-4">
+<h4 id="important-cc-bins-file"><span class="section-number-4">2.2.1</span> Important bank card BINs file</h4>
+<div class="outline-text-4" id="text-important-cc-bins-file">
+<p>
+Each line of the file can be one of the following:
+</p>
+
+<ul class="org-ul">
+<li>A comment line, starting with a <code>#</code> character.  There can be multiple
+consecutive comment lines.  The last comment line preceding a BIN
+specification is used as a note for that BIN.</li>
+<li>An empty line, clears the note.</li>
+<li>A BIN specification.  The format is: digit characters followed by number
+placeholder characters.  The number of digit and placeholder characters
+should match the number of bank card digits corresponding to the bin (e.g.,
+16 for Visa and Mastercard).  Spaces are ignored (in both prefix and
+placeholder parts).</li>
+</ul>
+
+<p>
+The following example file defines 5 bins for 2 banks.  The first bank uses
+16-digit numbers that start with <code>123456</code>, <code>424242</code> and <code>111122</code>.  The second
+bank uses 15-digit numbers that start with <code>23</code> and <code>32</code>.
+</p>
+
+<div class="org-src-container">
+<label class="org-src-name"><span class="listing-number">Listing 1: </span>Sample important BIN file</label><pre class="src src-text" id="orgcc0df2c"># This is just an example.
+
+# National bank
+1234 56xx xxxx xxxx
+424242 xx xxxx xxxx
+111122xxxxxxxxxx
+
+# Other bank
+23xx xxxxxx xxxxx
+32xxxxxxxxxxxxx
+</pre>
+</div>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org4159c5e" class="outline-3">
+<h3 id="org4159c5e"><span class="section-number-3">2.3</span> Interactive mode</h3>
+<div class="outline-text-3" id="text-2-3">
+<p>
+The simplest way to use <code>pastelyzer</code> is to pass it one or more file names.
+<code>pastelyzer</code> will analyze given files and print all detected artefacts in a
+tree structure (see figure <a href="#org512198a">below</a>).
+</p>
+
+
+<div id="org512198a" class="figure">
+<p><img src="img/cli-33E400e1.png" alt="cli-33E400e1.png" width="100%" />
+</p>
+<p><span class="figure-number">Figure 1: </span>Sample CLI usage</p>
+</div>
+
+<p>
+Currently in this mode it is only possible to view what and where <code>pastelyzer</code>
+can detect.  In the future it will be possible to control what is extracted
+(i.e., limit output to a subset of &ldquo;interesting&rdquo; artefact classes) and what to
+do with the results (i.e,. write to a file, or generate JSON).
+</p>
+</div>
+</div>
+
+<div id="outline-container-org073fe74" class="outline-3">
+<h3 id="org073fe74"><span class="section-number-3">2.4</span> Standalone mode</h3>
+<div class="outline-text-3" id="text-2-4">
+<p>
+In standalone mode <code>pastelyzer</code> receives documents from a feed<sup><a id="fnr.1" class="footref" href="#fn.1">1</a></sup>, stores
+them in database and analyzes them.  It is possible to control what to do with
+the discovered artefacts using filters (see section <a href="#org9ad5729">3</a>).  A
+sample systemd service file is provided in
+<a href="../support/pastelyzer.service">support/pastelyzer.service</a> file.
+</p>
+</div>
+
+<div id="outline-container-org9c33624" class="outline-4">
+<h4 id="org9c33624"><span class="section-number-4">2.4.1</span> Prerequisites</h4>
+<div class="outline-text-4" id="text-2-4-1">
+<p>
+<code>pastelyzer</code> stores all received documents in a PostgreSQL (version <b>9.5</b> or
+later) database.  The database schema is provided in the source distribution
+<a href="../support/schema.sql">support/schema.sql</a> file.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org7c40724" class="outline-4">
+<h4 id="org7c40724"><span class="section-number-4">2.4.2</span> Options</h4>
+<div class="outline-text-4" id="text-2-4-2">
+<dl class="org-dl">
+<dt><code>-c, --config</code></dt><dd>Path to configuration file (see section <a href="#org9ad5729">3</a>).</dd>
+
+<dt><code>-w, --workers</code></dt><dd>Number of threads to use for document processing (default: <code>4</code>).</dd>
+
+<dt><code>--server-port</code></dt><dd>Port number where to expose the dashboard.  If the port is not given then
+the web server is not started.</dd>
+
+<dt><code>--server-ext-host</code>, <code>--server-ext-port</code></dt><dd>Web server host and port to use when generating links to documents in
+emails.  If not specified, links of the form <code>http://localhost/...</code> will be
+generated.</dd>
+
+<dt><code>--[no-]process-broken</code></dt><dd>Process pastes with broken UTF-8 content<sup><a id="fnr.2" class="footref" href="#fn.2">2</a></sup> (in addition to trying to fix
+them; defaults to yes).  Specific sites can be blacklisted using an
+environment variable (see <a href="#org40f5c64"><code>IGNORED_PASTESITES</code></a>).</dd>
+</dl>
+</div>
+</div>
+
+<div id="outline-container-org40f5c64" class="outline-4">
+<h4 id="org40f5c64"><span class="section-number-4">2.4.3</span> Environment variables</h4>
+<div class="outline-text-4" id="text-2-4-3">
+<dl class="org-dl">
+<dt><code>DB_NAME</code></dt><dd>Database name.  Default: <code>pastelyzer</code>.</dd>
+
+<dt><code>DB_USER</code></dt><dd>Database user.  Default: <code>pastelyzer</code>.</dd>
+
+<dt><code>DB_PASS</code></dt><dd>Database password.  Default: empty.</dd>
+
+<dt><code>DB_HOST</code></dt><dd>Database host.  Default: <code>localhost</code>.</dd>
+
+<dt><code>DB_PORT</code></dt><dd>Database port.  Default: <code>5432</code>.</dd>
+
+<dt><code>CIRCL_ZMQ_ADDRESS</code></dt><dd>Paste feed endpoint<sup><a id="fnr.3" class="footref" href="#fn.3">3</a></sup>.  Default: <code>tcp://crf.circl.lu:5556</code>.</dd>
+
+<dt><code>IGNORED_PASTESITES</code></dt><dd>Comma-separated list of paste sites to not re-fetch broken pastes from.  It
+is a good idea to have at least <code>pastebin.com</code> in this list.</dd>
+
+<dt><code>HTTP_USER_AGENT</code></dt><dd>User agent to use when fetching web pages.  This will be used verbatim as
+the HTTP <code>User-Agent</code> header value.</dd>
+</dl>
+</div>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org9ad5729" class="outline-2">
+<h2 id="org9ad5729"><span class="section-number-2">3</span> Configuration</h2>
+<div class="outline-text-2" id="text-3">
+<p>
+Currently configuration file is used only when running in <a href="#org073fe74">standalone mode</a>.  By default received documents are stored in the
+database, processed, and the summary of findings (what kind of artefacts and
+how many) also stored in the database.  <a href="#org6cb6fc6">Sinks</a> are additional
+destinations where artefacts can be collected, and <a href="#org841e6ad">filters</a> are
+used to control what artefacts end up in which sinks.
+</p>
+
+<p>
+Current sink and filter implementation is good enough to support basic use
+cases.  But the implementation is expected to change to accommodate additional
+cases.
+</p>
+</div>
+
+<div id="outline-container-org8da503c" class="outline-3">
+<h3 id="org8da503c"><span class="section-number-3">3.1</span> Syntax overview</h3>
+<div class="outline-text-3" id="text-3-1">
+<p>
+Configuration is written using
+<a href="https://en.wikipedia.org/wiki/S-expression">S-expressions</a>.  The most
+unusual thing about this notation might be the prefix notation, but it can
+also be thought of as XML simplified (i.e., no need for closing tags).  Please
+refer to <a href="https://en.wikipedia.org/wiki/S-expression">Wikipedia page</a> for a
+more verbose introduction.
+</p>
+
+<p>
+Syntax used in <code>pastelyzer</code> configuration file have an extension: square
+brackets can be used to specify byte-vectors.  The elements between opening
+and closing square are expected to be space-separate hexadecimal 8-bit numbers
+(case-insensitive).  Example: <code>[7f 45 4c 46]</code>.
+</p>
+
+<p>
+Currently there are two recognized configuration directives (described in
+following sections): <code>define-sink</code> and <code>define-artefact-filter</code>.  The word
+<code>define</code> in both of them is there to let text editors that have support for
+lisp-like languages recognize and treat these expressions specially (i.e., for
+syntax highlighting and automatic indentation).
+</p>
+</div>
+</div>
+
+<div id="outline-container-org6cb6fc6" class="outline-3">
+<h3 id="org6cb6fc6"><span class="section-number-3">3.2</span> Sinks</h3>
+<div class="outline-text-3" id="text-3-2">
+<p>
+<code>define-sink</code> directive is used to define a sink.  The syntax is as follows:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sexpr">(<span style="color: #1874cd;">define-sink</span> &lt;name&gt; (&lt;parent&gt;) &lt;attribute&gt;*)
+</pre>
+</div>
+
+<p>
+<code>&lt;name&gt;</code> is the name of sink being defined and will be used to refer to it in
+<a href="#org841e6ad">filters</a> or as a parent in another sink.
+</p>
+
+<p>
+<code>&lt;parent&gt;</code> should be either one of the built-in sink implementations
+(described in the following sections), or another thing that has been defined
+previously.  Even though a sink can only have one parent it has to be
+specified as a single-element list (i.e., it has to be surrounded by
+parenthesis).
+</p>
+
+<p>
+There can be zero or more <code>&lt;attribute&gt;</code> specifications of the following form:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sexpr">(&lt;name&gt; &lt;parameter&gt;*)
+</pre>
+</div>
+
+<p>
+Attribute <code>&lt;name&gt;</code> will usually be a keyword (i.e., a symbol starting with a
+colon).  Each sink implementation has a different set of supported attributes
+described in corresponding section below.
+</p>
+</div>
+
+<div id="outline-container-org5db3f13" class="outline-4">
+<h4 id="org5db3f13"><span class="section-number-4">3.2.1</span> Specifying values</h4>
+<div class="outline-text-4" id="text-3-2-1">
+<p>
+Attribute values have types.  This means that if a <code>string</code> value is required,
+the value must be enclosed in double quotes (i.e., <code>"this is a string"</code>).
+</p>
+
+<p>
+Values can also be forms:
+</p>
+
+<dl class="org-dl">
+<dt><code>&lt;string&gt;</code></dt><dd>A string value stands for itself.</dd>
+
+<dt><code>yes</code>, <code>true</code></dt><dd>A boolean true value.</dd>
+
+<dt><code>no</code>, <code>false</code></dt><dd>A boolean false value.</dd>
+
+<dt><code>(env &lt;string&gt;)</code></dt><dd>Returns the value of process environment variable named by given string.</dd>
+
+<dt><code>(file-contents &lt;string&gt;)</code></dt><dd>Returns the contents of a file named by the given string.</dd>
+
+<dt><code>(or &lt;form&gt;+)</code></dt><dd>Returns the first form from the given list that has a value.  For example,
+the form <code>(or (env "SOME_VAR" "undefined"))</code> will return
+the value of <code>SOME_VAR</code> environment variable, or the string <code>"undefined"</code> if
+there is no such environment variable.</dd>
+</dl>
+</div>
+</div>
+
+<div id="outline-container-org489f412" class="outline-4">
+<h4 id="org489f412"><span class="section-number-4">3.2.2</span> Templates</h4>
+<div class="outline-text-4" id="text-3-2-2">
+<p>
+If an attribute is specified to be a template, the value of an attribute will
+be generated using forms provided in the attribute.
+</p>
+
+<dl class="org-dl">
+<dt><code>:nl</code></dt><dd>New line: outputs a newline character, unconditionally.</dd>
+
+<dt><code>:fl</code></dt><dd>Fresh line: outputs a newline only if the last character was not a newline.</dd>
+
+<dt><code>(extract &lt;field&gt;)</code></dt><dd>Extracts <code>field</code> from the context variable.  See
+<a href="#sink-field-extractors">sink</a> and <a href="#item-field-extractors">item</a> field
+extractors below.</dd>
+
+<dt><code>(fmt &lt;format-string&gt; &lt;form&gt;+)</code></dt><dd>Formats given parameters using Common-lisp
+<a href="http://www.lispworks.com/documentation/HyperSpec/Body/f_format.htm">format</a>
+function.  For advanced users only.</dd>
+
+<dt><code>(unique-count &lt;artefact-class&gt;)</code></dt><dd>Not really a filter function or an extractor, but can be used in sink
+attribute <a href="#org489f412">templates</a> to calculate the number unique artefacts
+of the given <code>artefact-class</code> in a document currently being processed.
+Note: this is a hack, and most probably will change once we come up with a
+more general way to access this information.</dd>
+</dl>
+</div>
+
+<div id="outline-container-org531082f" class="outline-5">
+<h5 id="sink-field-extractors"><span class="section-number-5">3.2.2.1</span> Sink (document) level field extractors:</h5>
+<div class="outline-text-5" id="text-sink-field-extractors">
+<dl class="org-dl">
+<dt><code>source-url</code></dt><dd>Source site of the document being processed.  E.g., <code>pastebin.com</code>.</dd>
+
+<dt><code>remote-url</code></dt><dd>The URL of the document being processed (if available).</dd>
+
+<dt><code>remote-raw-url</code></dt><dd>The URL to the raw contents of the document being processed (if available).</dd>
+
+<dt><code>local-url</code></dt><dd>The URL to the local copy of the document being processed.  See
+<code>--server-ext-host</code> and <code>--server-ext-port</code> command line
+<a href="#org7c40724">options</a>.</dd>
+
+<dt><code>artefact-descriptions</code></dt><dd>Generates a summary of all artefacts collected in a sink, grouped by
+artefact class, one per line.</dd>
+
+<dt><code>artefact-summary-by-class</code></dt><dd>Generates a comma-separated string with artefact class and the number of
+artefacts with this class collected in the sink.</dd>
+</dl>
+</div>
+</div>
+
+<div id="outline-container-orgae552bb" class="outline-5">
+<h5 id="item-field-extractors"><span class="section-number-5">3.2.2.2</span> Item (artefact) level field extractors:</h5>
+<div class="outline-text-5" id="text-item-field-extractors">
+<dl class="org-dl">
+<dt><code>digits</code></dt><dd>The digits of a bank card number with no separators.</dd>
+
+<dt><code>note</code></dt><dd>Note associated with an artefact.  For
+<a href="#orgf3a0700"><code>important-card-number</code></a> it is the comment
+associated with the BIN.  See <code>--important-cc-bins</code>
+<a href="#common-cli-options">option</a>.</dd>
+</dl>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org586818b" class="outline-4">
+<h4 id="org586818b"><span class="section-number-4">3.2.3</span> <code>WEB-SINK</code></h4>
+<div class="outline-text-4" id="text-3-2-3">
+<p>
+This is the simplest sink.  It does not have any parameters.
+</p>
+
+<p>
+Example:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sexpr">(<span style="color: #1874cd;">define-sink</span> dashboard (web-sink))
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgde4d40b" class="outline-4">
+<h4 id="orgde4d40b"><span class="section-number-4">3.2.4</span> <code>SMTP-SINK</code></h4>
+<div class="outline-text-4" id="text-3-2-4">
+<p>
+This sink is used to send emails.  Attributes:
+</p>
+
+<dl class="org-dl">
+<dt><code>(:server &lt;string&gt;)</code></dt><dd>Sets the outgoing SMTP server to the given string.</dd>
+
+<dt><code>(:from &lt;string&gt;)</code></dt><dd>Sets the sender (&ldquo;From&rdquo; field) of the outgoing emails.</dd>
+
+<dt><code>(:subject &lt;form&gt;+)</code></dt><dd><a href="#org489f412">Template</a> attribute to generate subject line of the outgoing
+email.</dd>
+
+<dt><code>(:body &lt;form&gt;+)</code></dt><dd><a href="#org489f412">Template</a> attribute to generate the body of the outgoing
+email.</dd>
+
+<dt><code>(:recipients &lt;string&gt;+)</code></dt><dd>A list of strings, each being an email address to send the email to.</dd>
+</dl>
+</div>
+</div>
+
+<div id="outline-container-orgf726ca9" class="outline-4">
+<h4 id="orgf726ca9"><span class="section-number-4">3.2.5</span> <code>MISP-SINK</code></h4>
+<div class="outline-text-4" id="text-3-2-5">
+<dl class="org-dl">
+<dt><code>(:server &lt;string&gt;)</code></dt><dd>Sets the MISP instance URL.</dd>
+
+<dt><code>(:api-key &lt;string&gt;)</code></dt><dd>The API key to use when communicating with the instance.</dd>
+
+<dt><code>(:ca-cert &lt;string&gt;)</code></dt><dd>Path to a custom CA certificate.</dd>
+
+<dt><code>(:user-cert &lt;string&gt;)</code></dt><dd>Path to PEM-encoded user certificate.</dd>
+
+<dt><code>(:user-key &lt;string&gt;)</code></dt><dd>Path to PEM encoded private key matching the certificate given in
+<code>:user-cert</code> attribute.</dd>
+
+<dt><code>(:user-key-pass &lt;string&gt;)</code></dt><dd>Passphrase to use to decrypt the private key specified with <code>:user-key</code>
+attribute.</dd>
+
+<dt><code>(:alert &lt;boolean&gt;)</code></dt><dd><a href="#org5db3f13">Boolean</a> value specifying whether this MISP event is
+or is not an alert.</dd>
+
+<dt><code>(:publish &lt;boolean&gt;)</code></dt><dd><a href="#org5db3f13">Boolean</a> value specifying whether to automatically
+publish this event.</dd>
+
+<dt><code>(:title &lt;form&gt;+)</code></dt><dd><a href="#org489f412">Template</a> attribute to generate the title of MISP event.</dd>
+
+<dt><code>(:sharing-group &lt;string&gt;)</code></dt><dd>Currently the only sharing option is a sharing group.  Given value should be
+the name of the sharing group to use (the ID will be automatically looked up
+using the API).</dd>
+
+<dt><code>(:document-action &lt;form&gt;)</code></dt><dd>An action to perform once the MISP event is created.  Currently the
+following actions are supported:
+
+<dl class="org-dl">
+<dt><code>(add-tags &lt;string&gt;+)</code></dt><dd>Tag the event with the given tags.</dd>
+
+<dt><code>(add-attribute :category &lt;string&gt; :type &lt;string&gt; :value &lt;string&gt; :comment &lt;string&gt;)</code></dt><dd>Add an attribute to the event with the given <code>category</code>, <code>type</code>, <code>value</code>
+and <code>comment</code> (optional).  The subject of the action is sink (document).</dd>
+</dl></dd>
+
+<dt><code>(:item-action &lt;form&gt;)</code></dt><dd>An action to perform after the MISP event is created, and all document
+actions are performed.  Each item action is performed once for every
+artefact collected in the sink.  The only supported action is
+<code>add-attribute</code>:
+
+<dl class="org-dl">
+<dt><code>(add-attribute :category &lt;string&gt; :type &lt;string&gt; :value &lt;string&gt; :comment &lt;string&gt;)</code></dt><dd>Add an attribute to the event with the given <code>category</code>, <code>type</code>, <code>value</code>
+and <code>comment</code> (optional).  The subject of the action is an artefact.</dd>
+</dl></dd>
+</dl>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org841e6ad" class="outline-3">
+<h3 id="org841e6ad"><span class="section-number-3">3.3</span> Filters</h3>
+<div class="outline-text-3" id="text-3-3">
+<p>
+<code>define-artefact-filter</code> directive is used to define a filter.  The syntax is
+as follows:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sexpr">(<span style="color: #1874cd;">define-artefact-filter</span> &lt;name&gt; &lt;filter-expression&gt; &lt;action&gt;+)
+</pre>
+</div>
+
+<p>
+<code>&lt;name&gt;</code> is the name of the filter.  Generally unimportant, but useful for
+debugging.  Whenever an artefact is detected, <code>&lt;filter-expression&gt;</code> of every
+filter is executed.  If the result is true (i.e., the filter matches), all
+<code>&lt;action&gt;</code> items are executed in order.  Currently the only supported action
+is to collect the artefact into a sink.
+</p>
+
+<p>
+Actions have the following syntax: <code>(collect-into &lt;sink-name&gt;)</code>.
+</p>
+
+<p>
+Filter expressions have an implicit argument: an artefact.  The following
+filter expressions are supported:
+</p>
+
+<dl class="org-dl">
+<dt><code>(type? &lt;class&gt;)</code></dt><dd>True if the artefact is of the given class.  See section <a href="#orgc9cbf97">4</a>.</dd>
+
+<dt><code>(and &lt;filter-expression&gt;+)</code></dt><dd>True if all enclosed filter expressions are true, false otherwise.</dd>
+
+<dt><code>(or &lt;filter-expression&gt;+)</code></dt><dd>True if any of the enclosed filter expressions is true, false otherwise.</dd>
+
+<dt><code>(not &lt;filter-expression&gt;)</code></dt><dd>False if the given filter expression is true, false otherwise.</dd>
+
+<dt><code>(extract &lt;field&gt;)</code></dt><dd>Extract given field from the current context value, usually an artefact.
+Extractors applicable to particular artefacts are documented in the
+corresponding <a href="#orgc9cbf97">artefact class</a> section.</dd>
+
+<dt><code>(-&gt; &lt;filter-expression&gt;+)</code></dt><dd><p>
+Replaces the context of each consecutive filter expression with the value of
+the previous expression.  Consider the following example:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sexpr">(and (type? embedded-binary)
+     (-&gt; (extract embedded-binary-bytes)
+         (or (starts-with? [4D 5A])
+             (starts-with? [7f 45 4c 46]))))
+</pre>
+</div>
+
+<p>
+The <code>and</code> expression has two enclosed filter expressions.  For it to return
+true both of them have to be true.  So if the class of the artefact is not
+<a href="#org78c36a1">4.2.7</a>, the value of <code>and</code> will be false (and the second form
+will not even be considered).  But if the context of the filter is indeed an
+<a href="#org78c36a1">4.2.7</a> then the second form: <code>-&gt;</code>.
+</p>
+
+<p>
+First it calls <code>(extract embedded-binary-bytes)</code> (see below), and replaces
+the current context with returned value.  The next form is <code>or</code>, and for
+this form the context is the binary bytes of the current artefact (which we
+know is an <a href="#org78c36a1">4.2.7</a>).  The forms enclosed in <code>or</code> are executed
+in order, if any of them returns true the value of the <code>or</code> form is also
+true.  In any case, the value of <code>-&gt;</code> form will be the value of the <code>or</code>
+form applied to the byte content of the <a href="#org78c36a1">4.2.7</a> artefact.
+</p></dd>
+
+<dt><code>(length)</code></dt><dd>Returns the length of current context value.</dd>
+
+<dt><code>(= &lt;number&gt;)</code></dt><dd>True if the current context value is equal to the given number.</dd>
+
+<dt><code>(&lt; &lt;number&gt;)</code></dt><dd>True if the current context value is less than the given number.</dd>
+
+<dt><code>(&gt; &lt;number&gt;)</code></dt><dd>True if the current context value is greater than the given number.</dd>
+
+<dt><code>(starts-with? &lt;subsequence&gt;)</code></dt><dd>True if the context value is a sequence that starts with the given
+subsequence.</dd>
+
+<dt><code>(ends-with? &lt;subsequence&gt;)</code></dt><dd>True if the context value is a sequence that ends with the given
+subsequence.</dd>
+
+<dt><code>(contains? &lt;subsequence&gt;)</code></dt><dd>True if the context value is a sequence that contains the given subsequence.</dd>
+</dl>
+</div>
+</div>
+
+<div id="outline-container-org71c736e" class="outline-3">
+<h3 id="org71c736e"><span class="section-number-3">3.4</span> Example configuration</h3>
+<div class="outline-text-3" id="text-3-4">
+<div class="org-src-container">
+<pre class="src src-sexpr">(<span style="color: #1874cd;">define-sink</span> dashboard (web-sink))
+
+(<span style="color: #1874cd;">define-artefact-filter</span> web
+    <span style="color: #8b8b83;">;; </span><span style="color: #8b8b83; font-style: italic;">Everything except playlist entries and PNG images.</span>
+    (not (or (type? m3u-entry)
+             (and (type? embedded-binary)
+                  (-&gt; (extract embedded-binary-bytes)
+                      (starts-with? [89 50 4E 47])))))
+  (collect-into dashboard))
+
+(<span style="color: #1874cd;">define-sink</span> local-misp (misp-sink)
+  (<span style="color: #cd6600;">:server</span> <span style="color: #a52a2a;">"https://127.0.0.1:5000/"</span>)
+  (<span style="color: #cd6600;">:api-key</span> (env <span style="color: #a52a2a;">"MISP_API_KEY"</span>))
+  (<span style="color: #cd6600;">:ca-cert</span> (or (env <span style="color: #a52a2a;">"MISP_CA_CERT"</span>)
+                <span style="color: #a52a2a;">"misp/ca.pem"</span>))
+  (<span style="color: #cd6600;">:user-cert</span> (or (env <span style="color: #a52a2a;">"MISP_USER_CERT"</span>)
+                  <span style="color: #a52a2a;">"misp/misp.crt.pem"</span>))
+  (<span style="color: #cd6600;">:user-key</span> (or (env <span style="color: #a52a2a;">"MISP_USER_KEY"</span>)
+                 <span style="color: #a52a2a;">"misp/misp.key.pem"</span>))
+  (<span style="color: #cd6600;">:user-key-pass</span> (env <span style="color: #a52a2a;">"MISP_USER_KEY_PASS"</span>)))
+
+(<span style="color: #1874cd;">define-sink</span> misp-cc-event (local-misp)
+  (<span style="color: #cd6600;">:alert</span> yes)
+  (<span style="color: #cd6600;">:publish</span> yes)
+  (<span style="color: #cd6600;">:title</span>
+   (fmt <span style="color: #a52a2a;">"~@[~A: ~]~A probable card number~:P"</span>
+        (extract source-url)
+        (unique-count important-card-number)))
+  (<span style="color: #cd6600;">:sharing-group</span> <span style="color: #a52a2a;">"Finance"</span>)
+  (<span style="color: #cd6600;">:document-action</span>
+   (add-tags <span style="color: #a52a2a;">"CardFraud"</span> <span style="color: #a52a2a;">"tlp:amber"</span>))
+  (<span style="color: #cd6600;">:document-action</span>
+   (add-attribute <span style="color: #cd6600;">:category</span> <span style="color: #a52a2a;">"External analysis"</span>
+                  <span style="color: #cd6600;">:type</span> <span style="color: #a52a2a;">"url"</span>
+                  <span style="color: #cd6600;">:value</span> (extract source-url)))
+  (<span style="color: #cd6600;">:item-action</span>
+   (add-attribute <span style="color: #cd6600;">:category</span> <span style="color: #a52a2a;">"Financial fraud"</span>
+                  <span style="color: #cd6600;">:type</span> <span style="color: #a52a2a;">"cc-number"</span>
+                  <span style="color: #cd6600;">:value</span> (extract digits)
+                  <span style="color: #cd6600;">:comment</span> (extract note))))
+
+(<span style="color: #1874cd;">define-sink</span> email (smtp-sink)
+  (<span style="color: #cd6600;">:server</span> <span style="color: #a52a2a;">"smtp.your.org"</span>)
+  (<span style="color: #cd6600;">:from</span> <span style="color: #a52a2a;">"pastelyzer@your.org"</span>)
+  (<span style="color: #cd6600;">:subject</span> (extract artefact-summary-by-class))
+  (<span style="color: #cd6600;">:body</span> <span style="color: #a52a2a;">"URL: "</span> (extract local-url) <span style="color: #cd6600;">:fl</span>
+         <span style="color: #a52a2a;">"Origin: "</span> (extract remote-url) <span style="color: #cd6600;">:fl</span>
+         <span style="color: #a52a2a;">"Origin (raw): "</span> (extract remote-raw-url) <span style="color: #cd6600;">:fl</span>
+         (extract artefact-descriptions))
+  (<span style="color: #cd6600;">:recipients</span> <span style="color: #a52a2a;">"pastelyzer-notifications@your.org"</span>))
+
+(<span style="color: #1874cd;">define-artefact-filter</span> important-cc
+    (type? important-card-number)
+  (collect-into misp-cc-event)
+  (collect-into dashboard)
+  (collect-into email))
+</pre>
+</div>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgc9cbf97" class="outline-2">
+<h2 id="orgc9cbf97"><span class="section-number-2">4</span> Artefact classes</h2>
+<div class="outline-text-2" id="text-4">
+<p>
+The list of artefact classes recognized by <code>pastelyzer</code> and their
+relationships are shown <a href="#orgb289d54">below</a>.  These artefact
+classes are described in the following sections.
+</p>
+
+<div class="org-src-container">
+<label class="org-src-name"><span class="listing-number">Listing 2: </span>Artefact relationships</label><pre class="src src-text" id="orgb289d54">ARTEFACT
+├─ BINARY-ARTEFACT
+│  ├─ COMPRESSED-BLOB
+│  └─ ENCODED-STRING
+└─ STRING-ARTEFACT
+   ├─ BANK-CARD-NUMBER
+   │  └─ IMPORTANT-CARD-NUMBER
+   ├─ CREDENTIAL
+   ├─ DOMAIN
+   │  └─ ONION
+   ├─ EMAIL
+   ├─ EMBEDDED-BINARY
+   │  ├─ BASE64-BLOB
+   │  ├─ HEX-BLOB
+   │  └─ BINARY-BLOB
+   ├─ IP-ADDRESS
+   │  └─ RESOLVED-IP-ADDRESS
+   ├─ M3U-ENTRY
+   ├─ URI
+   └─ WINDOWS-INTERNAL
+</pre>
+</div>
+</div>
+
+<div id="outline-container-orgd7d5619" class="outline-3">
+<h3 id="orgd7d5619"><span class="section-number-3">4.1</span> Binary artefacts</h3>
+<div class="outline-text-3" id="text-4-1">
+<p>
+<code>BINARY-ARTEFACT</code> is the superclass for artefacts that are represented as
+binary data (i.e. sequence of 8-bit bytes).  If the input data is not known to
+be text then it is processed as binary data.  In most cases this means that
+the data will be detected as being text in UTF-8 encoding and processed as
+text.
+</p>
+</div>
+
+<div id="outline-container-org7b6cb15" class="outline-4">
+<h4 id="org7b6cb15"><span class="section-number-4">4.1.1</span> <code>COMPRESSED-BLOB</code></h4>
+<div class="outline-text-4" id="text-4-1-1">
+<p>
+Created if the <code>BINARY-ARTEFACT</code> bytes can be decompressed using gzip, zlib or
+deflate methods.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgad45181" class="outline-4">
+<h4 id="orgad45181"><span class="section-number-4">4.1.2</span> <code>ENCODED-STRING</code></h4>
+<div class="outline-text-4" id="text-4-1-2">
+<p>
+Created if the <code>BINARY-ARTEFACT</code> bytes can be decoded as UTF-8 or UTF-16
+(little- or big-endian) string.
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org8705b83" class="outline-3">
+<h3 id="org8705b83"><span class="section-number-3">4.2</span> String artefacts</h3>
+<div class="outline-text-3" id="text-4-2">
+<p>
+<code>STRING-ARTEFACT</code> is the superclass of all artefacts represented as text
+(i.e. most of them, described below).
+</p>
+</div>
+
+<div id="outline-container-orge02f268" class="outline-4">
+<h4 id="orge02f268"><span class="section-number-4">4.2.1</span> <code>BANK-CARD-NUMBER</code></h4>
+<div class="outline-text-4" id="text-4-2-1">
+<p>
+<code>pastelyzer</code> currently recognizes bank card numbers that correspond to the
+following patterns:
+</p>
+
+<table id="orgdbd1470" border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+<caption class="t-above"><span class="table-number">Table 1:</span> Bank card number patterns</caption>
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Pattern</th>
+<th scope="col" class="org-left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left"><code>AXXXXXXXXXXXXZ</code></td>
+<td class="org-left">14 consecutive digits</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>AXXXXXXXXXXXXXZ</code></td>
+<td class="org-left">15 consecutive digits</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>AXXXXXXXXXXXXXXZ</code></td>
+<td class="org-left">16 consecutive digits</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>AXXX-XXXX-XXXX-XXXZ</code></td>
+<td class="org-left">16 digits in groups of 4</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>AXXX-XXXXXX-XXXXZ</code></td>
+<td class="org-left">15 digits in groups of 4-6-5</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+In the latter two cases the separator can be single or double space or dash.
+In all cases the first digit is expected to be non-zero, and the last digit is
+expected to be the checksum digit (according to
+<a href="https://en.wikipedia.org/wiki/Luhn_algorithm">Luhn algorithm</a>).
+</p>
+
+<p>
+These rules are very lax and are expected to generate false-positives.  This
+is because the <a href="https://en.wikipedia.org/wiki/Payment_card_number">BINs</a>
+change, and we want to avoid updating the software when they do.  In the
+future we expect to allow specifying the BINs in an external file.
+</p>
+
+<p>
+Applicable extractors:
+</p>
+
+<dl class="org-dl">
+<dt><code>digits</code></dt><dd>A string of all the bank card digits with separators removed.</dd>
+</dl>
+</div>
+</div>
+
+<div id="outline-container-orgf3a0700" class="outline-4">
+<h4 id="orgf3a0700"><span class="section-number-4">4.2.2</span> <code>IMPORTANT-CARD-NUMBER</code></h4>
+<div class="outline-text-4" id="text-4-2-2">
+<p>
+Artefact class of bank card number (see section <a href="#orge02f268">4.2.1</a>) whose
+BIN (prefix) is listed in the important bank card BIN file (see
+<a href="#common-cli-options"><code>--important-cc-bins</code></a> option).
+</p>
+
+<p>
+Applicable extractors:
+</p>
+
+<dl class="org-dl">
+<dt><code>digits</code></dt><dd>Inherited from <a href="#orge02f268"><code>BANK-CARD-NUMBER</code></a>.</dd>
+<dt><code>note</code></dt><dd>Comment associated with the bin this artefact has been matched to.  See
+section <a href="#important-cc-bins-file">2.2.1</a>.</dd>
+</dl>
+</div>
+</div>
+
+<div id="outline-container-org10ea71e" class="outline-4">
+<h4 id="org10ea71e"><span class="section-number-4">4.2.3</span> <code>CREDENTIAL</code></h4>
+<div class="outline-text-4" id="text-4-2-3">
+<p>
+An username/passphrase pair, separated by colon (<code>:</code>), semicolon (<code>;</code>),
+vertical bar (<code>|</code>), comma (<code>,</code>) or tab character.  At the moment regular
+expressions are used to match both.  Even though the character repertoire for
+passphrases is quite generous, there are some limitations:
+</p>
+
+<ul class="org-ul">
+<li>Only credentials with emails (see <a href="#org7cdf383">4.2.6</a>) as usernames are detected.</li>
+<li>Non-ASCII characters are not matched.</li>
+<li>Space (and tab) characters are not matched.</li>
+</ul>
+
+<p>
+We plan to improve credential extraction to work around these limitations in
+the future.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgcfdaf86" class="outline-4">
+<h4 id="orgcfdaf86"><span class="section-number-4">4.2.4</span> <code>DOMAIN</code></h4>
+<div class="outline-text-4" id="text-4-2-4">
+<p>
+Everything that looks like words separated with periods, with some additional
+restrictions (documented in <a href="https://www.ietf.org/rfc/rfc1035.txt">RFC1035</a>)
+and other heuristics.
+</p>
+
+<p>
+We strongly suggest to provide the valid TLD file (see the
+<a href="#common-cli-options"><code>--tlds-file</code></a> option) to filter out most false
+positives.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org3488881" class="outline-4">
+<h4 id="org3488881"><span class="section-number-4">4.2.5</span> <code>ONION</code></h4>
+<div class="outline-text-4" id="text-4-2-5">
+<p>
+A pseudo-domain consisting of two parts separated by a period.  The first part
+being 16 or 56 alphanumeric characters (consistency not checked), the second
+being <code>onion</code> (see <a href="https://en.wikipedia.org/wiki/.onion">Wikipedia entry</a>).
+</p>
+</div>
+</div>
+
+<div id="outline-container-org7cdf383" class="outline-4">
+<h4 id="org7cdf383"><span class="section-number-4">4.2.6</span> <code>EMAIL</code></h4>
+<div class="outline-text-4" id="text-4-2-6">
+<p>
+Strings of the form <code>username@domain</code> are recognized as emails using a
+simple regular expression.  Only alphanumeric characters plus a period (<code>.</code>),
+underscore (<code>_</code>), percent sign (<code>%</code>), plus (<code>+</code>) and minus (<code>-</code>) are
+considered in the username part.  Period-separated sequences of alphanumeric
+characters are accepted as domain part.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org78c36a1" class="outline-4">
+<h4 id="org78c36a1"><span class="section-number-4">4.2.7</span> <code>EMBEDDED-BINARY</code></h4>
+<div class="outline-text-4" id="text-4-2-7">
+<p>
+All embedded binary artefacts (currently <a href="#orgc384aab"><code>BASE64-BLOB</code></a>,
+<a href="#org4f2ab4f"><code>HEX-BLOB</code></a> and <a href="#org1e9c3bc"><code>BINARY-BLOB</code></a>) are
+specializations of this artefact class.  The textual representation is
+processed and resulting binary data is available as the <code>BYTES</code> field (see
+section <a href="#org841e6ad">3.3</a>).
+</p>
+
+<p>
+The bytes are processed, and if it turns out they represent text or compressed
+data, the corresponding <a href="#orgd7d5619"><code>BINARY-ARTEFACT</code></a> instance is
+created.
+</p>
+
+<p>
+Applicable extractors:
+</p>
+
+<dl class="org-dl">
+<dt><code>embedded-binary-bytes</code></dt><dd>The bytes of the artefact after decoding.  Note: this will most likely be
+renamed to just <code>bytes</code> in near future.</dd>
+</dl>
+</div>
+
+<div id="outline-container-orgc384aab" class="outline-5">
+<h5 id="orgc384aab"><span class="section-number-5">4.2.7.1</span> <code>BASE64-BLOB</code></h5>
+<div class="outline-text-5" id="text-4-2-7-1">
+<p>
+Base64-encoded (see <a href="https://en.wikipedia.org/wiki/Base64">Wikipedia</a>)
+sequence of bytes.  Example: <code>TVqQ</code>.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org4f2ab4f" class="outline-5">
+<h5 id="org4f2ab4f"><span class="section-number-5">4.2.7.2</span> <code>HEX-BLOB</code></h5>
+<div class="outline-text-5" id="text-4-2-7-2">
+<p>
+A sequence of hexadecimal digit pairs, each pair representing one 8-bit byte.
+Example: <code>4D5A90</code>.
+</p>
+
+<p>
+This artefact is also created for sequences of bytes written using C-syntax
+for hexadecimal numbers, separated by comma and optional white-space.
+Example: <code>0x4d, 0x5a, 0x90</code>.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org1e9c3bc" class="outline-5">
+<h5 id="org1e9c3bc"><span class="section-number-5">4.2.7.3</span> <code>BINARY-BLOB</code></h5>
+<div class="outline-text-5" id="text-4-2-7-3">
+<p>
+Just ones and zeroes in groups of 8 (i.e., the total number of digits must be
+a multiple of 8).  Example: <code>010011010101101010010000</code>.
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orge0e9c7c" class="outline-4">
+<h4 id="orge0e9c7c"><span class="section-number-4">4.2.8</span> <code>IP-ADDRESS</code></h4>
+<div class="outline-text-4" id="text-4-2-8">
+<p>
+Artefact class for IPv4 addresses.  Only addresses that belong to one of the
+&ldquo;interesting networks&rdquo; are considered &ldquo;interesting&rdquo; (see
+<a href="#common-cli-options"><code>--networks-file</code></a> option).
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgab0e8bf" class="outline-4">
+<h4 id="orgab0e8bf"><span class="section-number-4">4.2.9</span> <code>RESOLVED-IP-ADDRESS</code></h4>
+<div class="outline-text-4" id="text-4-2-9">
+<p>
+A specialization of <a href="#orge0e9c7c"><code>IP-ADDRESS</code></a> artefact class for IPv4
+addresses that are obtained by resolving domain names using system resolver
+(see <a href="#orgcfdaf86"><code>DOMAIN</code></a>).
+</p>
+</div>
+</div>
+
+<div id="outline-container-orge6d6555" class="outline-4">
+<h4 id="orge6d6555"><span class="section-number-4">4.2.10</span> <code>M3U-ENTRY</code></h4>
+<div class="outline-text-4" id="text-4-2-10">
+<p>
+Titles of playlist entries (lines starting with <code>#EXTINF:</code>).
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgf4d0f4d" class="outline-4">
+<h4 id="orgf4d0f4d"><span class="section-number-4">4.2.11</span> <code>URI</code></h4>
+<div class="outline-text-4" id="text-4-2-11">
+<p>
+URIs matched using the syntax provided in
+<a href="https://tools.ietf.org/html/rfc3986#appendix-A">RFC3986, appendix A</a>.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgeaf8f96" class="outline-4">
+<h4 id="orgeaf8f96"><span class="section-number-4">4.2.12</span> <code>WINDOWS-INTERNAL</code></h4>
+<div class="outline-text-4" id="text-4-2-12">
+<p>
+One of the strings from the following <a href="#org3c8e09f">table</a>:
+</p>
+
+<table id="org3c8e09f" border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+<caption class="t-above"><span class="table-number">Table 2:</span> Low-level Windows functions</caption>
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<tbody>
+<tr>
+<td class="org-left"><code>CreateProcess</code></td>
+<td class="org-left"><code>NtUnmapViewOfSection</code></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>CreateRemoteThread</code></td>
+<td class="org-left"><code>NtWriteVirtualMemory</code></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>DefineDynamicAssembly</code></td>
+<td class="org-left"><code>PointFunctionCall</code></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>GetDelegateForFunctionPointer</code></td>
+<td class="org-left"><code>QueueUserAPC</code></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>GetModuleHandle</code></td>
+<td class="org-left"><code>ResumeThread</code></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>GetProcAddress</code></td>
+<td class="org-left"><code>SetThreadContext</code></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>GetThreadContext</code></td>
+<td class="org-left"><code>VirtualAlloc</code></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>NtAllocateVirtualMemory</code></td>
+<td class="org-left"><code>VirtualAllocEx</code></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>NtCreateUserProcess</code></td>
+<td class="org-left"><code>WriteProcessMemory</code></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>NtGetContextThread</code></td>
+<td class="org-left">&#xa0;</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div id="footnotes">
+<h2 class="footnotes">Footnotes: </h2>
+<div id="text-footnotes">
+
+<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1">1</a></sup> <div class="footpara"><p class="footpara">
+Currently only CIRCL.LU AIL paste feed is supported.
+</p></div></div>
+
+<div class="footdef"><sup><a id="fn.2" class="footnum" href="#fnr.2">2</a></sup> <div class="footpara"><p class="footpara">
+This will not be necessary once the CIRCL.LU AIL paste feed is fixed.
+</p></div></div>
+
+<div class="footdef"><sup><a id="fn.3" class="footnum" href="#fnr.3">3</a></sup> <div class="footpara"><p class="footpara">
+You need to contact CIRCL.LU support to whitelist the external IP
+address of the machine running <code>pastelyzer</code>.
+</p></div></div>
+
+
+</div>
+</div></div>
+<div id="postamble" class="status">
+<p class="author">Author: Jānis Džeriņš</p>
+<p class="date">Created: 2019-12-27 Fri 12:46</p>
+</div>
+</body>
+</html>

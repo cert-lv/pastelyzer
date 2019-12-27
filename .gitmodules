@@ -1,0 +1,21 @@
+[submodule "deps/Postmodern"]
+	path = deps/postmodern
+	url = https://github.com/jdz/Postmodern.git
+[submodule "deps/cl-ppcre"]
+	path = deps/cl-ppcre
+	url = https://github.com/jdz/cl-ppcre.git
+[submodule "deps/cl-base64"]
+	path = deps/cl-base64
+	url = https://github.com/jdz/cl-base64.git
+[submodule "deps/cl-log"]
+	path = deps/cl-log
+	url = https://github.com/jdz/cl-log.git
+[submodule "deps/cl-speedy-queue"]
+	path = deps/cl-speedy-queue
+	url = https://github.com/jdz/cl-speedy-queue.git
+[submodule "deps/ip"]
+	path = deps/ip
+	url = https://github.com/jdz/ip.git
+[submodule "deps/2am"]
+	path = deps/2am
+	url = https://gitlab.common-lisp.net/dkochmanski/2am.git

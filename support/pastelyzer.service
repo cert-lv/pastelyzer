@@ -1,0 +1,39 @@
+; -*- mode: ini -*-
+
+[Unit]
+Description="Pastelyzer"
+After=postgresql.service
+; Pastelyzer can survive temporary loss of PostgreSQL, and does not
+; have to be brought down when PostgreSQL is being restarted.
+; Requires=postgresql.service
+
+[Service]
+WorkingDirectory=%h/
+Environment=DB_NAME=pastelyzer
+Environment=DB_PASS=XXXXXXXXXX
+Environment=SMTP_SERVER=localhost
+Environment=SMTP_FROM=pastelyzer@your.org
+Environment=MISP_SERVER=https://misp.your.org
+Environment=MISP_API_KEY=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+Environment=MISP_CA_CERT=%h/misp/ca.pem
+Environment=MISP_USER_CERT=%h/misp/misp.crt.pem
+Environment=MISP_USER_KEY=%h/misp/misp.key.pem
+Environment=MISP_USER_KEY_PASS=XXXXXXXXXX
+Environment=IGNORED_PASTESITES=pastebin.com
+Environment="HTTP_USER_AGENT=Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0"
+ExecStart=/home/pastelyzer/pastelyzer \
+--log-level info \
+--networks-file %h/local.net \
+--tlds-file %h/tlds.txt \
+--important-cc-bins %h/lv-bins.txt \
+--interesting-tlds .lv \
+--server \
+--server-port 80 \
+--server-ext-host pastelyzer.your.org \
+--config %h/pastelyzer.conf
+Restart=always
+RestartSec=1
+NoNewPrivileges=true
+
+[Install]
+WantedBy=default.target
