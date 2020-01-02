@@ -24,7 +24,7 @@ The following libraries must be installed on the target system:
 
 To run ~pastelyzer~ in standalone mode a PostgreSQL database (at least version
 *9.5*) is required.  Use the SQL script in
-[[file:../support/schema.sql][support/schema.sql]] to initialize the database:
+[[file:support/schema.sql][support/schema.sql]] to initialize the database:
 
 #+BEGIN_EXAMPLE
   $ psql -d pastelyzer < support/schema.sql
