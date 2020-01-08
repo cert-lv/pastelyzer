@@ -1,26 +1,25 @@
 (in-package #:pastelyzer)
 
 (defun resolve-sgr-code (code)
-  (typecase code
-    (keyword
-     (case code
-       (:clear 0)
-       (:bright 1)
-       (:dim 2)
-       (:reverse 7)
-       (:normal 22)
-       (:black 30)
-       (:red 31)
-       (:green 32)
-       (:yellow 33)
-       (:blue 34)
-       (:magenta 35)
-       (:cyan 36)
-       (:white 37)))
-    (integer
-     code)
-    (t
-     (error "Invalid SGR code: ~S" code))))
+  (or (typecase code
+        (integer
+         code)
+        (keyword
+         (case code
+           (:clear 0)
+           (:bright 1)
+           (:dim 2)
+           (:reverse 7)
+           (:normal 22)
+           (:black 30)
+           (:red 31)
+           (:green 32)
+           (:yellow 33)
+           (:blue 34)
+           (:magenta 35)
+           (:cyan 36)
+           (:white 37))))
+      (error "Invalid SGR code: ~S" code)))
 
 (defun sgr (stream &rest codes)
   (format stream "~C[~{~A~^;~}m"
