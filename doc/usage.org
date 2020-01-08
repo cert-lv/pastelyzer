@@ -223,8 +223,8 @@ destinations where artefacts can be collected, and [[Filters][filters]] are
 used to control what artefacts end up in which sinks.
 
 Current sink and filter implementation is good enough to support basic use
-cases.  But the implementation is expected to change to accommodate additional
-cases.
+cases.  The implementation is expected to change in the future to accommodate
+additional use cases.
 
 ** Syntax overview
 
@@ -237,8 +237,8 @@ more verbose introduction.
 
 Syntax used in ~pastelyzer~ configuration file have an extension: square
 brackets can be used to specify byte-vectors.  The elements between opening
-and closing square are expected to be space-separate hexadecimal 8-bit numbers
-(case-insensitive).  Example: ~[7f 45 4c 46]~.
+and closing square brackets are expected to be space-separated hexadecimal
+8-bit numbers (case-insensitive).  Example: ~[7f 45 4c 46]~.
 
 Currently there are two recognized configuration directives (described in
 following sections): ~define-sink~ and ~define-artefact-filter~.  The word
@@ -458,7 +458,8 @@ This sink is used to send emails.  Attributes:
 
   - ~(add-attribute :category <string> :type <string> :value <string> :comment <string>)~ ::
     Add an attribute to the event with the given ~category~, ~type~, ~value~
-    and ~comment~ (optional).  The subject of the action is an artefact.
+    and ~comment~ (optional).  The subject (context) of the action is an
+    artefact.
 
 ** Filters
 
@@ -513,13 +514,14 @@ filter expressions are supported:
   true both of them have to be true.  So if the class of the artefact is not
   [[~EMBEDDED-BINARY~]], the value of ~and~ will be false (and the second form
   will not even be considered).  But if the context of the filter is indeed an
-  [[~EMBEDDED-BINARY~]] then the second form: ~->~.
+  [[~EMBEDDED-BINARY~]] then the value of ~and~ will be the value of second
+  form: ~->~.
 
   First it calls ~(extract embedded-binary-bytes)~ (see below), and replaces
   the current context with returned value.  The next form is ~or~, and for
   this form the context is the binary bytes of the current artefact (which we
   know is an [[~EMBEDDED-BINARY~]]).  The forms enclosed in ~or~ are executed
-  in order, if any of them returns true the value of the ~or~ form is also
+  in order; if any of them returns true the value of the ~or~ form is also
   true.  In any case, the value of ~->~ form will be the value of the ~or~
   form applied to the byte content of the [[~EMBEDDED-BINARY~]] artefact.
 
@@ -603,7 +605,6 @@ filter expressions are supported:
   (define-artefact-filter important-cc
       (type? important-card-number)
     (collect-into misp-cc-event)
-    (collect-into dashboard)
     (collect-into email))
 #+end_src
 

@@ -3,7 +3,7 @@
 * Introduction
 
 This is ~pastelyzer~: the paste analyzer.  There is a
-[[file:doc/usage.org][user manual]] in ~doc~ directory.
+[[file:doc/usage.org][user manual]] in [[file:doc]] directory.
 
 The easiest way to run ~pastelyzer~ is by using the provided binary.
 
