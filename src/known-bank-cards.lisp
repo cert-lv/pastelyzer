@@ -54,10 +54,10 @@
     (loop for (ndigits plength table) in bins
           when (= ndigits length)
             do (multiple-value-bind (note foundp)
-                 (gethash (subseq digits 0 plength) table)
-               (when foundp
-                 (return-from recognise-bank-card-bin
-                   (values 'important-card-number (list :note note))))))))
+                   (gethash (subseq digits 0 plength) table)
+                 (when foundp
+                   (return-from recognise-bank-card-bin
+                     (values 'important-card-number (list :note note))))))))
 
 (defun initialize-important-cc-bins (path)
   (setq *important-cc-bins* (read-bins path))
