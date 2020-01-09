@@ -2,8 +2,8 @@
 
 * Introduction
 
-This is ~pastelyzer~: the paste analyzer.  There is a
-[[file:doc/usage.org][user manual]] in [[file:doc]] directory.
+This is ~pastelyzer~: the paste analyzer.  The user manual can be found in
+[[file:doc]] directory.
 
 The easiest way to run ~pastelyzer~ is by using the provided binary.
 
