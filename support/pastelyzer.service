@@ -21,12 +21,12 @@ Environment=MISP_USER_KEY=%h/misp/misp.key.pem
 Environment=MISP_USER_KEY_PASS=XXXXXXXXXX
 Environment=IGNORED_PASTESITES=pastebin.com
 Environment="HTTP_USER_AGENT=Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0"
-ExecStart=/home/pastelyzer/pastelyzer \
+ExecStart=/path/to/pastelyzer \
 --log-level info \
 --networks-file %h/local.net \
 --tlds-file %h/tlds.txt \
---important-cc-bins %h/lv-bins.txt \
---interesting-tlds .lv \
+--important-cc-bins %h/cc-bins.txt \
+--interesting-tlds .xx,.yy,.zz \
 --server \
 --server-port 80 \
 --server-ext-host pastelyzer.your.org \
