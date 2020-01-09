@@ -11,6 +11,7 @@
 
 #+BIND: org-latex-listings minted
 #+BIND: org-latex-packages-alist (("newfloat,outputdir=/tmp/tex" "minted"))
+#+BIND: org-latex-minted-langs ((sexpr "lisp"))
 
 * Introduction
 
