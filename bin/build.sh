@@ -94,7 +94,7 @@ done
 case $LISP in
   sbcl)
     set -- \
-        --dynamic-space-size 2048 \
+        --dynamic-space-size 1024 \
         --no-sysinit \
         --no-userinit \
         --eval "(sb-ext:disable-debugger)" \
