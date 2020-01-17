@@ -38,5 +38,4 @@
   nil)
 
 (defmethod resolve-domains-p ((job job))
-  ;; Resolve domains by default.
-  t)
+  *resolve-domains*)

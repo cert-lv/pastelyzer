@@ -38,9 +38,6 @@
 (defclass cli-job (job)
   ())
 
-(defmethod resolve-domains-p ((job cli-job))
-  nil)
-
 (defmethod analysable-parts ((path pathname) (job cli-job))
   (list (make-instance 'binary-fragment
                        :body (read-file-into-byte-vector path))))

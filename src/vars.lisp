@@ -10,6 +10,9 @@
 
 (defvar *interesting-networks* nil)
 
+(defvar *resolve-domains* nil
+  "Whether to resolve domains.")
+
 (defvar *interesting-tlds* '()
   "A list of TLDs that should be treated as noteworthy.")
 

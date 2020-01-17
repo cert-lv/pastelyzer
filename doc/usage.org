@@ -76,6 +76,12 @@ standalone mode:
   line.  Empty lines and lines starting with a ~#~ character are ignored.  See
   https://nic.lv/local.net for an example of such a file.
 
+- ~--[no-]resolve-damains~ ::
+  If ~--resolve-domains~ option is present, domain names are resolved to IP
+  addresses.  If ~--no-resolve-domains~ is present, domains are not resolved.
+  If this option is not provided, domain resolution is automatically enabled
+  if ~--networks-file~ is provided and loaded.
+
 - ~--tlds-file~ ::
   Path to a file containing valid Top Level Domains (e.g.,
   https://data.iana.org/TLD/tlds-alpha-by-domain.txt).  Empty lines and lines

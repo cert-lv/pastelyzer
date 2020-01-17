@@ -442,6 +442,10 @@
                    (if truename
                        (collect :net-file-path truename)
                        (warn "File does not exist: ~A" arg))))
+                ((string= "--resolve-domains" arg)
+                 (collect :resolve-domains t))
+                ((string= "--no-resolve-domains" arg)
+                 (collect :resolve-domains nil))
                 ((string= "--tlds-file" arg)
                  (let* ((arg (pop args))
                         (truename (probe-file arg)))
@@ -529,23 +533,25 @@ Usage:
   pastelyzer <options> --server
 
 Generic options:
-  --networks-file       path to file listing interesting network ranges
-  --tlds-file           path to file listing valid TLDs
-  --interesting-tlds    comma-separated list of interesting TLDs
-  --important-cc-bins   path to file listing important bank card bins
+  --networks-file        path to file listing interesting network ranges
+  --[no-]resolve-domains resolve domains; defaults to yes if --networks-file
+                         is specified, no otherwise
+  --tlds-file            path to file listing valid TLDs
+  --interesting-tlds     comma-separated list of interesting TLDs
+  --important-cc-bins    path to file listing important bank card bins
 
 CLI options:
-  -C, --color           colorize output
-  +C, --no-color        don't colorize output
+  -C, --color            colorize output
+  +C, --no-color         don't colorize output
 
 Server options:
-  -c, --config          path to configuration file
-  -w, --workers         use N worker threads (default: 4)
-  --server-port         start web server on port N (default: 7000)
-  --server-ext-host     web server host (for emails; default: \"localhost\")
-  --server-ext-port     web server port (for emails; no default)
-  --[no-]process-broken process pastes with broken UTF-8 content (in addition
-                        to trying to fix them; defaults to yes)
+  -c, --config           path to configuration file
+  -w, --workers          use N worker threads (default: 4)
+  --server-port          start web server on port N (default: 7000)
+  --server-ext-host      web server host (for emails; default: \"localhost\")
+  --server-ext-port      web server port (for emails; no default)
+  --[no-]process-broken  process pastes with broken UTF-8 content (in addition
+                         to trying to fix them; defaults to yes)
 
 Miscellaneous options:
   --log-level         set logging level; allowed values: DEBUG, INFO, NOTICE,
@@ -597,6 +603,7 @@ Environment variables:
             &key interactive
                  (log-level :warning)
                  config
+                 (resolve-domains nil resolve-domains-supplied-p)
                  net-file-path
                  tld-file-path
                  cc-bin-path
@@ -612,6 +619,12 @@ Environment variables:
       (read-config config))
     (when net-file-path
       (setf *interesting-networks* (read-networks net-file-path)))
+    (setq *resolve-domains*
+          (cond (resolve-domains-supplied-p
+                 resolve-domains)
+                (*interesting-networks*
+                 t)
+                (t nil)))
     (when tld-file-path
       (setf *valid-tlds* (read-tlds tld-file-path)))
     (when cc-bin-path
@@ -624,6 +637,7 @@ Environment variables:
                                   :interactive
                                   :log-level
                                   :config
+                                  :resolve-domains
                                   :net-file-path
                                   :tld-file-path
                                   :cc-bin-path
