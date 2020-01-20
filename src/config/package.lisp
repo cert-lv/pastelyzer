@@ -2,18 +2,26 @@
   (:use)
   (:import-from #:pastelyzer
                 #:artefact
-                #:string-artefact
                 #:binary-artefact
+                #:compressed-blob
+                #:encoded-string
+                #:string-artefact
+
+                #:bank-card-number
+                #:important-card-number
                 #:credential
+                #:domain
+                #:onion
                 #:email
                 #:embedded-binary
                 #:base64-blob
                 #:binary-blob
                 #:hex-blob
-                #:bank-card-number
-                #:important-card-number
+                #:ip-address
+                #:resolved-ip-address
                 #:m3u-entry
-                #:onion
+                #:uri
+                #:windows-internal
 
                 #:embedded-binary-bytes)
   (:export #:define-sink
