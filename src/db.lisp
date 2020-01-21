@@ -159,18 +159,33 @@ RETURNING created_at"
 
 (defun initiate-analysis (content-id &key (version-id *current-version-id*)
                                           (force nil))
-  (handler-case
-      (values (insert-analysis content-id version-id))
-    (cl-postgres-error:unique-violation ()
-      ;; Analysis already performed or in the process.
-      (cond (force
-             (values (pomo:query "
-UPDATE analysis
-   SET created_at = now(), updated_at = NULL
- WHERE content_id = $1 AND version_id = $2
-RETURNING created_at"
-                          content-id version-id :single)))
-            (t nil)))))
+  "Inserts a new record into the `analysis' table, with given
+CONTENT-ID and VERSION-ID values as primary key.  Returns the value of
+`started_at' column if a new record was created, NIL otherwise.  If
+FORCE is true and there is an existing record then the existing record
+is cleared to a state as if it was just created."
+  (cond (force
+         (handler-case
+             (insert-analysis content-id version-id)
+           (cl-postgres-error:unique-violation ()
+             (pomo:query "
+                UPDATE analysis
+                   SET created_at = now(), updated_at = NULL
+                 WHERE content_id = $1 AND version_id = $2
+                RETURNING created_at"
+                         content-id version-id :single))))
+        ((not (pomo:query "
+                 SELECT TRUE
+                   FROM analysis
+                  WHERE content_id = $1 AND version_id = $2"
+                          content-id version-id :single))
+         (handler-case
+             (insert-analysis content-id version-id)
+           (cl-postgres-error:unique-violation ()
+             ;; Record appeared since we queried, no need to insert.
+             nil)))
+        (t
+         nil)))
 
 (pomo:defprepared-with-names finish-analysis
     (content-id summary &key (version-id *current-version-id*))
