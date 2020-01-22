@@ -50,4 +50,5 @@ span.description a:visited {
   padding-top: 1ex;
   margin-bottom: 0px;
   padding-bottom: 1ex;
+  padding-left: 0.3em; /* Same as span.description. */
 }
