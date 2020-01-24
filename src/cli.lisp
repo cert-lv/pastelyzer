@@ -1,30 +1,31 @@
 (in-package #:pastelyzer)
 
-(defun resolve-sgr-code (code)
-  (or (typecase code
-        (integer
-         code)
-        (keyword
-         (case code
-           (:clear 0)
-           (:bright 1)
-           (:dim 2)
-           (:reverse 7)
-           (:normal 22)
-           (:black 30)
-           (:red 31)
-           (:green 32)
-           (:yellow 33)
-           (:blue 34)
-           (:magenta 35)
-           (:cyan 36)
-           (:white 37))))
-      (error "Invalid SGR code: ~S" code)))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun resolve-sgr-code (code)
+    (or (typecase code
+          (integer
+           code)
+          (keyword
+           (case code
+             (:clear 0)
+             (:bright 1)
+             (:dim 2)
+             (:reverse 7)
+             (:normal 22)
+             (:black 30)
+             (:red 31)
+             (:green 32)
+             (:yellow 33)
+             (:blue 34)
+             (:magenta 35)
+             (:cyan 36)
+             (:white 37))))
+        (error "Invalid SGR code: ~S" code)))
 
-(defun sgr (stream &rest codes)
-  (format stream "~C[~{~A~^;~}m"
-          (code-char 27)
-          (mapcar #'resolve-sgr-code codes)))
+ (defun sgr (stream &rest codes)
+   (format stream "~C[~{~A~^;~}m"
+           (code-char 27)
+           (mapcar #'resolve-sgr-code codes))))
 
 (define-compiler-macro sgr (&whole form stream &rest codes &environment env)
   (cond ((every (lambda (code) (constantp code env))
@@ -63,54 +64,79 @@
 (defmethod noteworthy-artefact-p ((target hex-blob) (ctx cli-job))
   t)
 
-(defun walk (job &aux (root (job-subject job)))
-  (labels ((process-artefact (node)
-             (sort (reverse (extract-artefacts node job))
-                   #'< :key #'artefact-source-seq-start))
-           (color (&rest attrs)
-             (when *color-output*
-               (apply #'sgr t attrs)))
-           (walk-node (node prefix lastp
-                       &aux (imp (noteworthy-artefact-p node job)))
-             (multiple-value-bind (start end)
-                 (artefact-source-seq-bounds node)
-               (format t "~{~A~}~:[├~;└~]─ ~A..~A "
-                       prefix lastp start (1- end))
-               (color (if imp :green :white))
-               (format t "~A" (type-of node))
-               (color :dim :white)
-               (write-string ": ")
-               (cond (imp
-                      (write-string
-                       (artefact-context-before node :limit 16 :bol t))
-                      (color :clear :bright :green)
-                      (write-string (one-line (artefact-source node)
-                                              :limit 48
-                                              :continuation "…"
-                                              :mode :squeeze))
-                      (color :clear :dim :white)
-                      (write-string
-                       (artefact-context-after node :limit 16 :eol t)))
-                     (t
-                      (write-string (one-line (artefact-description node)
-                                              :limit 48
-                                              :continuation "…"
-                                              :mode :squeeze))))
-               (color :clear)
-               (terpri))
-             (walk-children (process-artefact node)
-                            (append prefix (list (if lastp "   " "│  ")))))
-           (walk-children (list prefix)
-             (loop for (child . morep) on list
-                   do (walk-node child prefix (not morep)))))
-    (let ((*print-length* 16))
-      (format t "~&~A~%" root)
-      (walk-children (process-artefact root) nil))
-    job))
+(defmethod render-node ((view (eql :mono-term)) (node artefact) (job cli-job)
+                        &optional (stream *standard-output*))
+  (let ((imp (noteworthy-artefact-p node job)))
+    (multiple-value-bind (start end)
+        (artefact-source-seq-bounds node)
+      (format stream "~A..~A ~A: ~A"
+              start (1- end) (type-of node)
+              (one-line (if imp
+                            (artefact-source node)
+                            (artefact-description node))
+                        :limit 72
+                        :continuation "…"
+                        :mode :squeeze)))))
 
-(defun process-item (item)
+(defmethod render-node ((view (eql :color-term)) (node artefact) (job cli-job)
+                        &optional (stream *standard-output*))
+  (let ((imp (noteworthy-artefact-p node job)))
+    (multiple-value-bind (start end)
+        (artefact-source-seq-bounds node)
+      (format stream "~A..~A " start (1- end))
+      (sgr stream (if imp :green :white))
+      (format stream "~A" (type-of node))
+      (sgr stream :dim :white)
+      (write-string ": ")
+      (cond (imp
+             (write-string (artefact-context-before node :limit 16 :bol t)
+                           stream)
+             (sgr stream :clear :bright :green)
+             (write-string (one-line (artefact-source node)
+                                     :limit 48
+                                     :continuation "…"
+                                     :mode :squeeze)
+                           stream)
+             (sgr stream :clear :dim :white)
+             (write-string (artefact-context-after node :limit 16 :eol t)
+                           stream))
+            (t
+             (write-string (one-line (artefact-description node)
+                                     :limit 48
+                                     :continuation "…"
+                                     :mode :squeeze)
+                           stream)))
+      (sgr stream :clear))))
+
+(defun render-tree (roots &key (stream *standard-output*)
+                               (children-fn (constantly '()))
+                               (print-fn #'princ))
+  (labels ((draw-node (node prefix lastp)
+             (format stream "~&~{~A~}~:[├~;└~]─ " prefix lastp)
+             (funcall print-fn node stream)
+             (fresh-line stream)
+             (draw-children (funcall children-fn node)
+                            (append prefix (list (if lastp "   " "│  ")))))
+           (draw-children (list prefix)
+             (loop for (child . morep) on list
+                   do (draw-node child prefix (not morep)))))
+    (let ((*print-length* 16)
+          (*print-pretty* nil))
+      (dolist (root roots)
+        (format stream "~A~%" root)
+        (draw-children (funcall children-fn root) nil)))))
+
+(defun walk (job view)
+  (render-tree (list (job-subject job))
+               :children-fn (lambda (node)
+                              (sort (extract-artefacts node job)
+                                    #'< :key #'artefact-source-seq-start))
+               :print-fn (lambda (node stream)
+                           (render-node view node job stream))))
+
+(defun process-item (item view)
   (handler-case
-      (walk (make-instance 'cli-job :subject item))
+      (walk (make-instance 'cli-job :subject item) view)
     (error (condition)
       (format *error-output* "~&~A~%" condition))))
 
@@ -118,7 +144,8 @@
                 &allow-other-keys)
   (let ((*color-output* colour))
     (loop for (item . morep) on paths
-          collect (if (string= "-" item)
-                      (process-item :stdin)
-                      (process-item (parse-namestring item)))
+          collect (process-item (if (string= "-" item)
+                                    :stdin
+                                    (parse-namestring item))
+                                (if colour :color-term :mono-term))
           when morep do (terpri))))
