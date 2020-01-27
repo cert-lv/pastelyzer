@@ -70,7 +70,7 @@
     (multiple-value-bind (start end)
         (artefact-source-seq-bounds node)
       (format stream "~A..~A ~A: ~A"
-              start (1- end) (type-of node)
+              start end (type-of node)
               (one-line (if imp
                             (artefact-source node)
                             (artefact-description node))
@@ -83,7 +83,7 @@
   (let ((imp (noteworthy-artefact-p node job)))
     (multiple-value-bind (start end)
         (artefact-source-seq-bounds node)
-      (format stream "~A..~A " start (1- end))
+      (format stream "~A..~A " start end)
       (sgr stream (if imp :green :white))
       (format stream "~A" (type-of node))
       (sgr stream :dim :white)
