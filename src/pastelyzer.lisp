@@ -651,8 +651,11 @@ Environment variables:
       (:cli
        (apply #'run-cli keys))
       (t
-       (usage)
-       (uiop:quit)))))
+       (cond ((isatty *standard-input*)
+              (usage)
+              (uiop:quit))
+             (t
+              (apply #'run-cli :paths '("-") keys)))))))
 
 (defun run-standalone (&optional (args (uiop:command-line-arguments)))
   (let ((real-args (append (parse-cmdline args)
