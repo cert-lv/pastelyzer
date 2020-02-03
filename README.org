@@ -5,6 +5,10 @@
 This is ~pastelyzer~: the paste analyzer.  The user manual can be found in
 [[file:doc]] directory.
 
+#+ATTR_HTML: :width 95%
+#+ATTR_LATEX: :width 0.95\textwidth :float nil
+[[file:doc/img/cli-33E400e1.png]]
+
 The easiest way to run ~pastelyzer~ is by using the provided binary.
 
 * Runtime dependencies
