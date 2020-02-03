@@ -179,6 +179,12 @@ assumed to be sorted."
          (otherwise
           t))))
 
+(defun substitute-invisible (string replacement)
+  (declare (type (or null character) replacement))
+  (if replacement
+      (nsubstitute-if-not replacement #'visible-char-p string)
+      string))
+
 (defun one-line (string &key (start 0)
                              (end nil)
                              (limit 24)
@@ -191,10 +197,7 @@ assumed to be sorted."
   (when (null end)
     (setq end (length string)))
   (flet ((clean (start end)
-           (let ((result (subseq string start end)))
-             (if replace-invisible
-                 (nsubstitute-if-not replace-invisible #'visible-char-p result)
-                 result))))
+           (substitute-invisible (subseq string start end) replace-invisible)))
     (if (<= (- end start) limit)
         (clean start end)
         (ecase mode
@@ -212,7 +215,8 @@ assumed to be sorted."
 (defun string-context-before (string position &key (after 0)
                                                    (limit 50)
                                                    (bol nil)
-                                                   (trim-space t))
+                                                   (trim-space t)
+                                                   (replace-invisible #\.))
   (let ((start (if limit
                    (max after (- position limit))
                    after)))
@@ -224,12 +228,13 @@ assumed to be sorted."
       (when-let (pos (position-if-not #'whitespace-char-p string
                                       :start start :end position))
         (setq start pos)))
-    (subseq string start position)))
+    (substitute-invisible (subseq string start position) replace-invisible)))
 
 (defun string-context-after (string position &key (before nil)
                                                   (limit 50)
                                                   (eol nil)
-                                                  (trim-space t))
+                                                  (trim-space t)
+                                                  (replace-invisible #\.))
   (let* ((before (if before before (length string)))
          (end  (if limit
                    (min before (+ position limit))
@@ -242,7 +247,7 @@ assumed to be sorted."
                                       :start position :end end
                                       :from-end t))
         (setq end (1+ pos))))
-    (subseq string position end)))
+    (substitute-invisible (subseq string position end) replace-invisible)))
 
 (defun dsubseq (array start end)
   (declare (type array-index start end))
