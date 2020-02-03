@@ -246,15 +246,17 @@
       (funcall cont (if (contains? needle sequence) t nil)))))
 
 (defun parse-filter (name form)
-  (assert form)
   (msg :debug "Filter ~S: ~S" name form)
-  (let ((test (apply #'generate-filter-function form)))
-    (lambda (value)
-      (msg :debug "Applying filter ~S to ~S" name value)
-      (funcall test value
-               (lambda (result)
-                 (msg :debug "~S ~S => ~:[fail~;success~].~%" name value result)
-                 result)))))
+  (if form
+      (let ((test (apply #'generate-filter-function form)))
+        (lambda (value)
+          (msg :debug "Applying filter ~S to ~S" name value)
+          (funcall test value
+                   (lambda (result)
+                     (msg :debug "~S ~S => ~:[fail~;success~].~%"
+                          name value result)
+                     result))))
+      #'identity))
 
 (defun add-artefact-filter (name code actions)
   (register-filter name
