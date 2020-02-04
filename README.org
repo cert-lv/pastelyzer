@@ -11,7 +11,7 @@ This is ~pastelyzer~: the paste analyzer.  The user manual can be found in
 
 The easiest way to run ~pastelyzer~ is by using the provided binary.
 
-* Runtime dependencies
+* Runtime dependencies (standalone mode only)
 ** Libraries
 
 The following libraries must be installed on the target system:
@@ -26,9 +26,8 @@ The following libraries must be installed on the target system:
 
 ** Database
 
-To run ~pastelyzer~ in standalone mode a PostgreSQL database (at least version
-*9.5*) is required.  Use the SQL script in
-[[file:support/schema.sql][support/schema.sql]] to initialize the database:
+PostgreSQL database (at least version *9.5*) is required.  Use the SQL script
+in [[file:support/schema.sql][support/schema.sql]] to initialize the database:
 
 #+BEGIN_EXAMPLE
   $ psql -d pastelyzer < support/schema.sql

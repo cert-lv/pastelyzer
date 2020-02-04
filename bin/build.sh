@@ -147,6 +147,10 @@ case "$OPERATION" in
         --eval "(asdf:load-system \"pastelyzer\")" \
         --eval "(setq pastelyzer::*build-id* ${BUILD_ID})" \
         --eval "(proclaim '(optimize (speed 2) (safety 1)))" \
+        --eval "(asdf:load-system \"pastelyzer\")" \
+        --eval "(cffi:close-foreign-library 'pzmq::libzmq)" \
+        --eval "(cffi:close-foreign-library 'cl+ssl::libssl)" \
+        --eval "(cffi:close-foreign-library 'cl+ssl::libcrypto)" \
         --eval "(asdf:make \"pastelyzer\")"
     if [ -f "${BINDIR}/pastelyzer" ]; then
       mv -f "${BINDIR}/pastelyzer" "${BINDIR}/pastelyzer.old"

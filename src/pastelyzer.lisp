@@ -338,6 +338,13 @@
     (setf (puri:uri-host *web-server-external-uri*) web-server-external-host))
   (when web-server-external-port
     (setf (puri:uri-port *web-server-external-uri*) web-server-external-port))
+
+  ;; We unload foreign libraries required to run in server mode before
+  ;; dumping the image so that the CLI version can be used without
+  ;; these.
+  (cl+ssl:reload)
+  (cffi:load-foreign-library 'pzmq::libzmq)
+
   (let* ((store-queue (create-queue :store))
          (process-queue (create-queue :process))
          ;; Separate queue for big pastes.
