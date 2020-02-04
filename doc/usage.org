@@ -21,12 +21,6 @@ distinguishing feature of the tool is that embedded binary content (e.g.,
 base64-encoded) is detected and decoded.  The decoded content is then
 recursively processed (see section [[Binary artefacts]]).
 
-# The goals of this project are:
-
-# - Minimize human attention requirements.
-# - Don't try to do everything—allow integration with other tools.
-# -
-
 *IMPORTANT*: This software is a work-in-progress, and is expected to change.
 Make sure you consult the documentation that corresponds to the version of
 ~pastelyzer~ you're using.
@@ -174,8 +168,9 @@ later) database.  The database schema is provided in the source distribution
   Number of threads to use for document processing (default: ~4~).
 
 - ~--server-port~ ::
-  Port number where to expose the dashboard.  If the port is not given then
-  the web server is not started.
+  Port number where to expose the built-in web server.  If the port is not
+  given then the web server is not started and it will not be possible to
+  interact with the application using HTTP protocol.
 
 - ~--server-ext-host~, ~--server-ext-port~ ::
   Web server host and port to use when generating links to documents in
@@ -219,6 +214,29 @@ later) database.  The database schema is provided in the source distribution
 
 The ~public~ directory in the source distribution is expected to be located in
 the same directory where the ~pastelyzer~ binary is run from.
+
+*** Submitting documents
+
+If the web server is started (see [[Options][~--server-port~]] option) it is
+also possible to submit documents using HTTP POST requests.  The following
+POST parameters are expected:
+
+- ~data~ ::
+  Required.  The document content.
+- ~source~ ::
+  Optional.  String used to identify document source.  ~store~ is used if not
+  provided.  This is used as the value for ~provider~ column in the ~pastes~
+  table.
+- ~id~ ::
+  Optional.  Identifier of the document.  If not provided the file name from
+  the post data is used.  This is used as the value for ~provider_id~ column
+  in the ~pastes~ table.
+
+Example:
+
+#+begin_example
+  curl 'http://localhost:8080/store' -F data=@/path/to/a/file
+#+end_example
 
 * Configuration
 
