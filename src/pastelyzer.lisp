@@ -267,12 +267,21 @@
                  (serious-condition (condition)
                    (msg :error "Problem processing ~A: ~A" item condition)))))))
 
-(defvar *queues* nil)
+(defvar *queues* '())
 
 (defun create-queue (name)
   (let ((mailbox (make-mailbox :name name)))
-    (push mailbox *queues*)
+    (setq *queues* (acons name mailbox *queues*))
     mailbox))
+
+(defun get-queue (name &optional (errorp t) (error-value nil))
+  (let ((cell (assoc name *queues*)))
+    (cond (cell
+           (cdr cell))
+          ((not errorp)
+           error-value)
+          (t
+           (error "Unknown queue: ~S" name)))))
 
 (defun debugger-hook (condition old-hook)
   (declare (ignore old-hook))

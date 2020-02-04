@@ -95,6 +95,15 @@
             (db:store-paste body provider provider-id time))
         (msg :info "~D -> ~A : store : ~A (~/fmt:nbytes/)"
              paste-id content-id provider-id (length body))
+        (let* ((content (make-instance 'content
+                                      :id content-id
+                                      :body body))
+               (paste (make-instance 'paste
+                                     :id paste-id
+                                     :provider provider
+                                     :provider-id provider-id
+                                     :content content)))
+          (send-message (get-queue :process) paste))
         (setf (ht:return-code*) ht:+http-see-other+)
         (setf (ht:header-out :location)
               (puri:merge-uris (format nil "content/~A" content-id)
