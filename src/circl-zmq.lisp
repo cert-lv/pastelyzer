@@ -98,7 +98,7 @@
                 (db:store-paste body provider provider-id time)
                 (values (db:insert-paste provider provider-id :null time)
                         nil))
-          (msg :info "~D -> ~A : ~A (~/fmt:nbytes/ -> ~/fmt:nbytes/)"
+          (msg :info "~D -> ~A : circl : ~A (~/fmt:nbytes/ -> ~/fmt:nbytes/)"
                paste-id content-id
                (zmq-message-file paste)
                (length (zmq-message-data paste))

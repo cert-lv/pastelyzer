@@ -79,6 +79,28 @@
   (load-time-value
    (ht:create-folder-dispatcher-and-handler "/static/" #p"public/")))
 
+(defun store-document (req)
+  (let ((time (local-time:now))
+        (data (ht:post-parameter "data" req))
+        (source (ht:post-parameter "source" req))
+        (id (ht:post-parameter "id" req)))
+    (unless (consp data)
+      (setf (ht:return-code*) ht:+http-bad-request+)
+      (return-from store-document "File data missing."))
+    (let ((provider (or source "store"))
+          (provider-id (or id (second data) ""))
+          (body (read-file-into-byte-vector (first data))))
+      (multiple-value-bind (paste-id content-id)
+          (db:with-connection ()
+            (db:store-paste body provider provider-id time))
+        (msg :info "~D -> ~A : store : ~A (~/fmt:nbytes/)"
+             paste-id content-id provider-id (length body))
+        (setf (ht:return-code*) ht:+http-see-other+)
+        (setf (ht:header-out :location)
+              (puri:merge-uris (format nil "content/~A" content-id)
+                               (ht:script-name req)))
+        ""))))
+
 (defmethod ht:acceptor-dispatch-request ((acceptor acceptor)
                                          (req ht:request))
   (block nil
@@ -115,6 +137,10 @@
         (setf (ht:return-code*) ht:+http-moved-permanently+)
         (setf (ht:header-out :location) (format nil "/show/~A" id))
         (return ""))
+
+      (when (and (string= "/store" path)
+                 (eql :post (ht:request-method req)))
+        (return (store-document req)))
 
       (when (and (or (string= "/analyze" path)
                      (string= "/analyse" path))
