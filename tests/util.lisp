@@ -32,16 +32,16 @@
        ""
        (pastelyzer::string-context-before string 0))
       (check
-       (format nil "aaa~C~Cwhatever " #\linefeed #\tab)
+       "aaa..whatever "
        (pastelyzer::string-context-before string 14 :bol nil))
       (check
-       (format nil "a~C~Cwhatever " #\linefeed #\tab)
+       "a..whatever "
        (pastelyzer::string-context-before string 14 :after 2 :trim-space t))
       (check
        "whatever "
        (pastelyzer::string-context-before string 14 :after 3 :trim-space t))
       (check
-       (format nil "~Cwhatever " #\tab)
+       ".whatever "
        (pastelyzer::string-context-before string 14 :bol t :trim-space nil))
       (check
        "whatever "
@@ -53,17 +53,17 @@
        ""
        (pastelyzer::string-context-after string (length string)))
       (check
-       (format nil " blah blah ~C~C~Czzz" #\tab #\return #\newline)
+       " blah blah ...zzz"
        (pastelyzer::string-context-after string 20 :eol nil))
       (check
-       (format nil " blah blah ~C~C~Cz" #\tab #\return #\newline)
+       " blah blah ...z"
        (pastelyzer::string-context-after string 20 :before 35 :trim-space t))
       (check
        " blah blah"
        (pastelyzer::string-context-after string 20 :before 34 :trim-space t))
       (check
        ;; XXX: Do we want eol to be until #\return?
-       (format nil " blah blah ~C~C" #\tab #\return)
+       " blah blah .."
        (pastelyzer::string-context-after string 20 :eol t :trim-space nil))
       (check
        " blah blah"
