@@ -14,18 +14,24 @@
 #+BIND: org-latex-minted-langs ((sexpr "lisp"))
 
 * Introduction
+:PROPERTIES:
+:CUSTOM_ID: intro
+:END:
 
 ~pastelyzer~ is a tool that analyses text documents and looks for security and
 privacy related "items" (called /artefacts/ in this document).  A
 distinguishing feature of the tool is that embedded binary content (e.g.,
 base64-encoded) is detected and decoded.  The decoded content is then
-recursively processed (see section [[Binary artefacts]]).
+recursively processed (see section [[#binary-artefacts]]).
 
 *IMPORTANT*: This software is a work-in-progress, and is expected to change.
 Make sure you consult the documentation that corresponds to the version of
 ~pastelyzer~ you're using.
 
 * Running ~pastelyzer~
+:PROPERTIES:
+:CUSTOM_ID: running-pastelyzer
+:END:
 
 ~pastelyzer~ can be run in two modes:
 
@@ -35,6 +41,9 @@ Make sure you consult the documentation that corresponds to the version of
 Both of these modes are described in the following sections.
 
 ** Interesting artefacts
+:PROPERTIES:
+:CUSTOM_ID: interesting-artefacts
+:END:
 
 In order to keep the amount of information presented to the user manageable
 not all discovered artefacts are shown.  For example not all groups of four
@@ -129,6 +138,9 @@ bank uses 15-digit numbers that start with ~23~ and ~32~.
 #+end_src
 
 ** Interactive mode
+:PROPERTIES:
+:CUSTOM_ID: interactive-mode
+:END:
 
 The simplest way to use ~pastelyzer~ is to pass it one or more file names.
 ~pastelyzer~ will analyze given files and print all detected artefacts in a
@@ -146,23 +158,32 @@ can detect.  In the future it will be possible to control what is extracted
 do with the results (i.e,. write to a file, or generate JSON).
 
 ** Standalone mode
+:PROPERTIES:
+:CUSTOM_ID: standalone-mode
+:END:
 
 In standalone mode ~pastelyzer~ receives documents from a feed[fn:1], stores
 them in database and analyzes them.  It is possible to control what to do with
-the discovered artefacts using filters (see section [[Configuration]]).  A
-sample systemd service file is provided in
+the discovered artefacts using [[#configuration][configuration]].  A sample
+systemd service file is provided in
 [[file:../support/pastelyzer.service][support/pastelyzer.service]] file.
 
 *** Prerequisites
+:PROPERTIES:
+:CUSTOM_ID: prerequisites
+:END:
 
 ~pastelyzer~ stores all received documents in a PostgreSQL (version *9.5* or
 later) database.  The database schema is provided in the source distribution
 [[file:../support/schema.sql][support/schema.sql]] file.
 
 *** Options
+:PROPERTIES:
+:CUSTOM_ID: standalone-options
+:END:
 
 - ~-c, --config~ ::
-  Path to configuration file (see section [[Configuration]]).
+  Path to configuration file (see section [[#configuration]]).
 
 - ~-w, --workers~ ::
   Number of threads to use for document processing (default: ~4~).
@@ -180,9 +201,12 @@ later) database.  The database schema is provided in the source distribution
 - ~--[no-]process-broken~ ::
   Process pastes with broken UTF-8 content[fn:2] (in addition to trying to fix
   them; defaults to yes).  Specific sites can be blacklisted using an
-  environment variable (see [[Environment variables][~IGNORED_PASTESITES~]]).
+  environment variable (see [[#environment-variables][~IGNORED_PASTESITES~]]).
 
 *** Environment variables
+:PROPERTIES:
+:CUSTOM_ID: environment-variables
+:END:
 
 - ~DB_NAME~ ::
   Database name.  Default: ~pastelyzer~.
@@ -211,15 +235,21 @@ later) database.  The database schema is provided in the source distribution
   the HTTP ~User-Agent~ header value.
 
 *** Static web server files
+:PROPERTIES:
+:CUSTOM_ID: static-web-server-files
+:END:
 
 The ~public~ directory in the source distribution is expected to be located in
 the same directory where the ~pastelyzer~ binary is run from.
 
 *** Submitting documents
+:PROPERTIES:
+:CUSTOM_ID: submitting-documents
+:END:
 
-If the web server is started (see [[Options][~--server-port~]] option) it is
-also possible to submit documents using HTTP POST requests.  The following
-POST parameters are expected:
+If the web server is started (see [[#standalone-options][~--server-port~]]
+option) it is also possible to submit documents using HTTP POST requests.  The
+following POST parameters are expected:
 
 - ~data~ ::
   Required.  The document content.
@@ -239,19 +269,26 @@ Example:
 #+end_example
 
 * Configuration
+:PROPERTIES:
+:CUSTOM_ID: configuration
+:END:
 
-Currently configuration file is used only when running in [[Standalone
-mode][standalone mode]].  By default received documents are stored in the
-database, processed, and the summary of findings (what kind of artefacts and
-how many) also stored in the database.  [[Sinks][Sinks]] are additional
-destinations where artefacts can be collected, and [[Filters][filters]] are
-used to control what artefacts end up in which sinks.
+Currently configuration file is used only when running in
+[[#standalone-mode][standalone mode]].  By default received documents are
+stored in the database, processed, and the summary of findings (what kind of
+artefacts and how many) also stored in the database.  [[#sinks][Sinks]] are
+additional destinations where artefacts can be collected, and
+[[#filters][filters]] are used to control what artefacts end up in which
+sinks.
 
 Current sink and filter implementation is good enough to support basic use
 cases.  The implementation is expected to change in the future to accommodate
 additional use cases.
 
 ** Syntax overview
+:PROPERTIES:
+:CUSTOM_ID: syntax-overview
+:END:
 
 Configuration is written using
 [[https://en.wikipedia.org/wiki/S-expression][S-expressions]].  The most
@@ -272,6 +309,9 @@ lisp-like languages recognize and treat these expressions specially (i.e., for
 syntax highlighting and automatic indentation).
 
 ** Sinks
+:PROPERTIES:
+:CUSTOM_ID: sinks
+:END:
 
 ~define-sink~ directive is used to define a sink.  The syntax is as follows:
 
@@ -280,7 +320,7 @@ syntax highlighting and automatic indentation).
 #+end_src
 
 ~<name>~ is the name of sink being defined and will be used to refer to it in
-[[Filters][filters]] or as a parent in another sink.
+[[#filters][filters]] or as a parent in another sink.
 
 ~<parent>~ should be either one of the built-in sink implementations
 (described in the following sections), or another thing that has been defined
@@ -299,6 +339,9 @@ colon).  Each sink implementation has a different set of supported attributes
 described in corresponding section below.
 
 *** Specifying values
+:PROPERTIES:
+:CUSTOM_ID: specifying-values
+:END:
 
 Attribute values have types.  This means that if a ~string~ value is required,
 the value must be enclosed in double quotes (i.e., ~"this is a string"~).
@@ -327,6 +370,9 @@ Values can also be forms:
   there is no such environment variable.
 
 *** Templates
+:PROPERTIES:
+:CUSTOM_ID: templates
+:END:
 
 If an attribute is specified to be a template, the value of an attribute will
 be generated using forms provided in the attribute.
@@ -349,7 +395,7 @@ be generated using forms provided in the attribute.
 
 - ~(unique-count <artefact-class>)~ ::
   Not really a filter function or an extractor, but can be used in sink
-  attribute [[Templates][templates]] to calculate the number unique artefacts
+  attribute [[#templates][templates]] to calculate the number unique artefacts
   of the given ~artefact-class~ in a document currently being processed.
   Note: this is a hack, and most probably will change once we come up with a
   more general way to access this information.
@@ -371,7 +417,7 @@ be generated using forms provided in the attribute.
 - ~local-url~ ::
   The URL to the local copy of the document being processed.  See
   ~--server-ext-host~ and ~--server-ext-port~ command line
-  [[Options][options]].
+  [[#standalone-options][options]].
 
 - ~artefact-descriptions~ ::
   Generates a summary of all artefacts collected in a sink, grouped by
@@ -391,11 +437,14 @@ be generated using forms provided in the attribute.
 
 - ~note~ ::
   Note associated with an artefact.  For
-  [[~IMPORTANT-CARD-NUMBER~][~important-card-number~]] it is the comment
+  [[#IMPORTANT-CARD-NUMBER][~important-card-number~]] it is the comment
   associated with the BIN.  See ~--important-cc-bins~
   [[#common-cli-options][option]].
 
 *** ~WEB-SINK~
+:PROPERTIES:
+:CUSTOM_ID: WEB-SINK
+:END:
 
 This is the simplest sink.  It does not have any parameters.
 
@@ -406,6 +455,9 @@ Example:
 #+end_src
 
 *** ~SMTP-SINK~
+:PROPERTIES:
+:CUSTOM_ID: SMTP-SINK
+:END:
 
 This sink is used to send emails.  Attributes:
 
@@ -416,17 +468,20 @@ This sink is used to send emails.  Attributes:
   Sets the sender ("From" field) of the outgoing emails.
 
 - ~(:subject <form>+)~ ::
-  [[Templates][Template]] attribute to generate subject line of the outgoing
+  [[#templates][Template]] attribute to generate subject line of the outgoing
   email.
 
 - ~(:body <form>+)~ ::
-  [[Templates][Template]] attribute to generate the body of the outgoing
+  [[#templates][Template]] attribute to generate the body of the outgoing
   email.
 
 - ~(:recipients <string>+)~ ::
   A list of strings, each being an email address to send the email to.
 
 *** ~MISP-SINK~
+:PROPERTIES:
+:CUSTOM_ID: MISP-SINK
+:END:
 
 - ~(:server <string>)~ ::
   Sets the MISP instance URL.
@@ -449,15 +504,15 @@ This sink is used to send emails.  Attributes:
   attribute.
 
 - ~(:alert <boolean>)~ ::
-  [[Specifying values][Boolean]] value specifying whether this MISP event is
+  [[#specifying-values][Boolean]] value specifying whether this MISP event is
   or is not an alert.
 
 - ~(:publish <boolean>)~ ::
-  [[Specifying values][Boolean]] value specifying whether to automatically
+  [[#specifying-values][Boolean]] value specifying whether to automatically
   publish this event.
 
 - ~(:title <form>+)~ ::
-  [[Templates][Template]] attribute to generate the title of MISP event.
+  [[#templates][Template]] attribute to generate the title of MISP event.
 
 - ~(:sharing-group <string>)~ ::
   Currently the only sharing option is a sharing group.  Given value should be
@@ -487,6 +542,9 @@ This sink is used to send emails.  Attributes:
     artefact.
 
 ** Filters
+:PROPERTIES:
+:CUSTOM_ID: filters
+:END:
 
 ~define-artefact-filter~ directive is used to define a filter.  The syntax is
 as follows:
@@ -507,8 +565,8 @@ Filter expressions have an implicit argument: an artefact.  The following
 filter expressions are supported:
 
 - ~(type? <class>)~ ::
-  True if the artefact is of the given class.  See section [[Artefact
-  classes]].
+  True if the artefact is of the given class.  See section
+  [[#artefact-classes][Artefact classes]].
 
 - ~(and <filter-expression>+)~ ::
   True if all enclosed filter expressions are true, false otherwise.
@@ -522,7 +580,7 @@ filter expressions are supported:
 - ~(extract <field>)~ ::
   Extract given field from the current context value, usually an artefact.
   Extractors applicable to particular artefacts are documented in the
-  corresponding [[Artefact classes][artefact class]] section.
+  corresponding [[#artefact-classes][artefact class]] section.
 
 - ~(-> <filter-expression>+)~ ::
   Replaces the context of each consecutive filter expression with the value of
@@ -537,18 +595,19 @@ filter expressions are supported:
 
   The ~and~ expression has two enclosed filter expressions.  For it to return
   true both of them have to be true.  So if the class of the artefact is not
-  [[~EMBEDDED-BINARY~]], the value of ~and~ will be false (and the second form
-  will not even be considered).  But if the context of the filter is indeed an
-  [[~EMBEDDED-BINARY~]] then the value of ~and~ will be the value of second
-  form: ~->~.
+  [[#EMBEDDED-BINARY][~EMBEDDED-BINARY~]], the value of ~and~ will be false
+  (and the second form will not even be considered).  But if the context of
+  the filter is indeed an [[#EMBEDDED-BINARY][~EMBEDDED-BINARY~]] then the
+  value of ~and~ will be the value of second form: ~->~.
 
   First it calls ~(extract embedded-binary-bytes)~ (see below), and replaces
   the current context with returned value.  The next form is ~or~, and for
   this form the context is the binary bytes of the current artefact (which we
-  know is an [[~EMBEDDED-BINARY~]]).  The forms enclosed in ~or~ are executed
-  in order; if any of them returns true the value of the ~or~ form is also
-  true.  In any case, the value of ~->~ form will be the value of the ~or~
-  form applied to the byte content of the [[~EMBEDDED-BINARY~]] artefact.
+  know is an [[#EMBEDDED-BINARY][~EMBEDDED-BINARY~]]).  The forms enclosed in
+  ~or~ are executed in order; if any of them returns true the value of the
+  ~or~ form is also true.  In any case, the value of ~->~ form will be the
+  value of the ~or~ form applied to the byte content of the
+  [[#EMBEDDED-BINARY][~EMBEDDED-BINARY~]] artefact.
 
 - ~(length)~ ::
   Returns the length of current context value.
@@ -574,6 +633,9 @@ filter expressions are supported:
   True if the context value is a sequence that contains the given subsequence.
 
 ** Example configuration
+:PROPERTIES:
+:CUSTOM_ID: example-configuration
+:END:
 
 #+begin_src sexpr
   (define-sink dashboard (web-sink))
@@ -634,6 +696,9 @@ filter expressions are supported:
 #+end_src
 
 * Artefact classes
+:PROPERTIES:
+:CUSTOM_ID: artefact-classes
+:END:
 
 The list of artefact classes recognized by ~pastelyzer~ and their
 relationships are shown [[artefact-class-tree][below]].  These artefact
@@ -666,9 +731,12 @@ classes are described in the following sections.
 
 # TODO: Currently these types of artefacts are recognized and it is not
 # possible to disable any of them (except by editing source code).  But it is
-# possible to not report them in any way: see [[Configuration]].
+# possible to not report them in any way: see [[#configuration]].
 
 ** Binary artefacts
+:PROPERTIES:
+:CUSTOM_ID: binary-artefacts
+:END:
 
 ~BINARY-ARTEFACT~ is the superclass for artefacts that are represented as
 binary data (i.e. sequence of 8-bit bytes).  If the input data is not known to
@@ -677,21 +745,33 @@ the data will be detected as being text in UTF-8 encoding and processed as
 text.
 
 *** ~COMPRESSED-BLOB~
+:PROPERTIES:
+:CUSTOM_ID: COMPRESSED-BLOB
+:END:
 
 Created if the ~BINARY-ARTEFACT~ bytes can be decompressed using gzip, zlib or
 deflate methods.
 
 *** ~ENCODED-STRING~
+:PROPERTIES:
+:CUSTOM_ID: ENCODED-STRING
+:END:
 
 Created if the ~BINARY-ARTEFACT~ bytes can be decoded as UTF-8 or UTF-16
 (little- or big-endian) string.
 
 ** String artefacts
+:PROPERTIES:
+:CUSTOM_ID: string-artefacts
+:END:
 
 ~STRING-ARTEFACT~ is the superclass of all artefacts represented as text
 (i.e. most of them, described below).
 
 *** ~BANK-CARD-NUMBER~
+:PROPERTIES:
+:CUSTOM_ID: BANK-CARD-NUMBER
+:END:
 
 ~pastelyzer~ currently recognizes bank card numbers that correspond to the
 following patterns:
@@ -722,27 +802,34 @@ Applicable extractors:
   A string of all the bank card digits with separators removed.
 
 *** ~IMPORTANT-CARD-NUMBER~
+:PROPERTIES:
+:CUSTOM_ID: IMPORTANT-CARD-NUMBER
+:END:
 
-Artefact class of bank card number (see section [[~BANK-CARD-NUMBER~]]) whose
-BIN (prefix) is listed in the important bank card BIN file (see
+Artefact class of [[#BANK-CARD-NUMBER][bank card number]] whose BIN (prefix)
+is listed in the important bank card BIN file (see
 [[#common-cli-options][~--important-cc-bins~]] option).
 
 Applicable extractors:
 
 - ~digits~ ::
-  Inherited from [[~BANK-CARD-NUMBER~][~BANK-CARD-NUMBER~]].
+  Inherited from [[#BANK-CARD-NUMBER][~BANK-CARD-NUMBER~]].
 - ~note~ ::
   Comment associated with the bin this artefact has been matched to.  See
   section [[#important-cc-bins-file]].
 
 *** ~CREDENTIAL~
+:PROPERTIES:
+:CUSTOM_ID: CREDENTIAL
+:END:
 
 An username/passphrase pair, separated by colon (~:~), semicolon (~;~),
 vertical bar (~|~), comma (~,~) or tab character.  At the moment regular
 expressions are used to match both.  Even though the character repertoire for
 passphrases is quite generous, there are some limitations:
 
-- Only credentials with emails (see [[~EMAIL~]]) as usernames are detected.
+- Only credentials with emails (see [[#EMAIL][~EMAIL~]]) as usernames are
+  detected.
 - Non-ASCII characters are not matched.
 - Space (and tab) characters are not matched.
 
@@ -750,6 +837,9 @@ We plan to improve credential extraction to work around these limitations in
 the future.
 
 *** ~DOMAIN~
+:PROPERTIES:
+:CUSTOM_ID: DOMAIN
+:END:
 
 Everything that looks like words separated with periods, with some additional
 restrictions (documented in [[https://www.ietf.org/rfc/rfc1035.txt][RFC1035]])
@@ -760,12 +850,18 @@ We strongly suggest to provide the valid TLD file (see the
 positives.
 
 *** ~ONION~
+:PROPERTIES:
+:CUSTOM_ID: ONION
+:END:
 
 A pseudo-domain consisting of two parts separated by a period.  The first part
 being 16 or 56 alphanumeric characters (consistency not checked), the second
 being ~onion~ (see [[https://en.wikipedia.org/wiki/.onion][Wikipedia entry]]).
 
 *** ~EMAIL~
+:PROPERTIES:
+:CUSTOM_ID: EMAIL
+:END:
 
 Strings of the form ~username@domain~ are recognized as emails using a
 simple regular expression.  Only alphanumeric characters plus a period (~.~),
@@ -774,15 +870,18 @@ considered in the username part.  Period-separated sequences of alphanumeric
 characters are accepted as domain part.
 
 *** ~EMBEDDED-BINARY~
+:PROPERTIES:
+:CUSTOM_ID: EMBEDDED-BINARY
+:END:
 
-All embedded binary artefacts (currently [[~BASE64-BLOB~][~BASE64-BLOB~]],
-[[~HEX-BLOB~][~HEX-BLOB~]] and [[~BINARY-BLOB~][~BINARY-BLOB~]]) are
+All embedded binary artefacts (currently [[#BASE64-BLOB][~BASE64-BLOB~]],
+[[#HEX-BLOB][~HEX-BLOB~]] and [[#BINARY-BLOB][~BINARY-BLOB~]]) are
 specializations of this artefact class.  The textual representation is
 processed and resulting binary data is available as the ~BYTES~ field (see
-section [[Filters]]).
+section [[#filters][Filters]]).
 
 The bytes are processed, and if it turns out they represent text or compressed
-data, the corresponding [[Binary artefacts][~BINARY-ARTEFACT~]] instance is
+data, the corresponding [[#binary-artefacts][~BINARY-ARTEFACT~]] instance is
 created.
 
 Applicable extractors:
@@ -792,11 +891,17 @@ Applicable extractors:
   renamed to just ~bytes~ in near future.
 
 **** ~BASE64-BLOB~
+:PROPERTIES:
+:CUSTOM_ID: BASE64-BLOB
+:END:
 
 Base64-encoded (see [[https://en.wikipedia.org/wiki/Base64][Wikipedia]])
 sequence of bytes.  Example: ~TVqQ~.
 
 **** ~HEX-BLOB~
+:PROPERTIES:
+:CUSTOM_ID: HEX-BLOB
+:END:
 
 A sequence of hexadecimal digit pairs, each pair representing one 8-bit byte.
 Example: ~4D5A90~.
@@ -806,32 +911,50 @@ for hexadecimal numbers, separated by comma and optional white-space.
 Example: ~0x4d, 0x5a, 0x90~.
 
 **** ~BINARY-BLOB~
+:PROPERTIES:
+:CUSTOM_ID: BINARY-BLOB
+:END:
 
 Just ones and zeroes in groups of 8 (i.e., the total number of digits must be
 a multiple of 8).  Example: ~010011010101101010010000~.
 
 *** ~IP-ADDRESS~
+:PROPERTIES:
+:CUSTOM_ID: IP-ADDRESS
+:END:
 
 Artefact class for IPv4 addresses.  Only addresses that belong to one of the
 "interesting networks" are considered "interesting" (see
 [[#common-cli-options][~--networks-file~]] option).
 
 *** ~RESOLVED-IP-ADDRESS~
+:PROPERTIES:
+:CUSTOM_ID: RESOLVED-IP-ADDRESS
+:END:
 
-A specialization of [[~IP-ADDRESS~][~IP-ADDRESS~]] artefact class for IPv4
+A specialization of [[#IP-ADDRESS][~IP-ADDRESS~]] artefact class for IPv4
 addresses that are obtained by resolving domain names using system resolver
-(see [[~DOMAIN~][~DOMAIN~]]).
+(see [[#DOMAIN][~DOMAIN~]]).
 
 *** ~M3U-ENTRY~
+:PROPERTIES:
+:CUSTOM_ID: M3U-ENTRY
+:END:
 
 Titles of playlist entries (lines starting with ~#EXTINF:~).
 
 *** ~URI~
+:PROPERTIES:
+:CUSTOM_ID: URI
+:END:
 
 URIs matched using the syntax provided in
 [[https://tools.ietf.org/html/rfc3986#appendix-A][RFC3986, appendix A]].
 
 *** ~WINDOWS-INTERNAL~
+:PROPERTIES:
+:CUSTOM_ID: WINDOWS-INTERNAL
+:END:
 
 One of the strings from the following [[windows-internals][table]]:
 
