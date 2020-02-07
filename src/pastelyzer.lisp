@@ -345,8 +345,8 @@
     (setup-swank swank-port))
   (when web-server-external-host
     (setf (puri:uri-host *web-server-external-uri*) web-server-external-host))
-  (when web-server-external-port
-    (setf (puri:uri-port *web-server-external-uri*) web-server-external-port))
+  (when-let ((port (or web-server-external-port web-server-port)))
+    (setf (puri:uri-port *web-server-external-uri*) port))
 
   ;; We unload foreign libraries required to run in server mode before
   ;; dumping the image so that the CLI version can be used without
