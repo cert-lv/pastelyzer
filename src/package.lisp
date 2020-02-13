@@ -31,6 +31,7 @@
            #:paste-with-content
            #:initiate-analysis
            #:finish-analysis
+           #:register-artefact
 
            #:congested-content
            #:congested-content-id))

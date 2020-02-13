@@ -1,7 +1,7 @@
 (in-package #:pastelyzer)
 
 ;;; System release version.
-(defvar *release* "0.8")
+(defvar *release* "0.9")
 
 ;;; Set by build script.
 (defvar *build-id* nil)
@@ -55,3 +55,20 @@
   "Paste sites to ignore when re-fetching broken pastes.")
 
 (defvar *default-http-user-agent* nil)
+
+;;; Ensure that artefacts of these classes have methods on
+;;; ARTEFACT-STORE-VALUE and ARTEFACT-STORE-EXTRA generic functions.
+(defvar *stored-artefact-classes*
+  '(bank-card-number
+    important-card-number
+    domain
+    onion
+    email
+    credential
+    ip-address
+    ip-service
+    resolved-ip-address
+    base64-blob
+    hex-blob
+    binary-blob)
+  "Classes of artefacts that are stored in the database.")

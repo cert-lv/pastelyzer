@@ -198,6 +198,24 @@ UPDATE analysis
 RETURNING updated_at"
      content-id summary version-id)
     :single)
+
+(pomo:defprepared-with-names %register-artefact
+    (content-id type value extra version-id)
+    ("
+INSERT INTO artefacts (content_id, version_id, type, value, extra)
+VALUES ($1, $2, $3, $4, $5)"
+     content-id version-id (or type :null) (or value :null) (or extra :null))
+    :single)
+
+(defun register-artefact (content-id type value extra
+                          &key (version-id *current-version-id*))
+  (handler-case
+      (%register-artefact content-id type value extra version-id)
+    (cl-postgres-error:unique-violation ()
+      (msg :notice "~A for ~A/~A already registered: ~A~@[:~A~]"
+           type content-id version-id value extra))
+    (cl-postgres:database-error (condition)
+      (msg :error "Failed to register artefact: ~A" condition))))
 
 (defvar *schema-updates*
   '(("0000-base"
@@ -270,7 +288,31 @@ CREATE TABLE IF NOT EXISTS analysis (
   updated_at TIMESTAMPTZ,
   summary    JSONB,
 
-  PRIMARY KEY (content_id, version_id))")))
+  PRIMARY KEY (content_id, version_id))")
+    ("0001-artefacts"
+     "
+CREATE TABLE IF NOT EXISTS artefacts (
+  content_id INTEGER NOT NULL
+             REFERENCES contents(id)
+             ON UPDATE CASCADE
+             ON DELETE CASCADE
+             DEFERRABLE INITIALLY DEFERRED,
+  version_id INTEGER NOT NULL
+             REFERENCES versions(id)
+             ON UPDATE CASCADE
+             ON DELETE CASCADE
+             DEFERRABLE INITIALLY DEFERRED,
+  type       VARCHAR NOT NULL,
+  value      VARCHAR NOT NULL,
+  extra      VARCHAR)"
+
+     "
+CREATE INDEX IF NOT EXISTS artefacts_content_id_version_id_idx
+    ON artefacts(content_id, version_id)"
+
+     "
+CREATE INDEX IF NOT EXISTS artefacts_value_idx
+    ON artefacts(value varchar_pattern_ops)")))
 
 (pomo:defprepared all-schema-updates
     "SELECT name FROM schema_updates"

@@ -166,7 +166,62 @@
              extractor (eq target root) root target condition)))))
 
 (defgeneric log-artefacts (source))
+
 (defgeneric analyse (source &key force))
+
+(defgeneric artefact-store-value (artefact))
+
+(defgeneric artefact-store-extra (artefact))
+
+(defmethod artefact-store-value ((artefact string-artefact))
+  (artefact-source artefact))
+
+(defmethod artefact-store-extra ((artefact artefact))
+  nil)
+
+(defmethod artefact-store-value ((artefact bank-card-number))
+  (bank-card-number-digits artefact))
+
+(defmethod artefact-store-extra ((artefact important-card-number))
+  (important-card-number-note artefact))
+
+(defmethod artefact-store-value ((artefact credential))
+  (credential-username artefact))
+
+(defmethod artefact-store-extra ((artefact credential))
+  (credential-passphrase artefact))
+
+(defmethod artefact-store-value ((artefact domain))
+  (call-next-method))
+
+(defmethod artefact-store-value ((artefact ip-address))
+  (princ-to-string (artefact-address artefact)))
+
+(defmethod artefact-store-extra ((artefact ip-service))
+  (princ-to-string (ip-service-port artefact)))
+
+(defmethod artefact-store-extra ((artefact resolved-ip-address))
+  (artefact-domain artefact))
+
+(defmethod artefact-store-value ((artefact embedded-binary))
+  (let* ((bytes (fragment-body (embedded-binary-bytes artefact)))
+         (hash (ironclad:digest-sequence 'ironclad:sha1 bytes)))
+    (format nil "~/fmt:bytes/" hash)))
+
+(defmethod artefact-store-extra ((artefact embedded-binary))
+  (let* ((bytes (fragment-body (embedded-binary-bytes artefact)))
+         (prefix (subseq bytes 0 (min 4 (length bytes)))))
+    (format nil "~/fmt:bytes/" prefix)))
+
+(defun register-artefacts-from-groups (content-id groups)
+  (loop for (class unique) in groups
+        when (member class *stored-artefact-classes*)
+          do (loop for bag being each hash-value in unique
+                   for artefact = (first bag)
+                   do (let ((type (string class))
+                            (value (artefact-store-value artefact))
+                            (extra (artefact-store-extra artefact)))
+                        (db:register-artefact content-id type value extra)))))
 
 (defmethod analyse ((target paste) &key (force nil))
   (let* ((content-id (content-id target))
@@ -179,7 +234,8 @@
                  (setq finishedp t)
                  (let ((summary (summarize-artefacts groups :json)))
                    (db:with-connection ()
-                     (db:finish-analysis content-id summary)))
+                     (db:finish-analysis content-id summary)
+                     (register-artefacts-from-groups content-id groups)))
                  groups)
             (unless finishedp
               (db:with-connection ()
