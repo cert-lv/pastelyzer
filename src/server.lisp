@@ -393,50 +393,42 @@
 (defclass web-job (job)
   ())
 
+(defmethod resolve-domains-p ((job web-job))
+  nil)
+
 (defmethod applicable-extractors :around ((target string-fragment)
                                           (job web-job))
   (set-difference (call-next-method)
                   '(:m3u-entries
                     :windows-internals)))
 
-(defmethod artefact-to-json ((artefact t))
-  nil)
-
-(defmethod artefact-to-json ((artefact uri))
-  (list (cons "data" (artefact-source artefact))
-        '("type" . "url")))
-
-(defmethod artefact-to-json ((artefact domain))
-  (list (cons "data" (artefact-source artefact))
-        '("type" . "domain")))
-
-(defmethod artefact-to-json ((artefact ip-address))
-  (list (cons "data" (princ-to-string (artefact-address artefact)))
-        '("type" . "ip")))
-
-(defmethod artefact-to-json ((artefact resolved-ip-address))
-  nil)
-
-(defmethod artefact-to-json ((artefact email))
-  (list (cons "data" (artefact-source artefact))
-        '("type" . "email")))
-
 (defun process-posted-content (fragment &key context)
-  (let* ((artefacts (process (make-instance 'web-job :subject fragment)))
-         (groups (group-artefacts artefacts))
-         (result '()))
-    (loop for (nil unique nil nil) in groups
-          do (loop for bag being each hash-value in unique
-                   for artefact = (first bag)
-                   do (when-let (json (artefact-to-json artefact))
-                        (push (list* :obj
-                                     (append
-                                      (when (or (eq context :after)
-                                                (eq context :both))
-                                        `(("after" . ,(artefact-context-after artefact :limit nil :eol t))))
-                                      (when (or (eq context :before)
-                                                (eq context :both))
-                                        `(("before" . ,(artefact-context-before artefact :limit nil :bol t))))
-                                      (artefact-to-json artefact)))
-                              result))))
-    (jsown:to-json result)))
+  (flet ((to-jsown (artefact type)
+           `(:obj
+             ,@(when (or (eq context :after)
+                         (eq context :both))
+                 `(("after" . ,(artefact-context-after artefact
+                                                       :limit nil
+                                                       :eol t))))
+             ,@(when (or (eq context :before)
+                         (eq context :both))
+                 `(("before" . ,(artefact-context-before artefact
+                                                         :limit nil
+                                                         :bol t))))
+             ("type" . ,type)
+             ("data" . ,(artefact-description artefact)))))
+    (let* ((artefacts (process (make-instance 'web-job :subject fragment)))
+           (groups (group-artefacts artefacts))
+           (result '())
+           (types '((domain . "domain")
+                    (email . "email")
+                    (ip-address . "ip")
+                    (uri . "url"))))
+      (loop for (class unique) in groups
+            for type = (assoc class types)
+            when type
+              do (loop for bag being each hash-value in unique
+                       for artefact = (first bag)
+                       do (push (to-jsown artefact (cdr type))
+                                result)))
+      (jsown:to-json result))))
