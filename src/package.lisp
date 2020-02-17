@@ -97,6 +97,9 @@
            #:credential-username
            #:credential-passphrase
            #:ip-address
+           #:ip-service
+           #:ip-service-address
+           #:ip-service-port
            #:resolved-ip-address
            #:domain
            #:onion

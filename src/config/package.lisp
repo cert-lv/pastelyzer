@@ -18,6 +18,7 @@
                 #:binary-blob
                 #:hex-blob
                 #:ip-address
+                #:ip-service
                 #:resolved-ip-address
                 #:m3u-entry
                 #:uri

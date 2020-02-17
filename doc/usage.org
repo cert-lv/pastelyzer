@@ -723,6 +723,7 @@ classes are described in the following sections.
      │  ├─ HEX-BLOB
      │  └─ BINARY-BLOB
      ├─ IP-ADDRESS
+     │  ├─ IP-SERVICE
      │  └─ RESOLVED-IP-ADDRESS
      ├─ M3U-ENTRY
      ├─ URI
@@ -926,6 +927,14 @@ a multiple of 8).  Example: ~010011010101101010010000~.
 Artefact class for IPv4 addresses.  Only addresses that belong to one of the
 "interesting networks" are considered "interesting" (see
 [[#common-cli-options][~--networks-file~]] option).
+
+*** ~IP-SERVICE~
+:PROPERTIES:
+:CUSTOM_ID: IP-SERVICE
+:END:
+
+A specialization of [[#IP-ADDRESS][~IP-ADDRESS~]] artefact class that is
+created for IPv4 address:port combination (e.g., ~1.2.3.4:8080~).
 
 *** ~RESOLVED-IP-ADDRESS~
 :PROPERTIES:

@@ -826,6 +826,25 @@
 (defmethod artefact-key ((artefact ip-address))
   (ip:ipv4-address-bits (artefact-address artefact)))
 
+(defclass ip-service (ip-address)
+  ((port
+    :initarg :port
+    :reader ip-service-port
+    :type (unsigned-byte 16))))
+
+(defmethod print-object ((object ip-service) (stream t))
+  (print-unreadable-object (object stream :type t :identity t)
+    (with-slots (address port) object
+      (format stream "~A:~D" address port))))
+
+(defmethod artefact-description ((artefact ip-service))
+  (with-slots (address port) artefact
+    (format nil "~A:~D" address port)))
+
+(defmethod artefact-key ((artefact ip-service))
+  (with-slots (address port) artefact
+    (cons (ip:ipv4-address-bits address) port)))
+
 (defclass resolved-ip-address (ip-address)
   ((domain
     :initarg :domain
@@ -1329,14 +1348,28 @@
         (result '()))
     (ppcre:do-matches (start end regex target)
       (handler-case
-          (let ((address (ip:parse-address (subseq target start end) :address)))
-            (push (add-artefact job fragment 'ip-address
-                                :start start
-                                :end end
-                                :address address)
-                  result))
+          (let ((address (ip:parse-address (subseq target start end) :address))
+                (port nil))
+            (if (and (<= (+ end 2) (length target))
+                     (char= #\: (schar target end))
+                     (digit-char-p (schar target (1+ end)))
+                     (multiple-value-bind (n pos)
+                       (parse-integer target :start (1+ end) :junk-allowed t)
+                       (when (and n (<= 1 n #xFFFF))
+                         (setq port n end pos))))
+                (push (add-artefact job fragment 'ip-service
+                                    :start start
+                                    :end end
+                                    :address address
+                                    :port port)
+                      result)
+                (push (add-artefact job fragment 'ip-address
+                                    :start start
+                                    :end end
+                                    :address address)
+                      result)))
         (error (condition)
-               (msg :debug "In ~A: ~A" (job-subject job) condition))))
+          (msg :debug "In ~A: ~A" (job-subject job) condition))))
     result))
 
 (defclass bank-card-number (string-artefact)

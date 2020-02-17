@@ -131,6 +131,12 @@ we're using regular expressions..."
                                        'ip-address)))
     (is (= 3 (length artefacts)))))
 
+(test extractors.services.1 ()
+  (let* ((string (format nil "a 1.2.3.4:1234 z"))
+         (artefacts (extract-artefacts string 'ip-service)))
+    (is (= 1 (length artefacts)))
+    (= 1234 (ip-service-port (first artefacts)))))
+
 (test extractors.embedded-binary.bin.1 ()
   (let* ((blob #(#xDE #xAD #xBE #xEF #xFE #xED #xFA #xCE #xD0 #x0D))
          (string (format nil "xxx ~{~8,'0B~} xxx" (coerce blob 'list)))
