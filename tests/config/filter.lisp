@@ -16,6 +16,7 @@
                      (> . usr:>)
                      (< . usr:<)
                      (type? . usr:type?)
+                     (exact-type? . usr:exact-type?)
                      (extract . usr:extract)
                      (-> . usr:->)
                      (length . usr:length)
@@ -76,6 +77,11 @@
   (with-filter f (type? cl:string)
     (is (eq 't (f "foo")))
     (is (eq 'nil (f 42)))))
+
+(test filter.exact-type? ()
+  (with-filter f (exact-type? fixnum)
+    (is (eq 't (f 42)))
+    (is (eq 'nil (f (1+ most-positive-fixnum))))))
 
 (test filter.length ()
   (with-filter f (length)

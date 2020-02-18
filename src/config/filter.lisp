@@ -150,6 +150,13 @@
     (make-function type? (value cont)
       (funcall cont (typep value type)))))
 
+(defmethod generate-filter-function ((operator (eql 'usr:exact-type?))
+                                     &rest body)
+  (check-type body (cons symbol null))
+  (let ((type (first body)))
+    (make-function type? (value cont)
+      (funcall cont (eq type (class-name (class-of value)))))))
+
 (defmethod generate-filter-function ((operator (eql 'usr:extract)) &rest body)
   (check-type body (cons symbol null))
   (let ((accessor (first body)))

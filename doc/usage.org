@@ -565,8 +565,12 @@ Filter expressions have an implicit argument: an artefact.  The following
 filter expressions are supported:
 
 - ~(type? <class>)~ ::
-  True if the artefact is of the given class.  See section
+  True if the artefact is of the given class (or any subclass).  See section
   [[#artefact-classes][Artefact classes]].
+
+- ~(exact-type? <class>)~ ::
+  Similar to ~type?~, but true only if the artefact is exactly of the given
+  class.
 
 - ~(and <filter-expression>+)~ ::
   True if all enclosed filter expressions are true, false otherwise.

@@ -43,6 +43,7 @@
            #:>
            #:<
            #:type?
+           #:exact-type?
            #:extract
            #:->
            #:length
