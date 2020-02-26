@@ -26,12 +26,10 @@ The following libraries must be installed on the target system:
 
 ** Database
 
-PostgreSQL database (at least version *9.5*) is required.  Use the SQL script
-in [[file:support/schema.sql][support/schema.sql]] to initialize the database:
-
-#+BEGIN_EXAMPLE
-  $ psql -d pastelyzer < support/schema.sql
-#+END_EXAMPLE
+PostgreSQL database (at least version *9.5*) is required.  Necessary tables
+will be created automatically.  Database access parameters can be controlled
+using environment variables ~DB_HOST~, ~DB_PORT~, ~DB_NAME~, ~DB_USER~ and
+~DB_PASS~.  See user guide, section "Environment variables."
 
 * Compilation
 ** Set up a working Common Lisp environment

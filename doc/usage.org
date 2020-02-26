@@ -174,8 +174,10 @@ systemd service file is provided in
 :END:
 
 ~pastelyzer~ stores all received documents in a PostgreSQL (version *9.5* or
-later) database.  The database schema is provided in the source distribution
-[[file:../support/schema.sql][support/schema.sql]] file.
+later) database.  Database connection parameters are set using environment
+variables (see section [[#environment-variables]]).  At the moment schema
+updates are managed by the application itself.  This means that all tables
+will be created automatically whenever ~pastelyzer~ is run in standalone mode.
 
 *** Options
 :PROPERTIES:
