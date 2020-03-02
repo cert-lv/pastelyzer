@@ -154,36 +154,7 @@
       (when (and (or (string= "/analyze" path)
                      (string= "/analyse" path))
                  (eql :post (ht:request-method req)))
-        (setf (ht:header-out :content-type) "application/json")
-        (return
-          (let ((data (ht:post-parameter "data" req))
-                (context
-                  (let ((value (ht:post-parameter "context" req)))
-                    (cond ((or (null value)
-                               (string-equal "after" value))
-                           :after)
-                          ((string-equal "before" value)
-                           :before)
-                          ((string-equal "both" value)
-                           :both)
-                          ((or (string= "" value)
-                               (string-equal "none" value))
-                           nil)))))
-            (cond ((consp data)
-                   (let ((bytes (read-file-into-byte-vector (first data))))
-                     (process-posted-content
-                      (make-instance 'binary-fragment :body bytes)
-                      :context context)))
-                  ((stringp data)
-                   (process-posted-content
-                    (make-instance 'string-fragment :body data)
-                    :context context))
-                  (t
-                   (setf (ht:return-code*) ht:+http-bad-request+)
-                   (jsown:to-json
-                    '(:obj
-                      ("type" . "error")
-                      ("value" . "No data field."))))))))
+        (return (analyze-document req)))
 
       (when (string= "/" path)
         (return
@@ -401,6 +372,37 @@
   (set-difference (call-next-method)
                   '(:m3u-entries
                     :windows-internals)))
+
+(defun analyze-document (req)
+  (setf (ht:header-out :content-type) "application/json")
+  (let ((data (ht:post-parameter "data" req))
+        (context
+          (let ((value (ht:post-parameter "context" req)))
+            (cond ((or (null value)
+                       (string-equal "after" value))
+                   :after)
+                  ((string-equal "before" value)
+                   :before)
+                  ((string-equal "both" value)
+                   :both)
+                  ((or (string= "" value)
+                       (string-equal "none" value))
+                   nil)))))
+    (cond ((consp data)
+           (let ((bytes (read-file-into-byte-vector (first data))))
+             (process-posted-content
+              (make-instance 'binary-fragment :body bytes)
+              :context context)))
+          ((stringp data)
+           (process-posted-content
+            (make-instance 'string-fragment :body data)
+            :context context))
+          (t
+           (setf (ht:return-code*) ht:+http-bad-request+)
+           (jsown:to-json
+            '(:obj
+              ("type" . "error")
+              ("value" . "No data field.")))))))
 
 (defun process-posted-content (fragment &key context)
   (flet ((to-jsown (artefact type)
