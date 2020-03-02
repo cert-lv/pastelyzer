@@ -2,12 +2,6 @@
 
 ;;; TODO:
 ;;;
-;;; - Don't use error pages (i.e., document-root or
-;;;   error-template-directory).
-;;;
-;;; - We don't want to include Server software/version in any
-;;;   response.
-;;;
 ;;; - Get rid of find-ws-handler.
 ;;;
 ;;; - Handle WebSockets in a separate server (because
@@ -59,10 +53,24 @@
           (t
            not-found-value))))
 
+(defclass reply (ht:reply)
+  ())
+
+(defmethod initialize-instance :after ((reply reply) &key)
+  ;; Don't include the "Server" header in response.
+  (setf (ht:header-out :server reply) nil))
+
 (defclass acceptor (hs:websocket-acceptor)
   ()
   (:default-initargs
-   :access-log-destination nil))
+   :access-log-destination nil
+   :document-root nil
+   :error-template-directory nil
+   ;; Hunchensocket customizes this too, but the customization is not
+   ;; needed since Hunchentoot's default reply-external-format already
+   ;; is UTF-8 with LF line endings.  hs::websocket-reply is also not
+   ;; exported.
+   :reply-class 'reply))
 
 (defmethod ht:acceptor-log-access ((acceptor acceptor) &key return-code)
   (msg :http "~A ~A ~A ~A"
@@ -74,6 +82,12 @@
 (defmethod ht:acceptor-log-message ((acceptor acceptor)
                                     category format &rest args)
   (maybe-log category format args))
+
+(defmethod ht:acceptor-status-message ((acceptor acceptor) status-code
+                                       &key &allow-other-keys)
+  ;; Don't include any extra information in response body unless the
+  ;; handler does it explicitly.
+  nil)
 
 (defvar *static-dispatcher*
   (load-time-value
