@@ -1,13 +1,5 @@
 (in-package #:pastelyzer)
 
-;;; TODO:
-;;;
-;;; - Get rid of find-ws-handler.
-;;;
-;;; - Handle WebSockets in a separate server (because
-;;;   websocket-acceptor has its own request and reply classes).
-;;;
-
 (define-condition record-not-found-error (simple-error)
   ((key :initarg :key :reader record-not-found-error-key)
    (table :initarg :table :reader record-not-found-error-table))
@@ -232,7 +224,11 @@
   *ws-resource*)
 
 (defun find-ws-handler (request)
-  (if (string= (ht:script-name request) "/ws")
+  ;; It would be nice if websocket stuff was associated with an
+  ;; acceptor directly, not through a special variable.  Until then
+  ;; there's this function and check against *acceptor*.
+  (if (and (string= (ht:script-name request) "/ws")
+           (eq *acceptor* (ht:request-acceptor request)))
       *ws-resource*
       nil))
 
@@ -349,13 +345,6 @@
                         (apply #'format-group html group))
                     grouped))))))))
     nil))
-
-;;; XXX: Move to start-server.  Or find a way to integrate websocket
-;;; handling with our own dispatcher.  Looking around it seems this is
-;;; not feasible (see acceptor-dispatch-request method on
-;;; websocket-acceptor).
-(eval-when (:load-toplevel :execute)
-  (pushnew 'find-ws-handler hs:*websocket-dispatch-table*))
 
 (defun stop-web-server (&key force)
   (when *ws-resource*
@@ -373,6 +362,7 @@
           (make-instance 'acceptor
                          :taskmaster taskmaster
                          :port port))
+    (pushnew 'find-ws-handler hs:*websocket-dispatch-table*)
     (ht:start *acceptor*)))
 
 (defclass web-job (job)
