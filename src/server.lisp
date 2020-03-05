@@ -131,12 +131,6 @@
                  (return nil)))))
 
       (ppcre:register-groups-bind ((#'parse-integer id))
-          ("^/show/(\\d+)$" path)
-        (setf (ht:return-code*) ht:+http-moved-permanently+)
-        (setf (ht:header-out :location) (format nil "/paste/~A" id))
-        (return ""))
-
-      (ppcre:register-groups-bind ((#'parse-integer id))
           ("^/paste/(\\d+)$" path)
         (let ((paste (fetch-paste id nil)))
           (cond (paste
@@ -147,11 +141,6 @@
                 (t
                  (setf (ht:return-code*) ht:+http-not-found+)
                  (return nil)))))
-
-      (ppcre:register-groups-bind (id) ("/show\\?id=(\\d+)" path)
-        (setf (ht:return-code*) ht:+http-moved-permanently+)
-        (setf (ht:header-out :location) (format nil "/show/~A" id))
-        (return ""))
 
       (when (and (string= "/store" path)
                  (eql :post (ht:request-method req)))
