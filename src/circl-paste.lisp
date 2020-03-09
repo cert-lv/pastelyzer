@@ -106,9 +106,12 @@
     (return-from parse-circl-paste-id (values site id)))
   (error "Unrecognized paste file: ~S" string))
 
-(defmethod paste-origins ((paste circl-paste))
+(defmethod paste-origin ((paste circl-paste))
+  (circl-provider-id-to-url (paste-provider-id paste)))
+
+(defun circl-provider-id-to-url (provider-id)
   (multiple-value-bind (site id)
-      (parse-circl-paste-id (paste-provider-id paste))
+      (parse-circl-paste-id provider-id)
     (flet ((url (scheme host &rest path)
              (make-instance 'puri:uri
                             :scheme scheme
@@ -116,14 +119,14 @@
                             :path (apply #'concatenate 'string path))))
       (cond ((or (string= "pastebin.com_pro" site)
                  (string= "pastebin.com" site))
-             (list
+             (values
               (make-instance 'http-content
                              :uri (url :https "pastebin.com" "/raw/" id))
               (make-instance 'link-only-http-content
                              :uri (url :https "pastebin.com" "/" id))))
 
             ((string= "lpaste.net" site)
-             (list
+             (values
               (make-instance 'http-content
                              :uri (url :http site "/raw/" id))
               (make-instance 'link-only-http-content
@@ -132,7 +135,7 @@
             ((string= "gist.github.com" site)
              (destructuring-bind (user hash)
                  (split-sequence #\_ id)
-               (list
+               (values
                 (make-instance 'link-only-http-content
                                :uri (url :https site "/" user "/" hash)))))
 
@@ -141,45 +144,45 @@
                  (split-sequence #\_ id)
                (when (string/= "" tail)
                  (warn "Unexpected snipplr.com paste id: ~S" id))
-               (list
+               (values
                 (make-instance 'link-only-http-content
                                :uri (url :http site
                                          "/view/" snipplr-id "/" slug "/")))))
 
             ((or (string= "paste.debian.net" site)
                  (string= "ideone.com" site))
-             (list
+             (values
               (make-instance 'http-content
                              :uri (url :http site "/plain/" id))
               (make-instance 'link-only-http-content
                              :uri (url :http site "/" id))))
 
             ((string= "slexy.org" site)
-             (list
+             (values
               (make-instance 'link-only-http-content
                              :uri (url :https site "/view/" id))))
 
             ((string= "paste.org.ru" site)
-             (list
+             (values
               (make-instance 'link-only-http-content
                              :uri (url :http site "/?" id))))
 
             ((string= "paste.opensuse.org" site)
-             (list
+             (values
               (make-instance 'http-content
                              :uri (url :http site "/view/raw/" id))
               (make-instance 'link-only-http-content
                              :uri (url :http site "/" id))))
 
             ((string= "kpaste.net" site)
-             (list
+             (values
               (make-instance 'http-content
                              :uri (url :http site "/" id "?raw"))
               (make-instance 'link-only-http-content
                              :uri (url :http site "/" id))))
 
             ((string= "pastebin.ru" site)
-             (list
+             (values
               (make-instance 'http-content
                              :uri (url :http site "/" id "/d/"))
               (make-instance 'link-only-http-content
@@ -187,23 +190,23 @@
 
             ((or (string= "justpaste.it" site)
                  (string= "paste.kde.org" site))
-             (list
+             (values
               (make-instance 'link-only-http-content
                              :uri (url :https site "/" id))))
 
             (t
-             (list
+             (values
               (make-instance 'link-only-http-content
                              :uri (url :http site "/" id))))))))
 
 (defmethod paste-source ((paste circl-paste))
-  (destructuring-bind (first &optional second &rest other)
-      (mapcar #'remote-content-location (paste-origins paste))
-    (declare (ignore other))
-    (let ((host (puri:uri-host first)))
-      (if second
-          (values host second first)
-          (values host first nil)))))
+  (multiple-value-bind (first other)
+      (paste-origin paste)
+    (let* ((first-url (remote-content-location first))
+           (host (puri:uri-host first-url)))
+      (if other
+          (values host (remote-content-location other) first-url)
+          (values host first-url nil)))))
 
 (defclass web-server-state ()
   ((host
@@ -292,17 +295,17 @@
     :documentation "Where the data was fetched from.")))
 
 (defmethod retrieve-original ((paste circl-paste))
-  (loop for origin in (paste-origins paste)
-        unless (find (puri:uri-host (remote-content-location origin))
-                     *ignored-paste-sites*
-                     :test #'string=)
-        do (multiple-value-bind (data uri headers)
-               (content-body origin)
-             (when data
-               (msg :debug "Retrieved ~A (~/fmt:nbytes/)"
-                    uri (length data))
-               (return-from retrieve-original
-                 (values data uri headers))))))
+  (let ((origin (paste-origin paste)))
+    (unless (find (puri:uri-host (remote-content-location origin))
+                  *ignored-paste-sites*
+                  :test #'string=)
+      (multiple-value-bind (data uri headers)
+          (content-body origin)
+        (when data
+          (msg :debug "Retrieved ~A (~/fmt:nbytes/)"
+               uri (length data))
+          (return-from retrieve-original
+            (values data uri headers)))))))
 
 (defclass web-paste (paste)
   ()
