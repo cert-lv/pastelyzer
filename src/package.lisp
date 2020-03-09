@@ -17,6 +17,7 @@
                 #:msg)
   (:import-from #:postmodern
                 #:with-transaction)
+  (:local-nicknames (#:pg #:cl-postgres))
   (:export #:*db-params*
            #:*current-version-id*
            #:initialize
@@ -31,12 +32,17 @@
            #:content-body
            #:insert-paste
            #:store-paste
+           #:get-paste
            #:paste-with-content
            #:initiate-analysis
            #:finish-analysis
            #:flush-content-artefacts
            #:register-artefact
            #:map-unprocessed-content-ids
+           #:content-artefacts
+           #:content-sources
+           #:search-artefacts
+           #:search-artefacts-multi
 
            #:congested-content
            #:congested-content-id))
@@ -83,6 +89,8 @@
                 #:with-gensyms)
   (:import-from #:split-sequence
                 #:split-sequence)
+  (:import-from #:string-case
+                #:string-case)
   (:import-from #:pastelyzer.log
                 #:msg
                 #:maybe-log

@@ -51,7 +51,7 @@
 (defgeneric external-url-to (thing))
 
 (defmethod external-url-to ((content content))
-  (puri:merge-uris (format nil "content/~A" (content-id content))
+  (puri:merge-uris (format nil "content/~A/body" (content-id content))
                    *web-server-external-uri*))
 
 (defmethod external-url-to ((paste paste))

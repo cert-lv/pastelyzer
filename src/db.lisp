@@ -146,6 +146,14 @@ ON CONFLICT (content_id, provider, provider_id)
     ("SELECT body FROM contents WHERE id = $1" content-id)
     :single)
 
+(pomo:defprepared-with-names get-paste (id)
+    ("
+SELECT id, provider, provider_id, updates[1], content_id
+  FROM pastes
+ WHERE id = $1"
+     id)
+    :row)
+
 (pomo:defprepared-with-names paste-with-content (source-id)
     ("
 SELECT c.id, c.body, s.provider, s.provider_id
@@ -249,6 +257,102 @@ SELECT c.id, c.size
       (incf count)
       (funcall function id size))
     count))
+
+(pomo:defprepared-with-names content-artefacts (content-id)
+    ("
+SELECT content_id, type, value, extra
+  FROM artefacts
+ WHERE content_id = $1"
+     content-id)
+    :rows)
+
+(pomo:defprepared-with-names content-sources (content-id)
+    ("
+SELECT id, provider, provider_id, updates[1], content_id
+  FROM pastes
+ WHERE content_id = $1"
+     content-id)
+    :rows)
+
+(defun search-artefacts (&key value extra type types (limit 500) (offset nil))
+  (let ((n 0)
+        (args '())
+        (where '()))
+    (when value
+      (incf n)
+      (push value args)
+      (push (format nil "lower(value) like lower($~A) ~
+                     AND reverse(lower(value)) like reverse(lower($~:*~A))"
+                    n)
+            where))
+    (when extra
+      (incf n)
+      (push extra args)
+      (push (format nil "lower(extra) like lower($~A)" n)
+            where))
+    (when type
+      (incf n)
+      (push type args)
+      (push (format nil "type = $~A" n)
+            where))
+    (when types
+      (let ((clauses (loop for type in types
+                           do (incf n)
+                              (push type args)
+                           collect (format nil "type = $~A" n))))
+        (push (format nil "(~{~A~^ OR ~})" clauses)
+              where)))
+    (let ((sql (format nil "~
+                 SELECT content_id, type, value, extra, important, note ~
+                   FROM artefacts ~
+                  ~@[WHERE ~{~A~^ AND ~}~] ~
+                  ORDER BY content_id DESC~
+                  ~@[ LIMIT ~A~]~@[ OFFSET ~A~]"
+                       (reverse where) limit offset)))
+      (pg:prepare-query pomo:*database* "" sql))
+    (pg:exec-prepared pomo:*database* "" (reverse args) 'pg:list-row-reader)))
+
+(defun search-artefacts-multi (list &key (limit 500) (offset nil))
+  (let ((n 0)
+        (args '()))
+    (flet ((conjunct (&key value extra type types
+                      &aux (where '()))
+             (when value
+               (incf n)
+               (push value args)
+               (push (format nil "lower(value) like lower($~A) ~
+                     AND reverse(lower(value)) like reverse(lower($~:*~A))"
+                             n)
+                     where))
+             (when extra
+               (incf n)
+               (push extra args)
+               (push (format nil "lower(extra) like lower($~A)" n)
+                     where))
+             (when type
+               (incf n)
+               (push type args)
+               (push (format nil "type = $~A" n)
+                     where))
+             (when types
+               (let ((clauses (loop for type in types
+                                    do (incf n)
+                                       (push type args)
+                                    collect (format nil "type = $~A" n))))
+                 (push (format nil "(~{~A~^ OR ~})" clauses)
+                       where)))
+             (format nil "(~{~A~^ AND ~})" (reverse where))))
+      (let* ((conjuncts (loop for args in list
+                              collect (apply #'conjunct args)))
+             (sql (format nil "~
+                 SELECT content_id, type, value, extra, important, note ~
+                   FROM artefacts ~
+                  ~@[WHERE ~{~A~^ OR ~}~] ~
+                  ORDER BY content_id DESC~
+                  ~@[ LIMIT ~A~]~@[ OFFSET ~A~]"
+                          conjuncts limit offset)))
+        (pg:prepare-query pomo:*database* "" sql)))
+    (pg:exec-prepared pomo:*database* "" (reverse args) 'pg:list-row-reader)))
 
 (defvar *schema-updates*
   '(("0000-base"
@@ -322,6 +426,7 @@ CREATE TABLE IF NOT EXISTS analysis (
   summary    JSONB,
 
   PRIMARY KEY (content_id, version_id))")
+
     ("0001-artefacts"
      "
 CREATE TABLE IF NOT EXISTS artefacts (

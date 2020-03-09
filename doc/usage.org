@@ -1161,8 +1161,211 @@ One of the strings from the following [[windows-internals][table]]:
 | ~NtCreateUserProcess~           | ~WriteProcessMemory~   |
 | ~NtGetContextThread~            |                        |
 
+* API
+
+Besides the already [[#submitting-documents][mentioned]] endpoint to store
+documents there are two other URLs that can be used to query artefact
+database, described in the following sections.  Requests should be done using
+HTTP ~POST~ method[fn:7].  The values are passed through to database
+[[https://www.postgresql.org/docs/current/functions-matching.html#FUNCTIONS-LIKE][~LIKE~]]
+operator, therefore wildcard characters ~%~ and ~_~ can be used.  It is
+strongly suggested to not put the wildcard characters on both ends of the
+query string[fn:8] because that will be slow (instead of using an index a full
+table scan will have to be performed).  As an example, the following patterns
+are good:
+
+: %@example.com
+: 192.168.%
+
+The following are *NOT* good:
+
+: %example.com%
+: %example%
+: %foo_bar%
+
+Artefacts are stored in ~artefacts~ table, in ~value~ column.  Artefacts that
+use ~extra~ column are listed in table [[artefacts-using-extra]].  Note that
+the entry for ~EMBEDDED-BINARY~ applies to its sub-classes (~BASE64-BLOB~,
+~HEX-BLOB~ and ~BINARY-BLOB~).
+
+#+CAPTION: Artefact classes using ~extra~ column
+#+NAME: artefacts-using-extra
+| Class                 | ~value~                | ~extra~                    |
+| ~CREDENTIAL~          | username               | passphrase                 |
+| ~EMBEDDED-BINARY~     | SHA1-sum of body bytes | first 4 bytes as hex-pairs |
+| ~IP-SERVICE~          | IP address             | port number                |
+| ~RESOLVED-IP-ADDRESS~ | IP address             | resolved domain            |
+
+** Generic value search
+
+The first query endpoint is ~/artefacts~ which can be used to search all
+values stored in ~artefacts~ table.  There are two parameters:
+
+- ~value~ ::
+  Pattern to search for in the ~value~ column.
+
+- ~extra~ ::
+  Pattern to search for in the ~extra~ column.
+
+Return value is a list of records (JSON array of objects), each record with
+the following fields:
+
+- ~type~ ::
+  One of the classes shown in listing [[artefact-class-tree]].
+- ~value~ ::
+  Value of the ~value~ column.
+- ~extra~ ::
+  Value of the ~extra~ column, when present.
+- ~important~ ::
+  ~true~ if the ~important~ column has a ~true~ value.
+- ~note~ ::
+  Value of the ~note~ column, when present.
+- ~source~ ::
+  URI of the document where the artefact has been extracted from (takes into
+  account ~--server-ext-host~ and ~--server-ext-port~
+  [[#standalone-options][command-line options]]).
+
+Example requests and possible :
+
+: curl 'http://pastelyzer.your.org/artefacts' -F 'value=%example.com' | jq .
+
+#+begin_src json
+  [
+    {
+      "type": "EMAIL",
+      "value": "johndoe@example.com",
+      "source": "http://pastelyzer.your.org/content/12345/"
+    },
+    {
+      "type": "DOMAIN",
+      "value": "example.com",
+      "source": "http://pastelyzer.your.org/content/42/"
+    },
+    {
+      "type": "CREDENTIAL",
+      "value": "fred@example.com",
+      "source": "http://pastelyzer.your.org/content/54321/",
+      "extra": "yabbadabbado"
+    }
+  ]
+#+end_src
+
+: curl 'http://pastelyzer.your.org/artefacts' -F 'extra=4D5A%' | jq .
+
+#+begin_src json
+  [
+    {
+      "type": "BASE64-BLOB",
+      "value": "3FFBB74B4D9D2915EDD58AA36A65D65AB4296BCD",
+      "source": "http://pastelyzer.your.org/content/4242/",
+      "extra": "4D5A9000"
+    }
+  ]
+#+end_src
+
+** Typed search
+
+The other endpoint is ~/artefacts/typed~, where artefacts can be searched by
+their class as summarized in table [[typed-artefact-queries]].
+
+#+CAPTION: Searching artefacts by type
+#+NAME: typed-artefact-queries
+| Parameter    | Queried artefact type(s)                          |
+| ~cc-number~  | ~BANK-CARD-NUMBER~                                |
+| ~credential~ | ~CREDENTIAL~[fn:9]                                |
+| ~domain~     | ~DOMAIN~                                          |
+| ~email~      | ~EMAIL~                                           |
+| ~ip~         | ~IP-ADDRESS~, ~IP-SERVICE~, ~RESOLVED-IP-ADDRESS~ |
+| ~onion~      | ~ONION~                                           |
+| ~sha1~       | ~BASE64-BLOB~, ~HEX-BLOB~, ~BINARY-BLOB~          |
+| ~any~        | All types (similar to generic search)             |
+
+Fields in the result records are named depending on the artefact type.  This
+is nothing more than a straight forward mapping from database columns to
+record fields, as summarized in the table [[typed-query-results]].  As with
+generic search the ~important~ field is only included if its value is ~true~,
+and ~note~ field is only include if it has a value.
+
+#+CAPTION: Typed artefact record fields
+#+NAME: typed-query-results
+| Class                 | ~type~       | ~value~    | ~extra~      | More?              |
+| ~BANK-CARD-NUMBER~    | ~cc-number~  | ~digits~   |              |                    |
+| ~DOMAIN~              | ~domain~     | ~domain~   |              |                    |
+| ~ONION~               | ~onion~      | ~address~  |              |                    |
+| ~EMAIL~               | ~email~      | ~email~    |              |                    |
+| ~CREDENTIAL~          | ~credential~ | ~username~ | ~passphrase~ |                    |
+| ~IP-ADDRESS~          | ~ip~         | ~address~  |              |                    |
+| ~IP-SERVICE~          | ~service~    | ~address~  | ~port~       |                    |
+| ~RESOLVED-IP-ADDRESS~ | ~ip~         | ~address~  | ~domain~     |                    |
+| ~BASE64-BLOB~         | ~blob~       | ~sha1~     | ~start~      | ~encoding: base64~ |
+| ~HEX-BLOB~            | ~blob~       | ~sha1~     | ~start~      | ~encoding: hex~    |
+| ~BINARY-BLOB~         | ~blob~       | ~sha1~     | ~start~      | ~encoding: binary~ |
+| other                 | CLASS        | ~value~    | ~extra~      |                    |
+
+Example:
+
+: curl 'http://pastelyzer.your.org/artefacts/typed' \
+:   -F 'email=jo%example.com' -F 'credential=fr%example.com' | jq .
+
+#+begin_src json
+  [
+    {
+      "type": "email",
+      "email": "johndoe@example.com",
+      "source": "http://pastelyzer.your.org/content/12345/"
+    },
+    {
+      "type": "credential",
+      "username": "fred@example.com",
+      "passphrase": "yabbadabbado",
+      "source": "http://pastelyzer.your.org/content/54321/",
+    }
+  ]
+#+end_src
+
+** Document information
+
+The URIs to ~pastelyzer~ in returned data records (values of ~location~ and
+~source~ fields) can also be retrieved, using HTTP ~GET~ method:
+
+: curl 'http://pastelyzer.your.org/content/54321/' | jq .
+
+The result will look similar to one shown in listing [[document-metadata]].
+
+#+CAPTION: Document metadata
+#+NAME: document-metadata
+#+begin_src json
+  {
+    "type": "content",
+    "id": 54321,
+    "location": "http://localhost:8080/content/54321/",
+    "body": "http://localhost:8080/content/54321/body",
+    "sources": [
+      {
+        "type": "paste",
+        "id": 55555,
+        "location": "http://localhost:8080/paste/55555/",
+        "provider": "circl",
+        "provider-id": "archive/gist.github.com/2020/06/12/<user>_<hash>.gz",
+        "timestamp": "2020-06-12T17:27:02.593430+03:00",
+        "urls": [
+          "https://gist.github.com/<user>/<hash>"
+        ],
+        "content": "http://localhost:8080/content/54321/"
+      }
+    ]
+  }
+#+end_src
 
 * Footnotes
+
+[fn:9] Only the username part of the credential.
+
+[fn:8] Of course you may add an index that would help in this case but there
+is no such index in default ~pastelyzer~ database schema.
+
+[fn:7] To protect the innocent: ~%~ is used as a wildcard character and would
+have to be encoded (using ~%~-encoding) in ~GET~ requests.
 
 [fn:6] This only applies do documents received from CIRCL.LU feed, and broken
 means that all non-ASCII characters in source document have been replaced by

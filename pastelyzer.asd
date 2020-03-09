@@ -26,6 +26,7 @@
                "postmodern"
                "pzmq"
                "split-sequence"
+               "string-case"
                (:feature (:not :swank) "swank")
                (:feature (:not (:or :sbcl :ccl)) "trivial-utf-8")
                (:feature :sbcl (:require "sb-concurrency"))
@@ -57,6 +58,7 @@
                                            (:file "sets")
                                            (:file "smtp")))
                              (:file "server")
+                             (:file "json-api")
                              (:file "rest")
                              (:module "modules"
                               :components ((:file "misp")))

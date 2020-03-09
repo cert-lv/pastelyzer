@@ -85,11 +85,11 @@
   (load-time-value
    (ht:create-folder-dispatcher-and-handler "/static/" #p"public/")))
 
-(defun store-document (req)
+(defun store-document ()
   (let ((time (local-time:now))
-        (data (ht:post-parameter "data" req))
-        (source (ht:post-parameter "source" req))
-        (id (ht:post-parameter "id" req)))
+        (data (ht:post-parameter "data"))
+        (source (ht:post-parameter "source"))
+        (id (ht:post-parameter "id")))
     (unless (consp data)
       (setf (ht:return-code*) ht:+http-bad-request+)
       (return-from store-document "File data missing."))
@@ -113,53 +113,104 @@
         (setf (ht:return-code*) ht:+http-see-other+)
         (setf (ht:header-out :location)
               (puri:merge-uris (format nil "content/~A" content-id)
-                               (ht:script-name req)))
+                               (ht:script-name*)))
         ""))))
+
+(defvar *request-handlers* '())
+
+(defun add-request-handler (name method matcher)
+  (let* ((key (cons name method))
+         (cell (assoc key *request-handlers*)))
+    (if cell
+        (setf (cdr cell) matcher)
+        (setq *request-handlers* (acons key matcher *request-handlers*)))))
+
+(defun remove-request-handler (name &optional method)
+  (setq *request-handlers*
+        (if method
+            (remove (cons name method) *request-handlers*
+                    :key #'car :test #'equal)
+            (remove name *request-handlers*
+                    :key #'caar))))
+
+(defmacro define-handler (name method match &body body)
+  (multiple-value-bind (pattern args)
+      (etypecase match
+        (string
+         (values match nil))
+        (cons
+         (let* ((re (first match))
+                (args (rest match))
+                (vars (mapcar (lambda (arg)
+                                (if (consp arg)
+                                    (second arg)
+                                    arg))
+                              args)))
+           (values `(lambda (.path.)
+                      (block nil
+                        (ppcre:register-groups-bind ,args
+                            (,re .path.)
+                          (return (values t (list ,@vars))))))
+                   vars))))
+    `(progn
+       ,@(if (consp method)
+             (mapcar (lambda (method)
+                       `(add-request-handler ',name ',method ,pattern))
+                     method)
+             `((add-request-handler ',name ',method ,pattern)))
+       ,(if body
+            `(defun ,name ,args
+               ,@body)
+            `(quote ,name)))))
 
 (defmethod ht:acceptor-dispatch-request ((acceptor acceptor)
                                          (req ht:request))
-  (block nil
-    (let ((path (ht:script-name req)))
-      (ppcre:register-groups-bind ((#'parse-integer id))
-          ("^/content/(\\d+)$" path)
-        (let ((content (fetch-content id nil)))
-          (cond (content
-                 (setf (ht:content-type*) "text/plain; charset=utf-8")
-                 (return (content-body content)))
-                (t
-                 (setf (ht:return-code*) ht:+http-not-found+)
-                 (return nil)))))
+  ;; Are we sure the handlers belong to an ACCEPTOR?  For instance, we
+  ;; might want to run API (and only API) on a separate port (hence a
+  ;; separate ACCEPTOR).  We might also want to be able to run the API
+  ;; server in a separate process (also limited to just API
+  ;; processing).
+  (flet ((found (content &optional code)
+           (when code
+             (setf (ht:return-code*) code))
+           (return-from ht:acceptor-dispatch-request
+             content)))
+    (let ((path (ht:script-name req))
+          (request-method (ht:request-method req)))
+       (loop for ((name . handler-method) . matcher) in *request-handlers*
+             do (locally (declare (type symbol name))
+                  (when (eq request-method handler-method)
+                    (etypecase matcher
+                      (string
+                       (when (string= path matcher)
+                         (multiple-value-call #'found
+                           (funcall name))))
+                      (function
+                       (multiple-value-bind (matchedp parameters)
+                           (funcall matcher path)
+                         (when matchedp
+                           (multiple-value-call #'found
+                             (apply name parameters)))))))))))
 
-      (ppcre:register-groups-bind ((#'parse-integer id))
-          ("^/paste/(\\d+)$" path)
-        (let ((paste (fetch-paste id nil)))
-          (cond (paste
-                 (setf (ht:content-type*) "text/plain; charset=utf-8")
-                 (return (if-let (content (paste-content paste))
-                           (content-body content)
-                           "")))
-                (t
-                 (setf (ht:return-code*) ht:+http-not-found+)
-                 (return nil)))))
+  (if-let ((handler (funcall *static-dispatcher* req)))
+    (funcall handler)
+    (call-next-method)))
 
-      (when (and (string= "/store" path)
-                 (eql :post (ht:request-method req)))
-        (return (store-document req)))
+(define-handler get-content-body :get
+    ("^/content/(\\d+)/body$" (#'parse-integer id))
+  (let ((content (fetch-content id nil)))
+    (cond (content
+           (setf (ht:content-type*) "text/plain; charset=utf-8")
+           (content-body content))
+          (t
+           (values nil ht:+http-not-found+)))))
 
-      (when (and (or (string= "/analyze" path)
-                     (string= "/analyse" path))
-                 (eql :post (ht:request-method req)))
-        (return (analyze-document req)))
+(define-handler store-document :post "/store")
 
-      (when (string= "/" path)
-        (return
-          (ht:handle-static-file #p"public/dash.html"
-                                 "text/html; charset=utf-8")))
+(define-handler analyze-document :post "/analyze")
 
-      (when-let ((handler (funcall *static-dispatcher* req)))
-        (return (funcall handler)))
-
-      (call-next-method))))
+(define-handler root :get "/"
+  (ht:handle-static-file #p"public/dash.html" "text/html; charset=utf-8"))
 
 (defun message (type &optional data)
   (jsown:to-json
@@ -374,11 +425,11 @@
   (push artefact (slot-value job 'artefacts))
   artefact)
 
-(defun analyze-document (req)
+(defun analyze-document ()
   (setf (ht:header-out :content-type) "application/json")
-  (let ((data (ht:post-parameter "data" req))
+  (let ((data (ht:post-parameter "data"))
         (context
-          (let ((value (ht:post-parameter "context" req)))
+          (let ((value (ht:post-parameter "context")))
             (cond ((or (null value)
                        (string-equal "after" value))
                    :after)
