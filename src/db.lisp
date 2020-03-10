@@ -200,20 +200,22 @@ RETURNING updated_at"
     :single)
 
 (pomo:defprepared-with-names %register-artefact
-    (content-id type value extra version-id)
+    (content-id type value extra)
     ("
-INSERT INTO artefacts (content_id, version_id, type, value, extra)
-VALUES ($1, $2, $3, $4, $5)"
-     content-id version-id (or type :null) (or value :null) (or extra :null))
+INSERT INTO artefacts (content_id, type, value, extra)
+  VALUES ($1, $2, $3, $4)"
+     content-id (or type :null) (or value :null) (or extra :null))
     :single)
 
-(defun register-artefact (content-id type value extra
-                          &key (version-id *current-version-id*))
+(pomo:defprepared-with-names flush-content-artefacts (content-id)
+    ("DELETE FROM artefacts WHERE content_id = $1" content-id))
+
+(defun register-artefact (content-id type value extra)
   (handler-case
-      (%register-artefact content-id type value extra version-id)
+      (%register-artefact content-id type value extra)
     (cl-postgres-error:unique-violation ()
-      (msg :notice "~A for ~A/~A already registered: ~A~@[:~A~]"
-           type content-id version-id value extra))
+      (msg :notice "~A for ~A already registered: ~A~@[:~A~]"
+           type content-id value extra))
     (cl-postgres:database-error (condition)
       (msg :error "Failed to register artefact: ~A" condition))))
 
@@ -312,7 +314,29 @@ CREATE INDEX IF NOT EXISTS artefacts_content_id_version_id_idx
 
      "
 CREATE INDEX IF NOT EXISTS artefacts_value_idx
-    ON artefacts(value varchar_pattern_ops)")))
+    ON artefacts(value varchar_pattern_ops)")
+
+    ("0002-update-artefacts"
+     "DROP INDEX artefacts_value_idx"
+
+     "
+CREATE INDEX IF NOT EXISTS artefacts_value_idx
+    ON artefacts(lower(value) varchar_pattern_ops)"
+
+     "
+CREATE INDEX IF NOT EXISTS artefacts_rev_value_idx
+    ON artefacts(reverse(lower(value)) varchar_pattern_ops)"
+
+     "
+CREATE INDEX IF NOT EXISTS artefacts_extra_idx
+    ON artefacts(lower(extra) varchar_pattern_ops)")
+
+    ("0003-update-artefacts"
+     "DROP INDEX IF EXISTS artefacts_content_id_version_id_idx"
+     "ALTER TABLE artefacts DROP COLUMN IF EXISTS version_id"
+     "
+CREATE INDEX IF NOT EXISTS artefacts_content_id_idx
+  ON artefacts(content_id)")))
 
 (pomo:defprepared all-schema-updates
     "SELECT name FROM schema_updates"

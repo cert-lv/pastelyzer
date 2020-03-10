@@ -235,7 +235,9 @@
                  (let ((summary (summarize-artefacts groups :json)))
                    (db:with-connection ()
                      (db:finish-analysis content-id summary)
-                     (register-artefacts-from-groups content-id groups)))
+                     (db:with-transaction ()
+                       (db:flush-content-artefacts content-id)
+                       (register-artefacts-from-groups content-id groups))))
                  groups)
             (unless finishedp
               (db:with-connection ()

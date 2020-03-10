@@ -34,6 +34,7 @@
            #:paste-with-content
            #:initiate-analysis
            #:finish-analysis
+           #:flush-content-artefacts
            #:register-artefact
 
            #:congested-content
