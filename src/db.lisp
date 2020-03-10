@@ -337,7 +337,7 @@ CREATE TABLE IF NOT EXISTS schema_updates (
         for (name . queries) in *schema-updates*
         unless (member name present :test #'string=)
           do (msg :info "Running DB schema update: ~A" name)
-             (pomo:with-transaction ()
+             (with-transaction ()
                (loop for query in queries
                      do (etypecase query
                           (string

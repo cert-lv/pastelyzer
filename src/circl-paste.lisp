@@ -323,7 +323,7 @@
   (let ((url (puri:render-uri uri nil))
         (time (local-time:now)))
     (db:with-connection ()
-      (pomo:with-transaction ()
+      (db:with-transaction ()
         (multiple-value-bind (paste-id content-id)
             (db:store-paste data "web" url time)
           (db:insert-content-fix :broken-id broken-id

@@ -15,12 +15,15 @@
   (:use #:common-lisp)
   (:import-from #:pastelyzer.log
                 #:msg)
+  (:import-from #:postmodern
+                #:with-transaction)
   (:export #:*db-params*
            #:*current-version-id*
            #:initialize
            #:with-connection
            #:with-auto-reconnect
            #:call-with-auto-reconnect
+           #:with-transaction
            #:insert-content-fix
            #:register-broken-content
            #:insert-content
