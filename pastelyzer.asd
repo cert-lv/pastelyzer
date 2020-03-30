@@ -54,6 +54,7 @@
                                            (:file "context")
                                            (:file "loader")
                                            (:file "util")
+                                           (:file "sets")
                                            (:file "smtp")))
                              (:file "known-bank-cards")
                              (:file "server")
@@ -76,7 +77,8 @@
                (:module "config"
                 :depends-on ("package")
                 :components ((:file "filter")
-                             (:file "context")))
+                             (:file "context")
+                             (:file "sets")))
                (:file "suites" :depends-on ("package" "config")))
   :perform (test-op (o c)
                     (symbol-call '#:2am '#:run 't)))

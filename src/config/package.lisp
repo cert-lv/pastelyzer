@@ -49,7 +49,16 @@
            #:length
            #:starts-with?
            #:ends-with?
-           #:contains?))
+           #:contains?
+
+           ;; Sets.
+           #:define-set
+           #:strings
+           #:cc-bins
+           #:super-domains
+           #:ipv4-networks
+           #:member?
+           ))
 
 (defpackage #:pastelyzer.config.package
   (:use :common-lisp)
