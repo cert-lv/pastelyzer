@@ -1,4 +1,4 @@
-(in-package #:pastelyzer)
+(in-package #:pastelyzer.util)
 
 (defgeneric histogram (source))
 (defgeneric alphabet (source))

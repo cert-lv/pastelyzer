@@ -40,6 +40,29 @@
            #:congested-content
            #:congested-content-id))
 
+(defpackage #:pastelyzer.util
+  (:use #:common-lisp)
+  (:import-from #:alexandria
+                #:array-index
+                #:array-length
+                #:when-let)
+  (:export #:alphabet
+           #:sub-alphabet-p
+           #:histogram
+           #:show-histogram
+           #:entropy
+           #:group
+           #:partition
+           #:trim-space
+           #:whitespace-char-p
+           #:one-line
+           #:string-context-before
+           #:string-context-after
+           #:dsubseq
+           #:map-lines
+           #:starts-with-subseq
+           #:ends-with-subseq))
+
 (defpackage #:pastelyzer
   (:use #:common-lisp)
   (:import-from #:alexandria
@@ -63,6 +86,18 @@
                 #:maybe-log
                 #:setup-logging
                 #:with-logged-warnings)
+  (:import-from #:pastelyzer.util
+                #:alphabet
+                #:sub-alphabet-p
+                #:group
+                #:whitespace-char-p
+                #:one-line
+                #:string-context-after
+                #:string-context-before
+                #:dsubseq
+                #:map-lines
+                #:starts-with-subseq
+                #:ends-with-subseq)
   #+sbcl
   (:import-from #:sb-concurrency
                 #:make-mailbox
