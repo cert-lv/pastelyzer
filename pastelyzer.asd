@@ -43,7 +43,6 @@
                               :if-feature (:and (:not :sbcl) (:not :quicklisp)))
                              (:file "db")
                              (:file "circl-zmq")
-                             (:file "addresses")
                              (:file "circl-paste")
                              (:file "job")
                              (:file "processing")
@@ -71,7 +70,6 @@
                "pastelyzer")
   :pathname "tests/"
   :components ((:file "package")
-               (:file "addresses" :depends-on ("package"))
                (:file "processing" :depends-on ("package"))
                (:file "util" :depends-on ("package"))
                (:file "circl-paste" :depends-on ("package"))

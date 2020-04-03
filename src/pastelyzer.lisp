@@ -72,7 +72,7 @@
   nil)
 
 (defmethod noteworthy-artefact-p ((artefact ip-address) (ctx t))
-  (interesting-ip-address-p (artefact-address artefact)))
+  t)
 
 (defmethod noteworthy-artefact-p ((artefact bank-card-number) (ctx t))
   t)
@@ -510,12 +510,6 @@
                           (collect :swank-port (parse-integer arg)))
                          (t
                           (warn "Invalid swank port value: ~A" arg)))))
-                ((string= "--networks-file" arg)
-                 (let* ((arg (pop args))
-                        (truename (probe-file arg)))
-                   (if truename
-                       (collect :net-file-path truename)
-                       (warn "File does not exist: ~A" arg))))
                 ((string= "--resolve-domains" arg)
                  (collect :resolve-domains t))
                 ((string= "--no-resolve-domains" arg)
@@ -607,7 +601,6 @@ Usage:
   pastelyzer <options> --server
 
 Generic options:
-  --networks-file        path to file listing interesting network ranges
   --[no-]resolve-domains resolve domains; defaults to yes if --networks-file
                          is specified, no otherwise
   --tlds-file            path to file listing valid TLDs
@@ -678,7 +671,6 @@ Environment variables:
                  (log-level :warning)
                  config
                  (resolve-domains nil resolve-domains-supplied-p)
-                 net-file-path
                  tld-file-path
                  cc-bin-path
                  interesting-tlds
@@ -691,8 +683,6 @@ Environment variables:
   (with-logged-warnings
     (when config
       (read-config config))
-    (when net-file-path
-      (setf *interesting-networks* (read-networks net-file-path)))
     (setq *resolve-domains*
           (cond (resolve-domains-supplied-p
                  resolve-domains)
@@ -712,7 +702,6 @@ Environment variables:
                                   :log-level
                                   :config
                                   :resolve-domains
-                                  :net-file-path
                                   :tld-file-path
                                   :cc-bin-path
                                   :interesting-tlds))
