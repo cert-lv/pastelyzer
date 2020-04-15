@@ -40,7 +40,7 @@
   (create-user-readtable))
 
 (defun maybe-continue (condition)
-  (let ((continue (find-restart 'continue condition)))
+  (let ((continue (find-restart 'skip condition)))
     (when continue
       (invoke-restart continue))))
 
@@ -94,7 +94,7 @@
               for (form position) = (multiple-value-list (read-form source))
               until (eq form eof)
               do (with-simple-restart
-                     (continue "Ignore this directive (~A)." (first form))
+                     (skip "Ignore this directive (~A)." (first form))
                    (handler-bind
                        ((error
                           (lambda (condition)
