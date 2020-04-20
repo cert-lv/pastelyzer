@@ -227,3 +227,17 @@
     (is (eq 't (f "test.example.com")))
     (is (eq 'nil (f "xexample.com")))
     (is (eq 'nil (f "ample.com")))))
+
+(config-test ipv4-networks.1 ()
+  (define-set networks (ipv4-networks)
+    :entries ("10.42.0.0/16" "10.42.42.0/24"))
+
+  (with-filter f (member? networks)
+    (is (eq 't (f (ip:parse-address "10.42.0.1"))))
+    (is (eq 't (f (ip:parse-address "10.42.0.255"))))
+    (is (eq 't (f (ip:parse-address "10.42.41.1"))))
+    (is (eq 't (f (ip:parse-address "10.42.42.1"))))
+    (is (eq 't (f (ip:parse-address "10.42.43.1"))))
+
+    (is (eq nil (f (ip:parse-address "10.41.0.1"))))
+    (is (eq nil (f (ip:parse-address "10.43.0.1"))))))

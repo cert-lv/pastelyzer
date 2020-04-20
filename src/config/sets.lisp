@@ -78,58 +78,69 @@
                  :bins (pastelyzer::read-bins path)))
 
 (defclass ipv4-network-set (lookup-table)
-  ;; TODO: Instead of one big list of networks we should use 32 (maybe
-  ;; 31, since /0 is a special case) hash tables.  Or maybe fewer, if
-  ;; input data set does not have some prefixes.  Maybe only do this
-  ;; if the number of entries is big enough?
-  ;;
-  ;; Theoretically the networks should not overlap, but it might be a
-  ;; good idea to allow it so that known finer-grained networks can be
-  ;; reported, and the bigger prefix left as a fall-back.  Entries are
-  ;; be stored (and therefore also checked) with the longest prefixes
-  ;; first.
   ((entries
-    :initarg :networks
-    :reader ipv4-network-set-networks
-    :type list)))
-
-(defmethod contains? ((address ip:ip-address) (set ipv4-network-set))
-  (dolist (network (ipv4-network-set-networks set) nil)
-    (when (ip:address-in-network-p address network)
-      (return (values t network)))))
+    ;; An alist mapping prefix-length to a hash-table.
+    ;;
+    ;; Theoretically the networks should not overlap, but it seems a
+    ;; good idea to allow it so that known finer-grained networks can
+    ;; be reported, and the bigger prefixes left as a fall-back.
+    ;; Entries are be stored (and therefore also checked) with the
+    ;; longest prefixes first.
+    :type list
+    :initform '())))
 
 (defmethod contains? ((artefact pastelyzer:ip-address) (set ipv4-network-set))
   (contains? (pastelyzer::artefact-address artefact) set))
+
+(defmethod add-entry ((set ipv4-network-set) (network ip:ipv4-network))
+  (with-slots (entries)
+      set
+    (let* ((provided-bits (ip:ipv4-network-bits network))
+           (prefix (ip:ipv4-network-prefix network))
+           (bits (mask-field (byte prefix (- 32 prefix)) provided-bits))
+           (cell (assoc prefix entries))
+           (table (if cell
+                      (cdr cell)
+                      (let ((table (make-hash-table)))
+                        (setf entries
+                              (sort (acons prefix table entries) #'>
+                                    :key #'car))
+                        table))))
+      (if (gethash bits table)
+          (warn "Network ~S already present in ~S" network set)
+          (setf (gethash bits table) t)))))
+
+(defmethod contains? ((address ip:ip-address) (set ipv4-network-set))
+  (loop with entries = (slot-value set 'entries)
+        with address-bits = (ip:ipv4-address-bits address)
+        for (prefix . table) of-type ((integer 1 32) . hash-table) in entries
+        do (let ((bits (mask-field (byte prefix (- 32 prefix)) address-bits)))
+             (when (gethash bits table)
+               (return t)))))
 
 (defmethod load-set ((type (eql 'usr:ipv4-networks)) (list cons)
                      &rest keys)
   (when keys
     (warn "Unsupported options for IPv4-NETWORKS: ~S" keys))
-  (let ((networks (mapcar (lambda (string)
-                            (ip:parse-address string :network))
-                          list)))
-    (make-instance 'ipv4-network-set
-                   :source nil
-                   :networks (stable-sort networks #'>
-                                          :key #'ip:ipv4-network-prefix))))
+  (loop with result = (make-instance 'ipv4-network-set :source nil)
+        for string in list
+        do (add-entry result (ip:parse-address string :network))
+        finally (return result)))
 
 (defmethod load-set ((type (eql 'usr:ipv4-networks)) (path pathname)
                      &rest keys
                      &key (comment-start "#") (attach-comments nil))
   (unless (and (string= "#" comment-start) (eql 'nil attach-comments))
     (warn "Unsupported options for IPv4-NETWORKS: ~S" keys))
-  (let ((networks '()))
+  (let ((result (make-instance 'ipv4-network-set :source path)))
     (util:map-lines path
                     (lambda (string)
                       (with-simple-restart
                           (continue "Ignore the invalid network.")
-                        (push (ip:parse-address string :network) networks)))
+                        (add-entry result (ip:parse-address string :network))))
                     :trim-space t
                     :ignore-comment-lines t)
-    (make-instance 'ipv4-network-set
-                   :source path
-                   :networks (stable-sort networks #'>
-                                          :key #'ip:ipv4-network-prefix))))
+    result))
 
 (defclass super-domain-set (lookup-table)
   ((entries
