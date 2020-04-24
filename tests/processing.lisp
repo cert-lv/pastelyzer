@@ -10,7 +10,8 @@
     :initform '())))
 
 (defmethod register-artefact ((job test-job) (artefact t) (source t))
-  (push artefact (test-job-artefacts job)))
+  (push artefact (test-job-artefacts job))
+  artefact)
 
 (defmethod resolve-domains-p ((job test-job))
   nil)

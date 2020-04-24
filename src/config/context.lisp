@@ -41,8 +41,10 @@
 (defmethod register-artefact ((job configurable-job)
                               (artefact t)
                               (source t))
-
-  (when (pastelyzer::noteworthy-artefact-p artefact job)
+  ;; We might consider creating an instance of DISCARDED-ARTEFACT
+  ;; here.  It would give us a chance to gather some statistics
+  ;; when generating summary.
+  (catch 'discard-artefact
     (apply-filters artefact job)))
 
 (defmethod collect-artefact ((artefact t)

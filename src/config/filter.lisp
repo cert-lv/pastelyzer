@@ -57,12 +57,12 @@
       (msg :error "While applying filter ~S to ~S: ~A"
            (filter-name filter)
            value
-           condition)))
-  (values))
+           condition))))
 
 (defun apply-filters (value ctx)
   (loop for (nil . filter) in *filters*
-        do (apply-filter filter value ctx)))
+        do (apply-filter filter value ctx))
+  value)
 
 (defgeneric parse-action (action &rest args)
   (:documentation "Parse a filter action form.  Currently the only
@@ -73,6 +73,10 @@
   (let ((cfg (sink:resolve-configuration (first args))))
     (lambda (artefact ctx)
       (sink:collect-artefact artefact cfg ctx))))
+
+(defmethod parse-action ((action (eql 'usr:discard)) &rest args)
+  (check-type args (cons (or null string) null))
+  (throw 'discard-artefact nil))
 
 (defmacro make-function (op (&rest args) &body body)
   (declare (ignorable op))

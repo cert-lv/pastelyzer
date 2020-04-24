@@ -113,8 +113,7 @@
 (defmethod add-artefact ((job t) (source fragment) (class symbol)
                          &rest initargs)
   (let ((artefact (apply #'make-instance class :source source initargs)))
-    (register-artefact job artefact source)
-    artefact))
+    (register-artefact job artefact source)))
 
 (defmethod analysable-parts ((target artefact) (job t))
   "By default artefacts don't have any analysable parts."
@@ -127,29 +126,23 @@
 
 (defmethod extract-artefacts ((target t) (job t))
   (loop for part in (analysable-parts target job)
-        append (loop with done = nil
-                     for extractor in (applicable-extractors part job)
-                     append (multiple-value-bind (artefacts inhibit-next-p)
-                                (run-extractor extractor part job)
-                              (setq done inhibit-next-p)
-                              artefacts)
-                     until done)))
-
-(defun walk-tree (roots process-fn children-fn)
-  (loop for item in roots
-        do (funcall process-fn item)
-           (walk-tree (funcall children-fn item)
-                      process-fn
-                      children-fn)))
+        nconc (loop with done = nil
+                    for extractor in (applicable-extractors part job)
+                    append (multiple-value-bind (artefacts inhibit-next-p)
+                               (run-extractor extractor part job)
+                             (setq done inhibit-next-p)
+                             (remove 'nil artefacts))
+                    until done)))
 
 (defmethod process ((job job))
-  (let ((result '()))
-    (walk-tree (list (job-subject job))
-               (lambda (node)
-                 (when (typep node 'artefact)
-                   (push node result)))
-               (lambda (node)
-                 (extract-artefacts node job)))
+  (let ((queue (list (job-subject job)))
+        (result '()))
+    (loop for node = (pop queue)
+          while node
+          do (when (typep node 'artefact)
+               (push node result))
+             (let ((artefacts (extract-artefacts node job)))
+               (setq queue (append queue artefacts))))
     result))
 
 (defmethod run-extractor ((extractor t) (target t) (job t))
@@ -412,7 +405,8 @@
   ;; CIRCL-PASTE is processed.
   (let ((artefacts (call-next-method)))
     (dolist (artefact artefacts)
-      (when (eq :utf-8 (encoded-string-encoding artefact))
+      (when (and (typep artefact 'encoded-string)
+                 (eq :utf-8 (encoded-string-encoding artefact)))
         (let ((target (fragment-body (slot-value artefact 'string)))
               (count 0)
               (positions '()))

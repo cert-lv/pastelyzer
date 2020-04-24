@@ -28,6 +28,7 @@
   (:export #:define-sink
            #:define-artefact-filter
            #:collect-into
+           #:discard
            #:fmt
            #:env
            #:file-contents
