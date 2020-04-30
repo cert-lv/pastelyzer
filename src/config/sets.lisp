@@ -249,4 +249,4 @@
   (let* ((identifier (first body))
          (set (resolve-set identifier)))
     (make-function member? (artefact cont)
-      (funcall cont (if (contains? artefact set) t nil)))))
+      (funcall cont (contains? artefact set)))))
