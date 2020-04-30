@@ -66,7 +66,12 @@
    (end
     :initarg :end
     :reader artefact-source-seq-end
-    :type array-index)))
+    :type array-index)
+   (important
+    :initarg :important
+    :accessor important-artefact-p
+    :type boolean
+    :initform nil)))
 
 (defclass noted ()
   ((note
@@ -96,10 +101,6 @@
 
 (defmethod artefact-key ((artefact artefact))
   (artefact-source artefact))
-
-(defclass important-artefact (artefact)
-  ()
-  (:documentation "Subclass this class to make artefact stand out."))
 
 (defgeneric process (job))
 
@@ -1374,22 +1375,16 @@
           (msg :debug "In ~A: ~A" (job-subject job) condition))))
     result))
 
-(defclass bank-card-number (string-artefact)
+(defclass bank-card-number (string-artefact noted)
   ((digits
     :initarg :digits
     :reader bank-card-number-digits
     :type simple-string)))
 
-(defclass important-card-number (important-artefact bank-card-number noted)
-  ())
-
-(defmethod important-card-number-note ((artefact important-card-number))
-  (slot-value artefact 'note))
-
-(defmethod artefact-description ((artefact important-card-number))
+(defmethod artefact-description ((artefact bank-card-number))
   (format nil "~A~@[: ~A~]"
           (call-next-method)
-          (important-card-number-note artefact)))
+          (slot-value artefact 'note)))
 
 (defmethod artefact-key ((artefact bank-card-number))
   (bank-card-number-digits artefact))

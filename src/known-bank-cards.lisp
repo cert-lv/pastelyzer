@@ -57,7 +57,8 @@
                    (gethash (subseq digits 0 plength) table)
                  (when foundp
                    (return-from recognise-bank-card-bin
-                     (values 'important-card-number (list :note note))))))))
+                     (values 'bank-card-number
+                             (list :important t :note note))))))))
 
 (defun initialize-important-cc-bins (path)
   (setq *important-cc-bins* (read-bins path))

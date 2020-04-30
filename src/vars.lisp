@@ -60,7 +60,6 @@
 ;;; ARTEFACT-STORE-VALUE and ARTEFACT-STORE-EXTRA generic functions.
 (defvar *stored-artefact-classes*
   '(bank-card-number
-    important-card-number
     domain
     onion
     email

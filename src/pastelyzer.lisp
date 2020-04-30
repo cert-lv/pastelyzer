@@ -60,13 +60,6 @@
     (puri:merge-uris (format nil "paste/~A" (paste-id content))
                      *web-server-external-uri*)))
 
-(defgeneric important-artefact-p (artefact)
-  (:method ((artefact t))
-    "No artefact is important by default."
-    nil)
-  (:method ((artefact important-artefact))
-    t))
-
 (defmethod noteworthy-artefact-p ((artefact t) (ctx t))
   ;; Everything is unworthy unless specified otherwise.
   nil)

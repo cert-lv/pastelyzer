@@ -8,7 +8,6 @@
                 #:string-artefact
 
                 #:bank-card-number
-                #:important-card-number
                 #:credential
                 #:domain
                 #:onion

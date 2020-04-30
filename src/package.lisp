@@ -128,7 +128,6 @@
            #:artefact-context-before
            #:artefact-context-after
            #:artefact-key
-           #:important-artefact
            #:string-artefact
            #:m3u-entry
            #:windows-internal
@@ -146,8 +145,6 @@
            #:uri
            #:bank-card-number
            #:bank-card-number-digits
-           #:important-card-number
-           #:important-card-number-note
            #:noteworthy-artefact-p
 
            #:binary-artefact
