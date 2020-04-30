@@ -179,11 +179,11 @@
 (defmethod artefact-store-extra ((artefact artefact))
   nil)
 
+(defmethod artefact-store-extra ((artefact noted))
+  (slot-value artefact 'note))
+
 (defmethod artefact-store-value ((artefact bank-card-number))
   (bank-card-number-digits artefact))
-
-(defmethod artefact-store-extra ((artefact important-card-number))
-  (important-card-number-note artefact))
 
 (defmethod artefact-store-value ((artefact credential))
   (credential-username artefact))
@@ -199,9 +199,6 @@
 
 (defmethod artefact-store-extra ((artefact ip-service))
   (princ-to-string (ip-service-port artefact)))
-
-(defmethod artefact-store-extra ((artefact resolved-ip-address))
-  (artefact-domain artefact))
 
 (defmethod artefact-store-value ((artefact embedded-binary))
   (let* ((bytes (fragment-body (embedded-binary-bytes artefact)))

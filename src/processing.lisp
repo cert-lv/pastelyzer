@@ -68,6 +68,12 @@
     :reader artefact-source-seq-end
     :type array-index)))
 
+(defclass noted ()
+  ((note
+    :initarg :note
+    :type (or null string)
+    :initform nil)))
+
 (defmethod initialize-instance :after ((artefact artefact) &key)
   (unless (slot-boundp artefact 'start)
     (setf (slot-value artefact 'start) 0))
@@ -839,11 +845,13 @@
   (with-slots (address port) artefact
     (cons (ip:ipv4-address-bits address) port)))
 
-(defclass resolved-ip-address (ip-address)
-  ((domain
+(defclass resolved-ip-address (ip-address noted)
+  ((note
     :initarg :domain
-    :reader artefact-domain
     :type string)))
+
+(defmethod artefact-domain ((artefact resolved-ip-address))
+  (slot-value artefact 'note))
 
 (defmethod artefact-description ((artefact resolved-ip-address))
   (with-accessors ((address artefact-address)
@@ -1372,11 +1380,11 @@
     :reader bank-card-number-digits
     :type simple-string)))
 
-(defclass important-card-number (important-artefact bank-card-number)
-  ((note
-    :initarg :note
-    :reader important-card-number-note
-    :initform nil)))
+(defclass important-card-number (important-artefact bank-card-number noted)
+  ())
+
+(defmethod important-card-number-note ((artefact important-card-number))
+  (slot-value artefact 'note))
 
 (defmethod artefact-description ((artefact important-card-number))
   (format nil "~A~@[: ~A~]"
