@@ -24,6 +24,7 @@
               (ends-with? . usr:ends-with?)
               (contains? . usr:contains?)
               (member? . usr:member?)
+              (note . usr:note)
 
               (define-set . usr:define-set)
               (ipv4-networks . usr:ipv4-networks)
@@ -257,6 +258,55 @@
 
     (is (eq nil (f (ip:parse-address "10.41.0.1"))))
     (is (eq nil (f (ip:parse-address "10.43.0.1"))))))
+
+(config-test user-note.ip ()
+  (define-set test-network (ipv4-networks)
+    :entries (("10.42.0.0/16" "Test network")))
+
+  (define-artefact-filter test
+      (and (type? pastelyzer:ip-address)
+           (not (member? test-network)))
+    (discard))
+
+  (let* ((content "10.42.10.42 is in test network; 10.0.0.1 is not")
+         (artefacts (extract-artefacts content)))
+    (is (= 1 (length artefacts)))
+    (let ((artefact (first artefacts)))
+      (is (string= "10.42.10.42" (pastelyzer:artefact-source artefact)))
+      (is (string= "Test network" (slot-value artefact 'pastelyzer::note))))))
+
+(config-test user-note.domain ()
+  (define-set test-domain (super-domains)
+    :entries (("abc.test" "Test domain")))
+
+  (define-artefact-filter test
+      (and (type? pastelyzer:domain)
+           (not (member? test-domain)))
+    (discard))
+
+  (let* ((content "Testing abc.test and xxx.test")
+         (artefacts (extract-artefacts content)))
+    (is (= 1 (length artefacts)))
+    (let ((artefact (first artefacts)))
+      (is (string= "abc.test" (pastelyzer:artefact-source artefact)))
+      (is (string= "Test domain" (slot-value artefact 'pastelyzer::note))))))
+
+(config-test user-note.cc-bin ()
+  (define-set test-bin (cc-bins)
+    :entries (("4242xxxxxxxxxxxx" "Test BIN")))
+
+  (define-artefact-filter test
+      (and (type? pastelyzer:bank-card-number)
+           (not (member? test-bin)))
+    (discard))
+
+  (let* ((content "To 1111222233334444 or to 4242424242424242?")
+         (artefacts (extract-artefacts content)))
+    (is (= 1 (length artefacts)))
+    (let ((artefact (first artefacts)))
+      (is (string= "4242424242424242"
+                   (pastelyzer:bank-card-number-digits artefact)))
+      (is (string= "Test BIN" (slot-value artefact 'pastelyzer::note))))))
 
 (config-test important.1 ()
   (define-set networks (ipv4-networks)

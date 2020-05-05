@@ -811,7 +811,7 @@
                      result)))))
     result))
 
-(defclass ip-address (string-artefact)
+(defclass ip-address (string-artefact noted)
   ((address
     :initarg :address
     :reader artefact-address
@@ -860,7 +860,7 @@
       artefact
     (format nil "~A (~A)" address domain)))
 
-(defclass domain (string-artefact)
+(defclass domain (string-artefact noted)
   ())
 
 (defclass onion (domain)

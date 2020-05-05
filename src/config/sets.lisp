@@ -30,7 +30,9 @@
 
 (defclass string-set (lookup-table)
   ((entries
-    :type hash-table)))
+    ;; A simple hash table mapping strings to user supplied values.
+    :type hash-table
+    :initform (make-hash-table :test 'equal))))
 
 (defmethod load-set ((type (eql 'usr:strings)) (path pathname)
                      &rest keys
@@ -52,34 +54,105 @@
 
 (defclass cc-bin-set (lookup-table)
   ((entries
-    :initarg :bins
+    ;; A two-level alist.  The first level keys are card number
+    ;; lengths.  The second level maps prefix (BIN) length to a
+    ;; hash-table.  In this table BINs (strings of digits) are mapped
+    ;; to user supplied values (notes).
     :reader cc-bin-set-bins
-    :type list)))
+    :type list
+    :initform '())))
 
-(defmethod contains? ((digits string) (set cc-bin-set))
-  (let ((length (length digits)))
-    (loop for (ndigits plength table) in (cc-bin-set-bins set)
-          when (= ndigits length)
-            do (multiple-value-bind (note foundp)
-                   (gethash (subseq digits 0 plength) table)
-                 (when foundp
-                   (return (if note note t)))))))
+(defmethod add-entry ((set cc-bin-set) (pattern string) &optional note)
+  (let* ((pattern (remove-if #'util:whitespace-char-p pattern))
+         (length (length pattern))
+         (end (position-if-not #'digit-char-p pattern)))
+    (when (zerop end)
+      (error "Invalid bin pattern: ~S" pattern))
+    (with-slots (entries)
+        set
+      (let ((cell (assoc length entries)))
+        (unless cell
+          (setq cell (cons length '()))
+          (push cell entries))
+        (let* ((prefix (subseq pattern 0 end))
+               (plength (length prefix))
+               (table (cdr (assoc plength (cdr cell)))))
+          (unless table
+            (setq table (make-hash-table :test 'equal))
+            (setf (cdr cell) (acons plength table (cdr cell))))
+          (multiple-value-bind (value found)
+              (gethash prefix table)
+            (when found
+              (warn "BIN ~A already in set~@[ (~A)~]" pattern value)))
+          (msg :debug "Adding CC bin ~A/~D~@[: ~A~]" prefix length note)
+          (setf (gethash prefix table) note))))))
 
-(defmethod contains? ((artefact pastelyzer:bank-card-number) (set cc-bin-set))
-  (contains? (pastelyzer:bank-card-number-digits artefact) set))
+(defmethod load-set ((type (eql 'usr:cc-bins)) (list cons) &rest keys)
+  (when keys
+    (warn "Unsupported options for CC-BINS: ~S" keys))
+  (loop with result = (make-instance 'cc-bin-set :source nil)
+        for entry in list
+        do (multiple-value-bind (value comment)
+               (etypecase entry
+                 (cons
+                  (values-list entry))
+                 (string
+                  (values entry nil)))
+             (add-entry result value comment))
+        finally (return result)))
 
 (defmethod load-set ((type (eql 'usr:cc-bins)) (path pathname)
                      &rest keys
                      &key (comment-start "#") (attach-comments t))
   (unless (and (string= "#" comment-start) (eql 't attach-comments))
     (warn "Unsupported options for CC-BINS: ~S" keys))
-  (make-instance 'cc-bin-set
-                 :source path
-                 :bins (pastelyzer::read-bins path)))
+  (let ((result (make-instance 'cc-bin-set :source path))
+        (note nil))
+    (labels ((process-line (line)
+               (with-simple-restart
+                   (continue "Ignore invalid bin specification.")
+                 (cond ((zerop (length line))
+                        (setq note nil))
+                       ((char= #\# (schar line 0))
+                        (let ((start (position-if-not #'util:whitespace-char-p
+                                                      line
+                                                      :start 1)))
+                          (setq note (if start
+                                         (subseq line start)
+                                         nil))))
+                       (t
+                        (add-entry result line note))))))
+      (msg :info "Reading important CC bins from ~A" path)
+      (util:map-lines path #'process-line
+                      :trim-space t
+                      :ignore-comment-lines nil))
+    (let ((count (loop for (nil . bins) in (lookup-table-entries result)
+                       sum (loop for (nil . table) in bins
+                                 sum (hash-table-count table)))))
+      (msg :info "Read ~D bin~:P from ~A" count path))
+    result))
+
+(defmethod contains? ((digits string) (set cc-bin-set))
+  (with-slots (entries)
+      set
+    (loop with bins = (cdr (assoc (length digits) entries))
+          for (plength . table) in bins
+          do (multiple-value-bind (note found)
+                 (gethash (subseq digits 0 plength) table)
+               (when found
+                 (return (values found note)))))))
+
+(defmethod contains? ((artefact pastelyzer:bank-card-number) (set cc-bin-set))
+  (multiple-value-bind (found note)
+      (contains? (pastelyzer:bank-card-number-digits artefact) set)
+    (when note
+      (setf (slot-value artefact 'pastelyzer::note) note))
+    found))
 
 (defclass ipv4-network-set (lookup-table)
   ((entries
-    ;; An alist mapping prefix-length to a hash-table.
+    ;; An alist mapping prefix-length to a hash-table.  Hash table key
+    ;; is a prefix, and value is the user supplied note (can be NIL).
     ;;
     ;; Theoretically the networks should not overlap, but it seems a
     ;; good idea to allow it so that known finer-grained networks can
@@ -89,10 +162,8 @@
     :type list
     :initform '())))
 
-(defmethod contains? ((artefact pastelyzer:ip-address) (set ipv4-network-set))
-  (contains? (pastelyzer::artefact-address artefact) set))
-
-(defmethod add-entry ((set ipv4-network-set) (network ip:ipv4-network))
+(defmethod add-entry ((set ipv4-network-set) (network ip:ipv4-network)
+                      &optional note)
   (with-slots (entries)
       set
     (let* ((provided-bits (ip:ipv4-network-bits network))
@@ -106,25 +177,27 @@
                               (sort (acons prefix table entries) #'>
                                     :key #'car))
                         table))))
-      (if (gethash bits table)
-          (warn "Network ~S already present in ~S" network set)
-          (setf (gethash bits table) t)))))
-
-(defmethod contains? ((address ip:ip-address) (set ipv4-network-set))
-  (loop with entries = (slot-value set 'entries)
-        with address-bits = (ip:ipv4-address-bits address)
-        for (prefix . table) of-type ((integer 1 32) . hash-table) in entries
-        do (let ((bits (mask-field (byte prefix (- 32 prefix)) address-bits)))
-             (when (gethash bits table)
-               (return t)))))
+      (multiple-value-bind (value found)
+          (gethash bits table)
+        (declare (ignore value))
+        (when found
+          (warn "Network ~S already present in ~S" network set)))
+      (setf (gethash bits table) note)
+      set)))
 
 (defmethod load-set ((type (eql 'usr:ipv4-networks)) (list cons)
                      &rest keys)
   (when keys
     (warn "Unsupported options for IPv4-NETWORKS: ~S" keys))
   (loop with result = (make-instance 'ipv4-network-set :source nil)
-        for string in list
-        do (add-entry result (ip:parse-address string :network))
+        for entry in list
+        do (multiple-value-bind (value note)
+               (etypecase entry
+                 (cons
+                  (values-list entry))
+                 (string
+                  (values entry nil)))
+             (add-entry result (ip:parse-address value :network) note))
         finally (return result)))
 
 (defmethod load-set ((type (eql 'usr:ipv4-networks)) (path pathname)
@@ -142,35 +215,55 @@
                     :ignore-comment-lines t)
     result))
 
+(defmethod contains? ((address ip:ip-address) (set ipv4-network-set))
+  (loop with entries = (slot-value set 'entries)
+        with address-bits = (ip:ipv4-address-bits address)
+        for (prefix . table) of-type ((integer 1 32) . hash-table) in entries
+        do (let ((bits (mask-field (byte prefix (- 32 prefix)) address-bits)))
+             (multiple-value-bind (value found)
+                 (gethash bits table)
+               (when found
+                 (return (values t value)))))))
+
+(defmethod contains? ((artefact pastelyzer:ip-address) (set ipv4-network-set))
+  (multiple-value-bind (found note)
+      (contains? (pastelyzer::artefact-address artefact) set)
+    (when note
+      (setf (slot-value artefact 'pastelyzer::note) note))
+    found))
+
 (defclass super-domain-set (lookup-table)
   ((entries
+    ;; A tree of hash tables.  Key is a domain label.  Value is either
+    ;; another hash table, or a value to return for the entry (a note
+    ;; or NIL).
     :initarg :entries
     :reader super-domain-set-entries
     :type hash-table)))
 
-(defun hashtree-add-path (tree path)
+(defun hashtree-add-path (tree path &optional value)
   (check-type tree hash-table)
   (check-type path list)
   (if (null (cdr path))
-      (setf (gethash (car path) tree) 't)
-      (multiple-value-bind (table foundp)
+      (setf (gethash (car path) tree) value)
+      (multiple-value-bind (table found)
           (gethash (car path) tree)
-        (if foundp
-            (if (eq 't table)
-                (warn "Wildcard entry already present for ~S; ignoring ~S"
-                      (car path) (cdr path))
-                (hashtree-add-path table (cdr path)))
+        (if found
+            (if (typep table 'hash-table)
+                (hashtree-add-path table (cdr path))
+                (warn "Entry already present for ~S (~A); ignoring ~S (~A)"
+                      (car path) table (cdr path) value))
             (let ((new (setf (gethash (car path) tree)
                              (make-hash-table :test 'equal))))
-              (hashtree-add-path new (cdr path)))))))
+              (hashtree-add-path new (cdr path) value))))))
 
 (defun hashtree-present-p (tree path)
-  (multiple-value-bind (value foundp)
+  (multiple-value-bind (value found)
       (gethash (car path) tree)
-    (if foundp
-        (cond ((eql 't value)
+    (if found
+        (cond ((not (typep value 'hash-table))
                ;; Terminating table — all sub-searches match.
-               t)
+               (values t value))
               ((null (cdr path))
                ;; Path too short.
                nil)
@@ -182,13 +275,26 @@
   (hashtree-present-p (lookup-table-entries set)
                       (reverse (split-sequence #\. domain))))
 
+(defmethod contains? ((domain pastelyzer:domain) (set super-domain-set))
+  (multiple-value-bind (found note)
+      (contains? (pastelyzer:artefact-source domain) set)
+    (when note
+      (setf (slot-value domain 'pastelyzer::note) note))
+    found))
+
 (defmethod load-set ((type (eql 'usr:super-domains)) (list cons)
                      &rest keys)
   (when keys
     (warn "Unsupported options for SUPER-DOMAINS: ~S" keys))
   (let ((tree (make-hash-table :test 'equal)))
     (dolist (entry list)
-      (hashtree-add-path tree (reverse (split-sequence #\. entry))))
+      (multiple-value-bind (value note)
+          (etypecase entry
+            (cons
+             (values-list entry))
+            (string
+             (values entry nil)))
+        (hashtree-add-path tree (reverse (split-sequence #\. value)) note)))
     (make-instance 'super-domain-set
                    :source nil
                    :entries tree)))

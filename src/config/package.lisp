@@ -36,6 +36,7 @@
            #:no
            #:true
            #:false
+           #:note
 
            #:or
            #:and
