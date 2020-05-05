@@ -1,5 +1,7 @@
 (defpackage #:pastelyzer.config.context
   (:use :common-lisp)
+  (:import-from #:pastelyzer.log
+                #:msg)
   (:import-from #:pastelyzer
                 #:job
                 #:job-subject
@@ -15,7 +17,8 @@
                 #:add-artefact
                 #:finish-sink)
   (:import-from #:pastelyzer.config.filter
-                #:apply-filters)
+                #:apply-filters
+                #:discard-artefact)
   (:export #:configurable-job))
 
 (in-package #:pastelyzer.config.context)
@@ -44,8 +47,11 @@
   ;; We might consider creating an instance of DISCARDED-ARTEFACT
   ;; here.  It would give us a chance to gather some statistics
   ;; when generating summary.
-  (catch 'discard-artefact
-    (apply-filters artefact job)))
+  (let ((reason (catch 'discard-artefact
+                  (return-from register-artefact
+                    (apply-filters artefact job)))))
+    (msg :debug "~A discarded~@[: ~A~]" artefact reason)
+    nil))
 
 (defmethod collect-artefact ((artefact t)
                              (cfg symbol)

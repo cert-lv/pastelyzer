@@ -75,8 +75,11 @@
       (sink:collect-artefact artefact cfg ctx))))
 
 (defmethod parse-action ((action (eql 'usr:discard)) &rest args)
-  (check-type args (cons (or null string) null))
-  (throw 'discard-artefact nil))
+  (check-type args (or null (cons string null)))
+  (let ((reason (first args)))
+    (lambda (artefact ctx)
+      (declare (ignore artefact ctx))
+      (throw 'discard-artefact reason))))
 
 (defmethod parse-action ((action (eql 'usr:set-important)) &rest args)
   (check-type args null)

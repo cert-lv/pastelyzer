@@ -30,6 +30,7 @@
               (super-domains . usr:super-domains)
               (cc-bins . usr:cc-bins)
               (strings . usr:strings)
+              (discard . usr:discard)
               (set-important . usr:set-important))
             tree)))
 
@@ -281,3 +282,14 @@
          (artefacts (extract-artefacts content)))
     (is (= 6 (length artefacts)))
     (is (= 3 (count-if #'pastelyzer:important-artefact-p artefacts)))))
+
+(config-test discard.1 ()
+  (define-artefact-filter fake-news
+      (starts-with? "fake")
+    (discard "Fake news"))
+
+  (let* ((content "Discard fake.news.test, register only real.news.test")
+         (artefacts (extract-artefacts content)))
+    (is (= 1 (length artefacts)))
+    (is (string= "real.news.test"
+                 (pastelyzer:artefact-source (first artefacts))))))
