@@ -28,6 +28,7 @@
            #:define-artefact-filter
            #:collect-into
            #:discard
+           #:set-important
            #:fmt
            #:env
            #:file-contents

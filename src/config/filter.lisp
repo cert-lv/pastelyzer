@@ -78,6 +78,13 @@
   (check-type args (cons (or null string) null))
   (throw 'discard-artefact nil))
 
+(defmethod parse-action ((action (eql 'usr:set-important)) &rest args)
+  (check-type args null)
+  (lambda (artefact ctx)
+    (declare (ignore ctx))
+    (msg :debug "Marking ~S as important")
+    (setf (pastelyzer:important-artefact-p artefact) t)))
+
 (defmacro make-function (op (&rest args) &body body)
   (declare (ignorable op))
   `(lambda (&rest .args.)

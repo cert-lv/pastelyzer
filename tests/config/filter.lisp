@@ -29,7 +29,8 @@
               (ipv4-networks . usr:ipv4-networks)
               (super-domains . usr:super-domains)
               (cc-bins . usr:cc-bins)
-              (strings . usr:strings))
+              (strings . usr:strings)
+              (set-important . usr:set-important))
             tree)))
 
 (defmacro with-filter (var filter &body body)
@@ -57,6 +58,20 @@
                                    ',(translate-user-symbols (rest form)))
                                  form))
                            form)))))
+
+(defclass test-job (pastelyzer.config.context:configurable-job)
+  ())
+
+(defun extract-artefacts (subject)
+  (let* ((fragment (typecase subject
+                     (string
+                      (make-instance 'pastelyzer:string-fragment :body subject))
+                     ((vector (unsigned-byte 8))
+                      (make-instance 'pastelyzer:binary-fragment :body subject))
+                     (otherwise
+                      subject)))
+         (job (make-instance 'test-job :subject fragment)))
+    (values (pastelyzer:process job) job)))
 
 (suite 'tests)
 
@@ -241,3 +256,28 @@
 
     (is (eq nil (f (ip:parse-address "10.41.0.1"))))
     (is (eq nil (f (ip:parse-address "10.43.0.1"))))))
+
+(config-test important.1 ()
+  (define-set networks (ipv4-networks)
+    :entries ("10.42.0.0/16"))
+  (define-set domains (super-domains)
+    :entries ("example.com"))
+
+  (define-artefact-filter important-network
+      (and (type? pastelyzer:ip-address)
+           (member? networks))
+    (set-important))
+
+  (define-artefact-filter important-domain
+      (and (type? pastelyzer:domain)
+           (member? domains))
+    (set-important))
+
+  (let* ((content (format nil "~
+          Assuming test.example.com domain resolves to two IP addresses: ~
+          10.1.0.1 and 10.42.0.1, and another.domain.com also resolves to ~
+          two IP addresses: 10.2.0.42 and 10.42.10.42, this string should ~
+          contain 6 artefacts, 3 of which should be marked important."))
+         (artefacts (extract-artefacts content)))
+    (is (= 6 (length artefacts)))
+    (is (= 3 (count-if #'pastelyzer:important-artefact-p artefacts)))))

@@ -25,6 +25,9 @@
     :initarg :entries
     :reader lookup-table-entries)))
 
+(defmethod contains? ((artefact pastelyzer:string-artefact) (set lookup-table))
+  (contains? (pastelyzer:artefact-source artefact) set))
+
 (defclass string-set (lookup-table)
   ((entries
     :type hash-table)))
@@ -46,9 +49,6 @@
 
 (defmethod contains? ((string string) (set string-set))
   (gethash string set))
-
-(defmethod contains? ((artefact pastelyzer:string-artefact) (set string-set))
-  (gethash (pastelyzer:artefact-source artefact) set))
 
 (defclass cc-bin-set (lookup-table)
   ((entries
