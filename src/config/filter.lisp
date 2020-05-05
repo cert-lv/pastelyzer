@@ -274,7 +274,7 @@
           (msg :debug "Applying filter ~S to ~S" name value)
           (funcall test value
                    (lambda (result)
-                     (msg :debug "~S ~S => ~:[fail~;success~].~%"
+                     (msg :debug "~S ~S => ~:[fail~;success~]"
                           name value result)
                      result))))
       #'identity))
