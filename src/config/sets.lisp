@@ -13,6 +13,7 @@
 
 (in-package #:pastelyzer.config.sets)
 
+(defgeneric add-entry (set key &optional value))
 (defgeneric load-set (type source &key &allow-other-keys))
 (defgeneric contains? (datum set))
 
@@ -28,29 +29,76 @@
 (defmethod contains? ((artefact pastelyzer:string-artefact) (set lookup-table))
   (contains? (pastelyzer:artefact-source artefact) set))
 
+(defmethod populate-set ((set lookup-table) (list cons) &rest keys)
+  (when keys
+    (warn "Options not supported for ~S: ~S" set keys))
+  (loop for entry in list
+        do (multiple-value-bind (value comment)
+               (etypecase entry
+                 (cons
+                  (values-list entry))
+                 (string
+                  (values entry nil)))
+             (add-entry set value comment)))
+  set)
+
+(defmethod populate-set ((set lookup-table) (path pathname)
+                         &key (comment-start "#")
+                              (attach-comments nil)
+                              (trim-space t))
+  (with-open-file (in path)
+    (loop with note = nil
+          for line = (read-line in nil nil)
+          while line
+          do (when trim-space
+               (setq line (util:trim-space line :both)))
+             (if (zerop (length line))
+                 (setq note nil)
+                 (let ((mm (mismatch comment-start line)))
+                   (cond ((null mm)
+                          ;; Empty comment line.
+                          (setq note nil))
+                         ((zerop mm)
+                          ;; Not a comment line.
+                          (with-simple-restart
+                              (continue "Ignore invalid entry.")
+                            (add-entry set line note)))
+                         (attach-comments
+                          (let ((start (position-if-not #'util:whitespace-char-p
+                                                        line
+                                                        :start mm)))
+                            (setq note (if start
+                                           (subseq line start)
+                                           nil)))))))))
+  set)
+
 (defclass string-set (lookup-table)
   ((entries
     ;; A simple hash table mapping strings to user supplied values.
     :type hash-table
     :initform (make-hash-table :test 'equal))))
 
-(defmethod load-set ((type (eql 'usr:strings)) (path pathname)
-                     &rest keys
-                     &key (comment-start "#") (attach-comments nil))
-  (unless (and (string= "#" comment-start) (null attach-comments))
-    (warn "Unsupported options for STRINGS: ~S" keys))
-  (let ((table (make-hash-table :test 'equal)))
-    (util:map-lines path
-                    (lambda (entry)
-                      (setf (gethash entry table) t))
-                    :ignore-comment-lines t
-                    :trim-space t)
-    (make-instance 'string-set
-                   :source path
-                   :entries table)))
+(defmethod add-entry ((set string-set) (string string) &optional note)
+  (setf (gethash string (lookup-table-entries set)) note))
+
+(defmethod load-set ((type (eql 'usr:strings)) (list cons)
+                     &rest keys)
+  (apply #'populate-set
+         (make-instance 'string-set :source nil)
+         list
+         keys))
+
+(defmethod load-set ((type (eql 'usr:strings)) (path pathname) &rest keys)
+  (apply #'populate-set
+         (make-instance 'string-set :source path)
+         path
+         keys))
 
 (defmethod contains? ((string string) (set string-set))
-  (gethash string set))
+  (multiple-value-bind (value found)
+      (gethash string set)
+    (declare (ignore value))
+    found))
 
 (defclass cc-bin-set (lookup-table)
   ((entries
@@ -88,48 +136,21 @@
           (setf (gethash prefix table) note))))))
 
 (defmethod load-set ((type (eql 'usr:cc-bins)) (list cons) &rest keys)
-  (when keys
-    (warn "Unsupported options for CC-BINS: ~S" keys))
-  (loop with result = (make-instance 'cc-bin-set :source nil)
-        for entry in list
-        do (multiple-value-bind (value comment)
-               (etypecase entry
-                 (cons
-                  (values-list entry))
-                 (string
-                  (values entry nil)))
-             (add-entry result value comment))
-        finally (return result)))
+  (apply #'populate-set
+         (make-instance 'cc-bin-set :source nil)
+         list
+         keys))
 
-(defmethod load-set ((type (eql 'usr:cc-bins)) (path pathname)
-                     &rest keys
-                     &key (comment-start "#") (attach-comments t))
-  (unless (and (string= "#" comment-start) (eql 't attach-comments))
-    (warn "Unsupported options for CC-BINS: ~S" keys))
-  (let ((result (make-instance 'cc-bin-set :source path))
-        (note nil))
-    (labels ((process-line (line)
-               (with-simple-restart
-                   (continue "Ignore invalid bin specification.")
-                 (cond ((zerop (length line))
-                        (setq note nil))
-                       ((char= #\# (schar line 0))
-                        (let ((start (position-if-not #'util:whitespace-char-p
-                                                      line
-                                                      :start 1)))
-                          (setq note (if start
-                                         (subseq line start)
-                                         nil))))
-                       (t
-                        (add-entry result line note))))))
-      (msg :info "Reading important CC bins from ~A" path)
-      (util:map-lines path #'process-line
-                      :trim-space t
-                      :ignore-comment-lines nil))
-    (let ((count (loop for (nil . bins) in (lookup-table-entries result)
+(defmethod load-set ((type (eql 'usr:cc-bins)) (path pathname) &rest keys)
+  (msg :info "Reading important CC bins from ~A" path)
+  (let* ((result (apply #'populate-set
+                        (make-instance 'cc-bin-set :source path)
+                        path
+                        keys))
+         (count (loop for (nil . bins) in (lookup-table-entries result)
                        sum (loop for (nil . table) in bins
                                  sum (hash-table-count table)))))
-      (msg :info "Read ~D bin~:P from ~A" count path))
+    (msg :info "Read ~D bin~:P from ~A" count path)
     result))
 
 (defmethod contains? ((digits string) (set cc-bin-set))
@@ -185,35 +206,21 @@
       (setf (gethash bits table) note)
       set)))
 
+(defmethod add-entry ((set ipv4-network-set) (network string) &optional note)
+  (add-entry set (ip:parse-address network :network) note))
+
 (defmethod load-set ((type (eql 'usr:ipv4-networks)) (list cons)
                      &rest keys)
-  (when keys
-    (warn "Unsupported options for IPv4-NETWORKS: ~S" keys))
-  (loop with result = (make-instance 'ipv4-network-set :source nil)
-        for entry in list
-        do (multiple-value-bind (value note)
-               (etypecase entry
-                 (cons
-                  (values-list entry))
-                 (string
-                  (values entry nil)))
-             (add-entry result (ip:parse-address value :network) note))
-        finally (return result)))
+  (apply #'populate-set
+         (make-instance 'ipv4-network-set :source nil)
+         list
+         keys))
 
-(defmethod load-set ((type (eql 'usr:ipv4-networks)) (path pathname)
-                     &rest keys
-                     &key (comment-start "#") (attach-comments nil))
-  (unless (and (string= "#" comment-start) (eql 'nil attach-comments))
-    (warn "Unsupported options for IPv4-NETWORKS: ~S" keys))
-  (let ((result (make-instance 'ipv4-network-set :source path)))
-    (util:map-lines path
-                    (lambda (string)
-                      (with-simple-restart
-                          (continue "Ignore the invalid network.")
-                        (add-entry result (ip:parse-address string :network))))
-                    :trim-space t
-                    :ignore-comment-lines t)
-    result))
+(defmethod load-set ((type (eql 'usr:ipv4-networks)) (path pathname) &rest keys)
+  (apply #'populate-set
+         (make-instance 'ipv4-network-set :source path)
+         path
+         keys))
 
 (defmethod contains? ((address ip:ip-address) (set ipv4-network-set))
   (loop with entries = (slot-value set 'entries)
@@ -239,7 +246,8 @@
     ;; or NIL).
     :initarg :entries
     :reader super-domain-set-entries
-    :type hash-table)))
+    :type hash-table
+    :initform (make-hash-table :test 'equal))))
 
 (defun hashtree-add-path (tree path &optional value)
   (check-type tree hash-table)
@@ -282,38 +290,23 @@
       (setf (slot-value domain 'pastelyzer::note) note))
     found))
 
-(defmethod load-set ((type (eql 'usr:super-domains)) (list cons)
-                     &rest keys)
-  (when keys
-    (warn "Unsupported options for SUPER-DOMAINS: ~S" keys))
-  (let ((tree (make-hash-table :test 'equal)))
-    (dolist (entry list)
-      (multiple-value-bind (value note)
-          (etypecase entry
-            (cons
-             (values-list entry))
-            (string
-             (values entry nil)))
-        (hashtree-add-path tree (reverse (split-sequence #\. value)) note)))
-    (make-instance 'super-domain-set
-                   :source nil
-                   :entries tree)))
+(defmethod add-entry ((set super-domain-set) (value string) &optional note)
+  (with-slots (entries)
+      set
+    (hashtree-add-path entries (reverse (split-sequence #\. value)) note)))
 
-(defmethod load-set ((type (eql 'usr:super-domains)) (path pathname)
-                     &rest keys
-                     &key (comment-start "#") (attach-comments nil))
-  (unless (and (string= "#" comment-start) (eql 'nil attach-comments))
-    (warn "Unsupported options for SUPER-DOMAINS: ~S" keys))
-  (let ((tree (make-hash-table :test 'equal)))
-    (util:map-lines path
-                    (lambda (line)
-                      (hashtree-add-path tree
-                                         (reverse (split-sequence #\. line))))
-                    :ignore-comment-lines t
-                    :trim-space t)
-    (make-instance 'super-domain-set
-                   :source path
-                   :entries tree)))
+(defmethod load-set ((type (eql 'usr:super-domains)) (list cons) &rest keys)
+  (apply #'populate-set
+         (make-instance 'super-domain-set
+                        :source nil)
+         list
+         keys))
+
+(defmethod load-set ((type (eql 'usr:super-domains)) (path pathname) &rest keys)
+  (apply #'populate-set
+         (make-instance 'super-domain-set :source path)
+         path
+         keys))
 
 (defvar *known-sets* '())
 
