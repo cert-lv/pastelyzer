@@ -308,6 +308,22 @@
                    (pastelyzer:bank-card-number-digits artefact)))
       (is (string= "Test BIN" (pastelyzer:artefact-note artefact))))))
 
+(config-test user-note.string ()
+  (define-set watchlist (strings)
+    :entries (("WriteProcessMemory" "Really important")))
+
+  (define-artefact-filter test
+      (and (type? pastelyzer:windows-internal)
+           (not (member? watchlist)))
+    (discard))
+
+  (let* ((content "We care about WriteProcessMemory, not CreateRemoteThread.")
+         (artefacts (extract-artefacts content)))
+    (is (= 1 (length artefacts)))
+    (let ((artefact (first artefacts)))
+      (is (string= "WriteProcessMemory" (pastelyzer:artefact-source artefact)))
+      (is (string= "Really important" (pastelyzer:artefact-note artefact))))))
+
 (config-test important.1 ()
   (define-set networks (ipv4-networks)
     :entries ("10.42.0.0/16"))

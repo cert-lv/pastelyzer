@@ -103,9 +103,8 @@
 
 (defmethod contains? ((string string) (set string-set))
   (multiple-value-bind (value found)
-      (gethash string set)
-    (declare (ignore value))
-    found))
+      (gethash string (lookup-table-entries set))
+    (values found value)))
 
 (defclass cc-bin-set (lookup-table)
   ((entries
