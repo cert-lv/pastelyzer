@@ -273,7 +273,7 @@
     (is (= 1 (length artefacts)))
     (let ((artefact (first artefacts)))
       (is (string= "10.42.10.42" (pastelyzer:artefact-source artefact)))
-      (is (string= "Test network" (slot-value artefact 'pastelyzer::note))))))
+      (is (string= "Test network" (pastelyzer:artefact-note artefact))))))
 
 (config-test user-note.domain ()
   (define-set test-domain (super-domains)
@@ -289,7 +289,7 @@
     (is (= 1 (length artefacts)))
     (let ((artefact (first artefacts)))
       (is (string= "abc.test" (pastelyzer:artefact-source artefact)))
-      (is (string= "Test domain" (slot-value artefact 'pastelyzer::note))))))
+      (is (string= "Test domain" (pastelyzer:artefact-note artefact))))))
 
 (config-test user-note.cc-bin ()
   (define-set test-bin (cc-bins)
@@ -306,7 +306,7 @@
     (let ((artefact (first artefacts)))
       (is (string= "4242424242424242"
                    (pastelyzer:bank-card-number-digits artefact)))
-      (is (string= "Test BIN" (slot-value artefact 'pastelyzer::note))))))
+      (is (string= "Test BIN" (pastelyzer:artefact-note artefact))))))
 
 (config-test important.1 ()
   (define-set networks (ipv4-networks)

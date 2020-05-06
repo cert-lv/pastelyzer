@@ -128,6 +128,7 @@
            #:artefact-context-before
            #:artefact-context-after
            #:artefact-key
+           #:artefact-note
            #:important-artefact-p
            #:string-artefact
            #:m3u-entry

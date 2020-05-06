@@ -170,10 +170,7 @@
   (artefact-source artefact))
 
 (defmethod artefact-store-extra ((artefact artefact))
-  nil)
-
-(defmethod artefact-store-extra ((artefact noted))
-  (slot-value artefact 'note))
+  (artefact-note artefact))
 
 (defmethod artefact-store-value ((artefact bank-card-number))
   (bank-card-number-digits artefact))

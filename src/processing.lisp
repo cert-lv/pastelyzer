@@ -71,11 +71,10 @@
     :initarg :important
     :accessor important-artefact-p
     :type boolean
-    :initform nil)))
-
-(defclass noted ()
-  ((note
+    :initform nil)
+   (note
     :initarg :note
+    :accessor artefact-note
     :type (or null string)
     :initform nil)))
 
@@ -811,7 +810,7 @@
                      result)))))
     result))
 
-(defclass ip-address (string-artefact noted)
+(defclass ip-address (string-artefact)
   ((address
     :initarg :address
     :reader artefact-address
@@ -846,7 +845,7 @@
   (with-slots (address port) artefact
     (cons (ip:ipv4-address-bits address) port)))
 
-(defclass resolved-ip-address (ip-address noted)
+(defclass resolved-ip-address (ip-address)
   ((note
     :initarg :domain
     :type string)))
@@ -860,7 +859,7 @@
       artefact
     (format nil "~A (~A)" address domain)))
 
-(defclass domain (string-artefact noted)
+(defclass domain (string-artefact)
   ())
 
 (defclass onion (domain)
@@ -1375,7 +1374,7 @@
           (msg :debug "In ~A: ~A" (job-subject job) condition))))
     result))
 
-(defclass bank-card-number (string-artefact noted)
+(defclass bank-card-number (string-artefact)
   ((digits
     :initarg :digits
     :reader bank-card-number-digits

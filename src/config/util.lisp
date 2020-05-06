@@ -85,4 +85,4 @@
   (pastelyzer:bank-card-number-digits artefact))
 
 (defun usr::note (artefact)
-  (slot-value artefact 'pastelyzer::note))
+  (pastelyzer:artefact-note artefact))

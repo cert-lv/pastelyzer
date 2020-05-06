@@ -29,6 +29,13 @@
 (defmethod contains? ((artefact pastelyzer:string-artefact) (set lookup-table))
   (contains? (pastelyzer:artefact-source artefact) set))
 
+(defmethod contains? :around ((artefact pastelyzer:artefact) (set lookup-table))
+  (multiple-value-bind (found note)
+      (call-next-method)
+    (when note
+      (setf (pastelyzer:artefact-note artefact) note))
+    found))
+
 (defmethod populate-set ((set lookup-table) (list cons) &rest keys)
   (when keys
     (warn "Options not supported for ~S: ~S" set keys))
@@ -163,13 +170,6 @@
                (when found
                  (return (values found note)))))))
 
-(defmethod contains? ((artefact pastelyzer:bank-card-number) (set cc-bin-set))
-  (multiple-value-bind (found note)
-      (contains? (pastelyzer:bank-card-number-digits artefact) set)
-    (when note
-      (setf (slot-value artefact 'pastelyzer::note) note))
-    found))
-
 (defclass ipv4-network-set (lookup-table)
   ((entries
     ;; An alist mapping prefix-length to a hash-table.  Hash table key
@@ -233,11 +233,7 @@
                  (return (values t value)))))))
 
 (defmethod contains? ((artefact pastelyzer:ip-address) (set ipv4-network-set))
-  (multiple-value-bind (found note)
-      (contains? (pastelyzer::artefact-address artefact) set)
-    (when note
-      (setf (slot-value artefact 'pastelyzer::note) note))
-    found))
+  (contains? (pastelyzer::artefact-address artefact) set))
 
 (defclass super-domain-set (lookup-table)
   ((entries
@@ -282,13 +278,6 @@
 (defmethod contains? ((domain string) (set super-domain-set))
   (hashtree-present-p (lookup-table-entries set)
                       (reverse (split-sequence #\. domain))))
-
-(defmethod contains? ((domain pastelyzer:domain) (set super-domain-set))
-  (multiple-value-bind (found note)
-      (contains? (pastelyzer:artefact-source domain) set)
-    (when note
-      (setf (slot-value domain 'pastelyzer::note) note))
-    found))
 
 (defmethod add-entry ((set super-domain-set) (value string) &optional note)
   (with-slots (entries)
