@@ -140,11 +140,20 @@
                (lambda (result)
                  (funcall cont (if result nil t)))))))
 
+(defmethod equals ((left number) (right number))
+  (= left right))
+
+(defmethod equals ((left string) (right string))
+  (string= left right))
+
+(defmethod equals ((left string) (right pastelyzer:string-artefact))
+  (string= left (pastelyzer:artefact-source right)))
+
 (defmethod generate-filter-function ((operator (eql 'usr:=)) &rest body)
-  (check-type body (cons number null))
-  (let ((number (first body)))
+  (check-type body (cons (or number string) null))
+  (let ((datum (first body)))
     (make-function = (value cont)
-      (funcall cont (= number value)))))
+      (funcall cont (equals datum value)))))
 
 (defmethod generate-filter-function ((operator (eql 'usr:>)) &rest body)
   (check-type body (cons number null))
