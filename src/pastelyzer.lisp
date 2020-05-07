@@ -70,13 +70,6 @@
 (defmethod noteworthy-artefact-p ((artefact bank-card-number) (ctx t))
   t)
 
-(defmethod noteworthy-artefact-p ((artefact domain) (ctx t))
-  (some (lambda (tld)
-          (ends-with-subseq tld (artefact-source-seq artefact)
-                            :end2 (artefact-source-seq-end artefact)
-                            :test #'char-equal))
-        *interesting-tlds*))
-
 (defmethod noteworthy-artefact-p ((artefact uri) (ctx t))
   (starts-with-subseq "hxxp" (artefact-source-seq artefact)
                       :start2 (artefact-source-seq-start artefact)
@@ -521,10 +514,18 @@ following instead:
                        (collect :cc-bin-path truename)
                        (warn "File does not exist: ~A" arg))))
                 ((string= "--interesting-tlds" arg)
-                 (let* ((string (pop args)))
-                   (collect :interesting-tlds
-                     (split-sequence #\, string
-                                     :remove-empty-subseqs t))))
+                 (let ((arg (pop args)))
+                   (warn "~
+--interesting-tlds option has been removed.  Use configuration like the
+following instead:
+
+  (define-set interesting-tlds (cc-bins)
+    :entries (~{~S~^ ~}))
+
+  (define-artefact-filter interesting-tld
+      (and (type? domain)
+           (member? interesting-tlds))
+    (set-important))~%" (split-sequence #\, arg :remove-empty-subseqs t))))
                 ((string= "--server-port" arg)
                  (let ((arg (pop args)))
                    (cond ((and arg (every #'digit-char-p arg))
@@ -597,7 +598,6 @@ Usage:
 Generic options:
   --[no-]resolve-domains resolve domains; defaults to yes if --networks-file
                          is specified, no otherwise
-  --interesting-tlds     comma-separated list of interesting TLDs
   --important-cc-bins    path to file listing important bank card bins
 
 CLI options:
@@ -652,7 +652,6 @@ Environment variables:
                  config
                  (resolve-domains nil resolve-domains-supplied-p)
                  cc-bin-path
-                 interesting-tlds
                  mode
             &allow-other-keys)
   (setup-logging :filter log-level
@@ -670,17 +669,13 @@ Environment variables:
                 (t nil)))
     (when cc-bin-path
       (initialize-important-cc-bins cc-bin-path))
-    (when interesting-tlds
-      (msg :info "Interesting TLDs: ~{~A~^ ~}" interesting-tlds)
-      (setq *interesting-tlds* interesting-tlds))
     (setq keys (delete-from-plist keys
                                   :mode
                                   :interactive
                                   :log-level
                                   :config
                                   :resolve-domains
-                                  :cc-bin-path
-                                  :interesting-tlds))
+                                  :cc-bin-path))
     (setq *default-http-user-agent*
           (or (uiop:getenv "HTTP_USER_AGENT")
               (format nil "Pastelyzer~@[-~A~]" *build-id*)))

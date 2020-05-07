@@ -309,15 +309,6 @@ http://91.109.113.38:8000/playlist.m3u8
     (is (string= "http://3g2upl4pq6kufc4m.onion/"
                  (artefact-source (first artefacts))))))
 
-(test extractors.domains.noteworthy ()
-  (let ((pastelyzer::*interesting-tlds* '(".local")))
-    (multiple-value-bind (artefacts job)
-        (extract-artefacts "a foo.local b bar.local c" 'domain)
-      (is (= 2 (length artefacts)))
-      (is (every (lambda (artefact)
-                   (noteworthy-artefact-p artefact job))
-                 artefacts)))))
-
 (test extractors.domains.onion ()
   (let ((artefacts (extract-artefacts "xxx 3g2upl4pq6kufc4m.onion zzz" 'onion)))
     (is (= 1 (length artefacts)))

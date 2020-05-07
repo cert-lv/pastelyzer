@@ -13,9 +13,6 @@
 (defvar *resolve-domains* nil
   "Whether to resolve domains.")
 
-(defvar *interesting-tlds* '()
-  "A list of TLDs that should be treated as noteworthy.")
-
 (defvar *log-artefacts-threshold* 3
   "Include artefacts in the log output if there are fewer than this
   number of them")
