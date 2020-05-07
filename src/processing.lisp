@@ -1425,17 +1425,6 @@
                        :test-not test-fn
                        :key key-fn)))))))
 
-(defun add-bank-card-artefact (job source digits &rest initargs)
-  (dolist (extractor *bank-card-extractors*)
-    (multiple-value-bind (class extra-initargs)
-        (funcall extractor digits)
-      (when class
-        (return-from add-bank-card-artefact
-          (apply #'add-artefact job source class
-                 :digits digits
-                 (append extra-initargs initargs))))))
-  (apply #'add-artefact job source 'bank-card-number :digits digits initargs))
-
 (defmethod run-extractor ((what (eql :bank-card))
                           (fragment string-fragment)
                           (job t)
@@ -1475,9 +1464,10 @@
                (declare (type simple-string digits))
                (when (and (not (all-same-p digits))
                           (luhn-checksum-valid-p digits))
-                 (push (add-bank-card-artefact job fragment digits
-                                               :start start
-                                               :end end)
+                 (push (add-artefact job fragment 'bank-card-number
+                                     :digits digits
+                                     :start start
+                                     :end end)
                        result))))
         (cond ((aref rs 0)
                (collect (subseq target start end)))

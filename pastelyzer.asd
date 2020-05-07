@@ -56,7 +56,6 @@
                                            (:file "util")
                                            (:file "sets")
                                            (:file "smtp")))
-                             (:file "known-bank-cards")
                              (:file "server")
                              (:file "rest")
                              (:module "modules"

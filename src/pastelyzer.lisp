@@ -508,11 +508,18 @@ following instead:
            (not (member? tlds)))
     (discard \"Unknown TLD\"))~%" arg)))
                 ((string= "--important-cc-bins" arg)
-                 (let* ((arg (pop args))
-                        (truename (probe-file arg)))
-                   (if truename
-                       (collect :cc-bin-path truename)
-                       (warn "File does not exist: ~A" arg))))
+                 (let ((arg (pop args)))
+                   (warn "~
+--important-cc-bins option has been removed.  Use configuration like the
+following instead:
+
+  (define-set bins (cc-bins)
+    :file \"~A\")
+
+  (define-artefact-filter check-cc-bin
+      (and (type? bank-card-number)
+           (not (member? bins)))
+    (set-important))~%" arg)))
                 ((string= "--interesting-tlds" arg)
                  (let ((arg (pop args)))
                    (warn "~
@@ -598,7 +605,6 @@ Usage:
 Generic options:
   --[no-]resolve-domains resolve domains; defaults to yes if --networks-file
                          is specified, no otherwise
-  --important-cc-bins    path to file listing important bank card bins
 
 CLI options:
   -C, --color            colorize output
@@ -651,7 +657,6 @@ Environment variables:
                  (log-level :warning)
                  config
                  (resolve-domains nil resolve-domains-supplied-p)
-                 cc-bin-path
                  mode
             &allow-other-keys)
   (setup-logging :filter log-level
@@ -667,15 +672,12 @@ Environment variables:
                 (*interesting-networks*
                  t)
                 (t nil)))
-    (when cc-bin-path
-      (initialize-important-cc-bins cc-bin-path))
     (setq keys (delete-from-plist keys
                                   :mode
                                   :interactive
                                   :log-level
                                   :config
-                                  :resolve-domains
-                                  :cc-bin-path))
+                                  :resolve-domains))
     (setq *default-http-user-agent*
           (or (uiop:getenv "HTTP_USER_AGENT")
               (format nil "Pastelyzer~@[-~A~]" *build-id*)))
