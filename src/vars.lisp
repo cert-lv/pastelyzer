@@ -43,19 +43,3 @@
   "Paste sites to ignore when re-fetching broken pastes.")
 
 (defvar *default-http-user-agent* nil)
-
-;;; Ensure that artefacts of these classes have methods on
-;;; ARTEFACT-STORE-VALUE and ARTEFACT-STORE-EXTRA generic functions.
-(defvar *stored-artefact-classes*
-  '(bank-card-number
-    domain
-    onion
-    email
-    credential
-    ip-address
-    ip-service
-    resolved-ip-address
-    base64-blob
-    hex-blob
-    binary-blob)
-  "Classes of artefacts that are stored in the database.")

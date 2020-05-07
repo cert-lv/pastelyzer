@@ -152,13 +152,12 @@
 
 (defun register-artefacts-from-groups (content-id groups)
   (loop for (class unique) in groups
-        when (member class *stored-artefact-classes*)
-          do (loop for bag being each hash-value in unique
-                   for artefact = (first bag)
-                   do (let ((type (string class))
-                            (value (artefact-store-value artefact))
-                            (extra (artefact-store-extra artefact)))
-                        (db:register-artefact content-id type value extra)))))
+        do (loop for bag being each hash-value in unique
+                 for artefact = (first bag)
+                 do (let ((type (string class))
+                          (value (artefact-store-value artefact))
+                          (extra (artefact-store-extra artefact)))
+                      (db:register-artefact content-id type value extra)))))
 
 (defmethod analyse ((target paste) &key (force nil))
   (let* ((content-id (content-id target))
