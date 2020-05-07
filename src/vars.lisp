@@ -17,9 +17,6 @@
   "Include artefacts in the log output if there are fewer than this
   number of them")
 
-(defvar *interesting-b64-size-threshold* 500
-  "Create artefacts for Base64 fragments at least this big.")
-
 (defvar *acceptor* nil)
 
 (defvar *web-server-external-uri*

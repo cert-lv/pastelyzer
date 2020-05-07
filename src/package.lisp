@@ -146,7 +146,6 @@
            #:uri
            #:bank-card-number
            #:bank-card-number-digits
-           #:noteworthy-artefact-p
 
            #:binary-artefact
            #:compressed-blob

@@ -58,6 +58,9 @@
                                       #'char-code
                                       body))))))
 
+(defmethod noteworthy-artefact-p ((target t) (ctx cli-job))
+  nil)
+
 (defmethod noteworthy-artefact-p ((target base64-blob) (ctx cli-job))
   t)
 

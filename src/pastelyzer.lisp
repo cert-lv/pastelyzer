@@ -60,49 +60,6 @@
     (puri:merge-uris (format nil "paste/~A" (paste-id content))
                      *web-server-external-uri*)))
 
-(defmethod noteworthy-artefact-p ((artefact t) (ctx t))
-  ;; Everything is unworthy unless specified otherwise.
-  nil)
-
-(defmethod noteworthy-artefact-p ((artefact ip-address) (ctx t))
-  t)
-
-(defmethod noteworthy-artefact-p ((artefact bank-card-number) (ctx t))
-  t)
-
-(defmethod noteworthy-artefact-p ((artefact uri) (ctx t))
-  (starts-with-subseq "hxxp" (artefact-source-seq artefact)
-                      :start2 (artefact-source-seq-start artefact)
-                      :test #'char-equal))
-
-(defmethod noteworthy-artefact-p ((artefact onion) (ctx t))
-  t)
-
-(defmethod noteworthy-artefact-p ((artefact credential) (ctx t))
-  t)
-
-(defmethod noteworthy-artefact-p ((artefact email) (ctx t))
-  t)
-
-(defmethod noteworthy-artefact-p ((artefact m3u-entry) (ctx t))
-  t)
-
-(defmethod noteworthy-artefact-p ((artefact windows-internal) (ctx t))
-  t)
-
-(defmethod noteworthy-artefact-p ((target base64-blob) (ctx t))
-  (let* ((string (artefact-source-seq target))
-         (start (artefact-source-seq-start target))
-         (fragment (embedded-binary-bytes target))
-         (bytes (fragment-body fragment)))
-    (and (<= *interesting-b64-size-threshold* (length bytes))
-         (not (ppcre:scan "^(?:### )?Keybase proof" string))
-         (not (ppcre:scan "data:\\w+/\\w+;base64,$" string :end start)))))
-
-(defmethod noteworthy-artefact-p ((target embedded-binary) (ctx t))
-  (<= *interesting-b64-size-threshold*
-      (length (fragment-body (embedded-binary-bytes target)))))
-
 (defun announce-artefacts (paste artefacts grouped)
   (mapc #'(lambda (announcer)
             (funcall announcer paste
@@ -225,14 +182,11 @@
         (msg :debug "~A already [being] processed, skipping." target))))
 
 (defmethod log-artefacts ((source paste))
-  (let* ((job (make-instance 'batch-job :subject source))
-         (artefacts (process job))
-         (groups '()))
-    (when-let ((notable (remove-if-not (lambda (artefact)
-                                         (noteworthy-artefact-p artefact job))
-                                       artefacts)))
-      (setq groups (group-artefacts notable))
-      (announce-artefacts source notable groups))
+  (let ((job (make-instance 'batch-job :subject source))
+        (groups '()))
+    (when-let (artefacts (process job))
+      (setq groups (group-artefacts artefacts))
+      (announce-artefacts source artefacts groups))
     ;; XXX: This should be invoked from PROCESS, not here.
     (finish-job job)
     (values groups job)))

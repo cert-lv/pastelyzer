@@ -160,14 +160,12 @@ we're using regular expressions..."
              (string
                (format nil "### Keybase proof xxx ~A xxx"
                        (base64:usb8-array-to-base64-string blob)))
-             (input (map '(vector (unsigned-byte 8) *) #'char-code string)))
-        (multiple-value-bind (artefacts job)
-            (extract-artefacts input 'base64-blob)
-          (is (= 1 (length artefacts)))
-          (let ((artefact (first artefacts)))
-            (is (equalp blob
-                        (fragment-body (embedded-binary-bytes artefact))))
-            (is (not (noteworthy-artefact-p artefact job)))))))
+             (input (map '(vector (unsigned-byte 8) *) #'char-code string))
+             (artefacts (extract-artefacts input 'base64-blob)))
+        (is (= 1 (length artefacts)))
+        (let ((artefact (first artefacts)))
+          (is (equalp blob
+                      (fragment-body (embedded-binary-bytes artefact)))))))
 
 (test extractors.embedded-binary.hex.1 ()
   (let* ((blob #(#xDE #xAD #xBE #xEF #xFE #xED #xFA #xCE #xD0 #x0D
@@ -250,13 +248,9 @@ we're using regular expressions..."
                  (artefact-source (first artefacts))))))
 
 (test extractors.uri.5 ()
-  (let ((string "a hxxps://example.local/xyz z"))
-    (multiple-value-bind (artefacts job)
-        (extract-artefacts string 'uri)
-      (is (= 1 (length artefacts)))
-      (is (every (lambda (artefact)
-                   (noteworthy-artefact-p artefact job))
-                 artefacts)))))
+  (let* ((string "a hxxps://example.local/xyz z")
+         (artefacts (extract-artefacts string 'uri)))
+    (is (= 1 (length artefacts)))))
 
 (test extractors.uri.numeric-host.ipv4.1 ()
   (let* ((string "#EXTM3U
