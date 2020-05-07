@@ -388,13 +388,6 @@ http://91.109.113.38:8000/playlist.m3u8
   (is-viable-domain-p ("123.xxx.com") t :undecided)
   (is-viable-domain-p ("www.xxx.xn--123xx") t :undecided))
 
-(test viable-domains.tld-list ()
-  (let* ((table (make-hash-table :test 'equalp))
-         (pastelyzer::*valid-tlds* table))
-    (setf (gethash "xxx" table) t)
-    (is-viable-domain-p ("www.xxx") t :undecided)
-    (is-viable-domain-p ("www.abc") nil :unknown-tld)))
-
 (test viable-domains.tld ()
   (is-viable-domain-p ("www.xxx.c0m") nil :invalid-tld)
   (is-viable-domain-p ("www.xxx.c-m") nil :invalid-tld))
@@ -437,9 +430,6 @@ http://91.109.113.38:8000/playlist.m3u8
 (test viable-domains.assignment ()
   (is-viable-domain-p ("xxx.whatever=" 0 12) nil :expression)
   (is-viable-domain-p ("xxx.whatever = " 0 12) nil :expression))
-
-(test viable-domains.mixed-case ()
-  (is-viable-domain-p ("Third.xxx") nil :mixed-case))
 
 (test domains.1 ()
   (let ((string "tw(rw,cfn(.3,.7,0)*ang(-math.pi/2,math.rad(-40),0),.1,'')"))

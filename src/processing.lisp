@@ -967,11 +967,8 @@
                    (eq (first labels) (second rlabels)))
           (accept :onion))
 
-        (if *valid-tlds*
-            (unless (gethash (first rlabels) *valid-tlds*)
-              (reject :unknown-tld))
-            (unless (ppcre:scan tld-re (first rlabels))
-              (reject :invalid-tld)))
+        (unless (ppcre:scan tld-re (first rlabels))
+          (reject :invalid-tld))
 
         (when (string= "service" (first rlabels))
           (reject :service))
@@ -1014,13 +1011,6 @@
         (when (and (preceded-by #\( #\, "( " ", ")
                    (followed-by #\, #\) " ," " )"))
           (reject :function-parameter))
-
-        ;; Reject mixed-case dotted identifiers, unless they end with a
-        ;; valid TLD.
-        (when (and (pastelyzer.util:mixed-case-p string start end)
-                   (or (null *valid-tlds*)
-                       (not (gethash (first rlabels) *valid-tlds*))))
-          (reject :mixed-case))
 
         (when (or (followed-by #\= #\+ #\* #\< #\> #\^ #\& #\?
                                " = " " + " " - " " / " " * " " < " " > " " ^ "

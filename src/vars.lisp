@@ -16,9 +16,6 @@
 (defvar *interesting-tlds* '()
   "A list of TLDs that should be treated as noteworthy.")
 
-(defvar *valid-tlds* nil
-  "Table of all valid TLDs.")
-
 (defvar *log-artefacts-threshold* 3
   "Include artefacts in the log output if there are fewer than this
   number of them")

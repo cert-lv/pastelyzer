@@ -502,11 +502,18 @@
                 ((string= "--no-resolve-domains" arg)
                  (collect :resolve-domains nil))
                 ((string= "--tlds-file" arg)
-                 (let* ((arg (pop args))
-                        (truename (probe-file arg)))
-                   (if truename
-                       (collect :tld-file-path truename)
-                       (warn "File does not exist: ~A" arg))))
+                 (let ((arg (pop args)))
+                   (warn "~
+--tlds-file option has been removed.  Use configuration like the
+following instead:
+
+  (define-set tlds (super-domains)
+    :file \"~A\")
+
+  (define-artefact-filter check-tld
+      (and (type? domain)
+           (not (member? tlds)))
+    (discard \"Unknown TLD\"))~%" arg)))
                 ((string= "--important-cc-bins" arg)
                  (let* ((arg (pop args))
                         (truename (probe-file arg)))
@@ -590,7 +597,6 @@ Usage:
 Generic options:
   --[no-]resolve-domains resolve domains; defaults to yes if --networks-file
                          is specified, no otherwise
-  --tlds-file            path to file listing valid TLDs
   --interesting-tlds     comma-separated list of interesting TLDs
   --important-cc-bins    path to file listing important bank card bins
 
@@ -626,19 +632,6 @@ Environment variables:
   HTTP_USER_AGENT     User agent to use when fetching web pages
 "))
 
-(defun read-tlds (path)
-  (let ((table (make-hash-table :test 'equalp)))
-    (map-lines path
-               (lambda (tld)
-                 (setf (gethash (string-downcase tld) table) t))
-               :ignore-comment-lines t
-               :trim-space t)
-    (msg :debug "Read ~D TLD~:P from ~A" (hash-table-count table) path)
-    ;; Add some commonly-used unregistered TLDs.
-    (dolist (string '("local" "localdomain" "localnet"))
-      (setf (gethash string table) t))
-    table))
-
 (defun read-config (namestring)
   (msg :info "Reading configuration from ~A" namestring)
   (handler-case
@@ -658,7 +651,6 @@ Environment variables:
                  (log-level :warning)
                  config
                  (resolve-domains nil resolve-domains-supplied-p)
-                 tld-file-path
                  cc-bin-path
                  interesting-tlds
                  mode
@@ -676,8 +668,6 @@ Environment variables:
                 (*interesting-networks*
                  t)
                 (t nil)))
-    (when tld-file-path
-      (setf *valid-tlds* (read-tlds tld-file-path)))
     (when cc-bin-path
       (initialize-important-cc-bins cc-bin-path))
     (when interesting-tlds
@@ -689,7 +679,6 @@ Environment variables:
                                   :log-level
                                   :config
                                   :resolve-domains
-                                  :tld-file-path
                                   :cc-bin-path
                                   :interesting-tlds))
     (setq *default-http-user-agent*
