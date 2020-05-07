@@ -59,7 +59,6 @@
            #:string-context-before
            #:string-context-after
            #:dsubseq
-           #:map-lines
            #:starts-with-subseq
            #:ends-with-subseq
            #:mixed-case-p))
@@ -96,7 +95,6 @@
                 #:string-context-after
                 #:string-context-before
                 #:dsubseq
-                #:map-lines
                 #:starts-with-subseq
                 #:ends-with-subseq)
   #+sbcl

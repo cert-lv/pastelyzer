@@ -256,28 +256,6 @@ assumed to be sorted."
               :displaced-to array
               :displaced-index-offset start))
 
-(defgeneric map-lines (input function &key trim-space ignore-comment-lines))
-
-(defmethod map-lines ((input pathname) function &rest args)
-  (with-open-file (stream input :direction :input)
-    (apply #'map-lines stream function args)))
-
-(defmethod map-lines ((input string) function &rest args)
-  (with-input-from-string (stream input)
-    (apply #'map-lines stream function args)))
-
-(defmethod map-lines ((input stream) function
-                      &key trim-space ignore-comment-lines)
-  (loop for line = (read-line input nil nil)
-        while line
-        when (and (< 0 (length line))
-                  (or (not ignore-comment-lines)
-                      (char/= #\# (schar line 0))))
-          do (funcall function
-                      (if trim-space
-                          (trim-space line :both)
-                          line))))
-
 (defun starts-with-subseq (prefix sequence &rest keys)
   (let ((mismatch (apply #'mismatch prefix sequence keys)))
     (or (null mismatch)
