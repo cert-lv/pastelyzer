@@ -130,6 +130,10 @@
     (list content)
     '()))
 
+(defgeneric postprocess (artefact job)
+  (:method ((artefact t) (job t))
+    nil))
+
 (defmethod extract-artefacts ((target t) (job t))
   (loop for part in (analysable-parts target job)
         nconc (loop with done = nil
@@ -137,7 +141,12 @@
                     append (multiple-value-bind (artefacts inhibit-next-p)
                                (run-extractor extractor part job)
                              (setq done inhibit-next-p)
-                             (remove 'nil artefacts))
+                             ;; XXX: Until we have proper decorators.
+                             (mapcan (lambda (artefact)
+                                       (when artefact
+                                         (list* artefact
+                                                (postprocess artefact job))))
+                                     artefacts))
                     until done)))
 
 (defmethod process ((job job))
@@ -1096,18 +1105,27 @@
                  (push (add-artefact job fragment 'domain
                                      :start start
                                      :end end)
-                       result)
-                 (when (resolve-domains-p job)
-                   (let ((addresses (resolve-hostname key)))
-                     (loop for address in addresses
-                           do (push
-                               (add-artefact job fragment 'resolved-ip-address
-                                             :address address
-                                             :domain key
-                                             :start start
-                                             :end end)
-                               result)))))))))
+                       result))))))
     result))
+
+(defmethod postprocess ((artefact domain) (job t))
+  ;; XXX: This really is a hack to only resolve domains that have not
+  ;; been discarded by filters.
+  (when (resolve-domains-p job)
+    (let* ((domain (artefact-source artefact))
+           (addresses (resolve-hostname domain))
+           (fragment (artefact-parent artefact))
+           (start (artefact-source-seq-start artefact))
+           (end (artefact-source-seq-end artefact))
+           (result '()))
+      (loop for address in addresses
+            do (push (add-artefact job fragment 'resolved-ip-address
+                                   :address address
+                                   :domain domain
+                                   :start start
+                                   :end end)
+                     result))
+      result)))
 
 ;;; URI extractor.
 ;;;
