@@ -61,7 +61,8 @@
            #:dsubseq
            #:map-lines
            #:starts-with-subseq
-           #:ends-with-subseq))
+           #:ends-with-subseq
+           #:mixed-case-p))
 
 (defpackage #:pastelyzer
   (:use #:common-lisp)

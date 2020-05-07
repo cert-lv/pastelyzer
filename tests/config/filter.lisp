@@ -23,6 +23,7 @@
               (starts-with? . usr:starts-with?)
               (ends-with? . usr:ends-with?)
               (contains? . usr:contains?)
+              (mixed-case? . usr:mixed-case?)
               (member? . usr:member?)
               (note . usr:note)
 
@@ -194,6 +195,12 @@
     (test-string-filter f t "fubarz")
     (test-string-filter f nil "")
     (test-string-filter f nil "b ar")))
+
+(test filter.mixed-case? ()
+  (with-filter f (mixed-case?)
+    (is (f "FooBar"))
+    (is (not (f "foo-bar")))
+    (is (not (f "FUBAR")))))
 
 (test filter.-> ()
   (with-filter f (-> (length) (= 3))

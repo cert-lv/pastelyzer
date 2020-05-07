@@ -874,19 +874,6 @@
 (defclass onion (domain)
   ())
 
-(defun mixed-case-p (string &optional (start 0) (end nil))
-  (loop with lower fixnum = 0
-        with upper fixnum = 0
-        for index of-type array-index from start below (or end (length string))
-        for char of-type character = (char string index)
-        when (both-case-p char)
-          do (if (lower-case-p char)
-                 (incf lower)
-                 (incf upper))
-             (when (and (< 0 lower) (< 0 upper))
-               (return t))
-        finally (return nil)))
-
 (defparameter *known-file-extensions*
   (load-time-value
    (let ((table (make-hash-table :test 'equal))
@@ -1030,7 +1017,7 @@
 
         ;; Reject mixed-case dotted identifiers, unless they end with a
         ;; valid TLD.
-        (when (and (mixed-case-p string start end)
+        (when (and (pastelyzer.util:mixed-case-p string start end)
                    (or (null *valid-tlds*)
                        (not (gethash (first rlabels) *valid-tlds*))))
           (reject :mixed-case))

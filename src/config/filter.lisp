@@ -6,7 +6,8 @@
   (:import-from #:pastelyzer.log
                 #:msg)
   (:local-nicknames (#:usr #:pastelyzer.config.user)
-                    (#:sink #:pastelyzer.config.sink))
+                    (#:sink #:pastelyzer.config.sink)
+                    (#:util #:pastelyzer.util))
   (:export #:add-artefact-filter
            #:apply-filters
            #:collect-into
@@ -274,6 +275,20 @@
   (let ((needle (first body)))
     (make-function contains? (sequence cont)
       (funcall cont (if (contains? needle sequence) t nil)))))
+
+(defmethod mixed-case-p ((string string))
+  (util:mixed-case-p string))
+
+(defmethod mixed-case-p ((artefact pastelyzer:string-artefact))
+  (util:mixed-case-p (pastelyzer:artefact-source-seq artefact)
+                     (pastelyzer:artefact-source-seq-start artefact)
+                     (pastelyzer:artefact-source-seq-end artefact)))
+
+(defmethod generate-filter-function ((operator (eql 'usr:mixed-case?))
+                                     &rest body)
+  (check-type body null)
+  (make-function mixed-case? (thing cont)
+    (funcall cont (if (mixed-case-p thing) t nil))))
 
 (defun parse-filter (name form)
   (msg :debug "Filter ~S: ~S" name form)

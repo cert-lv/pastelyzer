@@ -52,6 +52,7 @@
            #:starts-with?
            #:ends-with?
            #:contains?
+           #:mixed-case?
 
            ;; Sets.
            #:define-set

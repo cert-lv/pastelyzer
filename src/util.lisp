@@ -287,3 +287,16 @@ assumed to be sorted."
   (let ((mismatch (apply #'mismatch suffix sequence :from-end t keys)))
     (or (null mismatch)
         (zerop mismatch))))
+
+(defun mixed-case-p (string &optional (start 0) (end nil))
+  (loop with lower fixnum = 0
+        with upper fixnum = 0
+        for index of-type array-index from start below (or end (length string))
+        for char of-type character = (char string index)
+        when (both-case-p char)
+          do (if (lower-case-p char)
+                 (incf lower)
+                 (incf upper))
+             (when (and (< 0 lower) (< 0 upper))
+               (return t))
+        finally (return nil)))
