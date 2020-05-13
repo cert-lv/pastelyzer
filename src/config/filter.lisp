@@ -99,6 +99,10 @@
 
 (defgeneric generate-filter-function (operator &rest body))
 
+(defmethod generate-filter-function ((operator t) &rest body)
+  (declare (ignore body))
+  (error "Unknown operator: ~S" operator))
+
 (defmethod generate-filter-function ((operator (eql 'usr:and)) &rest body)
   (if (endp body)
       (make-function and (value cont)
