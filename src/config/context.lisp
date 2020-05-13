@@ -42,7 +42,7 @@
              sink)))))
 
 (defmethod register-artefact ((job configurable-job)
-                              (artefact t)
+                              (artefact pastelyzer:string-artefact)
                               (source t))
   ;; We might consider creating an instance of DISCARDED-ARTEFACT
   ;; here.  It would give us a chance to gather some statistics
