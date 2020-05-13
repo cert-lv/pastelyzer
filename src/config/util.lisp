@@ -86,3 +86,9 @@
 
 (defun usr::note (artefact)
   (pastelyzer:artefact-note artefact))
+
+(defun usr::source-string (artefact)
+  (pastelyzer:artefact-source artefact))
+
+(defun usr::bytes (artefact)
+  (pastelyzer:embedded-binary-bytes artefact))
