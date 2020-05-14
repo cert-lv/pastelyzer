@@ -242,7 +242,7 @@
     :initarg :entries
     :reader super-domain-set-entries
     :type hash-table
-    :initform (make-hash-table :test 'equal))))
+    :initform (make-hash-table :test 'equalp))))
 
 (defun hashtree-add-path (tree path &optional value)
   (check-type tree hash-table)
@@ -257,7 +257,7 @@
                 (warn "Entry already present for ~S (~A); ignoring ~S (~A)"
                       (car path) table (cdr path) value))
             (let ((new (setf (gethash (car path) tree)
-                             (make-hash-table :test 'equal))))
+                             (make-hash-table :test 'equalp))))
               (hashtree-add-path new (cdr path) value))))))
 
 (defun hashtree-present-p (tree path)
