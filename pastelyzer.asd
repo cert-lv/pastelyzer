@@ -76,7 +76,6 @@
                (:module "config"
                 :depends-on ("package")
                 :components ((:file "filter")
-                             (:file "context")
                              (:file "sets")))
                (:file "suites" :depends-on ("package" "config")))
   :perform (test-op (o c)

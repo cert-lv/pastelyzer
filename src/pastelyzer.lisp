@@ -181,14 +181,13 @@
         (msg :debug "~A already [being] processed, skipping." target))))
 
 (defmethod log-artefacts ((source paste))
-  (let ((job (make-instance 'batch-job :subject source))
-        (groups '()))
-    (when-let (artefacts (process job))
-      (setq groups (group-artefacts artefacts))
-      (announce-artefacts source artefacts groups))
-    ;; XXX: This should be invoked from PROCESS, not here.
-    (finish-job job)
-    (values groups job)))
+  (let ((job (make-instance 'batch-job :subject source)))
+    (process job)
+    (let* ((artefacts (pastelyzer.config.context:job-artefacts job))
+           (groups (group-artefacts artefacts)))
+      (when groups
+        (announce-artefacts source artefacts groups))
+      (values groups job))))
 
 (defun fetch-circl-pastes-loop (queue)
   (with-logged-warnings

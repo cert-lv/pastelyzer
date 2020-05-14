@@ -74,7 +74,8 @@
                      (otherwise
                       subject)))
          (job (make-instance 'test-job :subject fragment)))
-    (values (pastelyzer:process job) job)))
+    (values (pastelyzer.config.context:job-artefacts (pastelyzer:process job))
+            job)))
 
 (suite 'tests)
 

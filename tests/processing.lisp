@@ -25,8 +25,7 @@
                      (otherwise
                       subject)))
          (job (make-instance 'test-job :subject fragment))
-         (result (process job)))
-    (is (null (set-difference result (test-job-artefacts job))))
+         (result (test-job-artefacts (process job))))
     (values (if types
                 (let ((classes (mapcar #'find-class types)))
                   (loop for item in result

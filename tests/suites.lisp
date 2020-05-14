@@ -26,7 +26,6 @@
 ;;;   (2am:run 'pastelyzer.test:all)
 ;;;
 (suite 'config '(pastelyzer.tests.config.filter:tests
-                 pastelyzer.tests.config.context:tests
                  pastelyzer.tests.config.sets:tests))
 
 (suite 't '(addresses processing util circl-paste config))

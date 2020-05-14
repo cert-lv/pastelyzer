@@ -150,15 +150,12 @@
                     until done)))
 
 (defmethod process ((job job))
-  (let ((queue (list (job-subject job)))
-        (result '()))
+  (let ((queue (list (job-subject job))))
     (loop for node = (pop queue)
           while node
-          do (when (typep node 'artefact)
-               (push node result))
-             (let ((artefacts (extract-artefacts node job)))
+          do (let ((artefacts (extract-artefacts node job)))
                (setq queue (append queue artefacts))))
-    result))
+    job))
 
 (defmethod run-extractor ((extractor t) (target t) (job t))
   (msg :debug "~S extractor not implemented for ~S/~S" extractor target job))

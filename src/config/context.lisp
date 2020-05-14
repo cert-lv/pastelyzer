@@ -19,12 +19,17 @@
   (:import-from #:pastelyzer.config.filter
                 #:apply-filters
                 #:discard-artefact)
-  (:export #:configurable-job))
+  (:export #:configurable-job
+           #:job-artefacts))
 
 (in-package #:pastelyzer.config.context)
 
 (defclass configurable-job (job)
   ((sinks
+    :initform '())
+   (artefacts
+    :reader job-artefacts
+    :type list
     :initform '())))
 
 ;;; Maybe this function's name should include MATERIALIZE or ENSURE?
@@ -48,8 +53,9 @@
   ;; here.  It would give us a chance to gather some statistics
   ;; when generating summary.
   (let ((reason (catch 'discard-artefact
-                  (return-from register-artefact
-                    (apply-filters artefact job)))))
+                  (apply-filters artefact job)
+                  (push artefact (slot-value job 'artefacts))
+                  (return-from register-artefact artefact))))
     (msg :debug "~A discarded~@[: ~A~]" artefact reason)
     nil))
 
@@ -67,3 +73,6 @@
 (defmethod finish-job ((job configurable-job))
   (loop for (nil . sink) in (slot-value job 'sinks)
         do (finish-sink (get-prototype sink) sink)))
+
+(defmethod pastelyzer:process :after ((job configurable-job))
+  (finish-job job))
