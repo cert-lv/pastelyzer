@@ -130,14 +130,15 @@ assumed to be sorted."
              (incf i)))
       (incf j))))
 
-(defun entropy (string &aux (length (length string)))
-  (declare (type string string))
-  (let ((table (make-hash-table)))
-    (loop for char across string
-          do (incf (gethash char table 0)))
-    (- (loop for freq being each hash-value in table
-             for freq/length = (/ freq length)
-             sum (* freq/length (log freq/length 2))))))
+(defun entropy (seq)
+  (let ((table (make-hash-table))
+        (length (coerce (length seq) 'float)))
+    (map nil (lambda (x)
+               (incf (the fixnum (gethash x table 0))))
+         seq)
+    (- (loop for freq fixnum being each hash-value in table
+             for q of-type (float 0.0 1.0) = (/ freq length)
+             sum (the float (* q (log q 2)))))))
 
 (defun group (list &key ((:key key-fn) #'identity)
                         ((:test test-fn) #'eql))
