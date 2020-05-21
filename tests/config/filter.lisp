@@ -26,6 +26,9 @@
               (mixed-case? . usr:mixed-case?)
               (member? . usr:member?)
               (note . usr:note)
+              (source-context . usr:source-context)
+              (context-before . usr:context-before)
+              (context-after . usr:context-after)
 
               (define-set . usr:define-set)
               (ipv4-networks . usr:ipv4-networks)
@@ -367,3 +370,39 @@
     (is (= 1 (length artefacts)))
     (is (string= "real.news.test"
                  (pastelyzer:artefact-source (first artefacts))))))
+
+(config-test context.1 ()
+  (define-artefact-filter ignore-inline-blob
+      (and (type? pastelyzer:base64-blob)
+           (-> (extract context-before)
+               (ends-with? ";base64,")))
+    (discard))
+
+  (let* ((bytes (coerce (loop for i from 0 below 54 collect i)
+                        '(vector (unsigned-byte 8))))
+         (a (base64:usb8-array-to-base64-string bytes))
+         (b (base64:usb8-array-to-base64-string (reverse bytes)))
+         (content (format nil "data:image/jpeg;base64,~A and ~A" b a))
+         (artefacts (extract-artefacts content)))
+    (is (= 1 (length artefacts)))
+    (is (equalp bytes
+                (pastelyzer:fragment-body
+                 (pastelyzer:embedded-binary-bytes (first artefacts)))))))
+
+(config-test context.2 ()
+  (define-artefact-filter ignore-keybase-proof
+      (and (type? pastelyzer:base64-blob)
+           (-> (extract source-context)
+               (starts-with? "### Keybase proof")))
+    (set-important))
+
+  (let* ((bytes (coerce (loop for i from 0 below 48 collect i)
+                        '(vector (unsigned-byte 8))))
+         (content (format nil "### Keybase proof~%~@
+                   I hereby claim whatever~%~@
+                   -----BEGIN PGP MESSAGE-----~%~%~A~%~A"
+                          (base64:usb8-array-to-base64-string bytes)
+                          (base64:usb8-array-to-base64-string (reverse bytes))))
+         (artefacts (extract-artefacts content)))
+    (is (= 1 (length artefacts)))
+    (is (pastelyzer:important-artefact-p (first artefacts)))))

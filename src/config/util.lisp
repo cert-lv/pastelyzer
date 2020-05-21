@@ -90,5 +90,14 @@
 (defun usr::source-string (artefact)
   (pastelyzer:artefact-source artefact))
 
+(defun usr::source-context (artefact)
+  (pastelyzer:artefact-source-seq artefact))
+
+(defun usr::context-before (artefact)
+  (pastelyzer::artefact-context-before artefact))
+
+(defun usr::context-after (artefact)
+  (pastelyzer::artefact-context-after artefact))
+
 (defun usr::bytes (artefact)
   (pastelyzer:embedded-binary-bytes artefact))

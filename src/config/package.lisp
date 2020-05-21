@@ -37,6 +37,9 @@
            #:true
            #:false
            #:note
+           #:source-context
+           #:context-before
+           #:context-after
 
            #:or
            #:and
