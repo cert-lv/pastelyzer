@@ -389,6 +389,14 @@
          (artefact-source-seq-end artefact)
          keys))
 
+(define-condition artefact-discarded (condition)
+  ((artefact
+    :initarg :artefact
+    :reader artefact-discarded-artefact)
+   (reason
+    :initarg :reason
+    :reader artefact-discarded-reason)))
+
 (define-condition broken-fragment (condition)
   ((datum
     :initarg :datum

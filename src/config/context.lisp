@@ -49,15 +49,13 @@
 (defmethod register-artefact ((job configurable-job)
                               (artefact pastelyzer:string-artefact)
                               (source t))
-  ;; We might consider creating an instance of DISCARDED-ARTEFACT
-  ;; here.  It would give us a chance to gather some statistics
-  ;; when generating summary.
   (let ((reason (catch 'discard-artefact
                   (apply-filters artefact job)
                   (push artefact (slot-value job 'artefacts))
                   (return-from register-artefact artefact))))
-    (msg :debug "~A discarded~@[: ~A~]" artefact reason)
-    nil))
+    (signal 'pastelyzer:artefact-discarded
+            :artefact artefact
+            :reason reason)))
 
 (defmethod collect-artefact ((artefact t)
                              (cfg symbol)

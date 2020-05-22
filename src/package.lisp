@@ -158,6 +158,7 @@
            #:broken-fragment-datum
            #:broken-fragment-locations
            #:broken-utf-8
+           #:artefact-discarded
 
            #:embedded-binary
            #:embedded-binary-bytes

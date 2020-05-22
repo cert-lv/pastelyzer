@@ -11,8 +11,9 @@
   (defcategory :warning (or :warning :error))
   (defcategory :notice (or :notice :warning))
   (defcategory :info (or :info :notice :hit))
-  (defcategory :debug (or :debug :info :http))
-  (defcategory :http))
+  (defcategory :debug (or :debug :info :http :disc))
+  (defcategory :http)
+  (defcategory :disc))
 
 (defclass timestamped-message (cl-log:formatted-message)
   ())

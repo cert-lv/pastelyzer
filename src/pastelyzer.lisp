@@ -60,9 +60,6 @@
     (puri:merge-uris (format nil "paste/~A" (paste-id content))
                      *web-server-external-uri*)))
 
-(defun log-hit (paste grouped)
-  (msg :hit "~A - ~A" (content-id paste) (summarize-artefacts grouped :text)))
-
 (defmethod summarize-artefacts ((groups list) (view (eql :json)) &key)
   (flet ((to-json (group)
            (destructuring-bind (class unique important duplicate)
@@ -173,12 +170,34 @@
         (msg :debug "~A already [being] processed, skipping." target))))
 
 (defmethod log-artefacts ((source paste))
-  (let ((job (make-instance 'batch-job :subject source)))
-    (process job)
+  (let ((job (make-instance 'batch-job :subject source))
+        (discarded (make-hash-table :test 'equal))
+        (discarded-count 0))
+    (handler-bind
+        ((artefact-discarded
+           (lambda (c)
+             (let* ((artefact (artefact-discarded-artefact c))
+                    (reason (artefact-discarded-reason c))
+                    (key (cons (artefact-key artefact) reason)))
+               (incf discarded-count)
+               (when (= 1 (incf (gethash key discarded 0)))
+                 (msg :disc "~A : ~A~@[ : ~A~]"
+                      (content-id source)
+                      (one-line (pastelyzer:artefact-source artefact)
+                                :limit 60
+                                :replace-invisible #\·
+                                :continuation "…"
+                                :mode :squeeze)
+                      reason))))))
+      (process job))
     (let* ((artefacts (pastelyzer.config.context:job-artefacts job))
            (groups (group-artefacts artefacts)))
-      (when groups
-        (log-hit source groups))
+      (when (or groups (< 0 discarded-count))
+        (msg :hit "~A - ~@[~A~]~:[~;, ~]~[~:;~:*~D discarded~]"
+             (content-id source)
+             (when groups (summarize-artefacts groups :text))
+             (and groups (< 0 discarded-count))
+             discarded-count))
       (values groups job))))
 
 (defun fetch-circl-pastes-loop (queue)
