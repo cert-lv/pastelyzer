@@ -193,7 +193,7 @@
     (let* ((artefacts (pastelyzer.config.context:job-artefacts job))
            (groups (group-artefacts artefacts)))
       (when (or groups (< 0 discarded-count))
-        (msg :hit "~A - ~@[~A~]~:[~;, ~]~[~:;~:*~D discarded~]"
+        (msg :stat "~A - ~@[~A~]~:[~;, ~]~[~:;~:*~D discarded~]"
              (content-id source)
              (when groups (summarize-artefacts groups :text))
              (and groups (< 0 discarded-count))
