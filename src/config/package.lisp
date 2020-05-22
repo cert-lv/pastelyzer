@@ -36,10 +36,13 @@
            #:no
            #:true
            #:false
+           #:digits
            #:note
+           #:source-string
            #:source-context
            #:context-before
            #:context-after
+           #:bytes
 
            #:or
            #:and
