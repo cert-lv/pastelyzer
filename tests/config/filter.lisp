@@ -259,6 +259,16 @@
     (is (eq 'nil (f "xexample.com")))
     (is (eq 'nil (f "ample.com")))))
 
+(config-test super-domains.3 ()
+  (define-set tlds (super-domains)
+    :entries ("example.com"))
+
+  (with-filter f (and (mixed-case?)
+                      (not (member? tlds)))
+    (is (f "XXX.com"))
+    (is (not (f "example.com")))
+    (is (not (f "Example.Com")))))
+
 (config-test ipv4-networks.1 ()
   (define-set networks (ipv4-networks)
     :entries ("10.42.0.0/16" "10.42.42.0/24"))
