@@ -60,15 +60,7 @@
     (puri:merge-uris (format nil "paste/~A" (paste-id content))
                      *web-server-external-uri*)))
 
-(defun announce-artefacts (paste artefacts grouped)
-  (mapc #'(lambda (announcer)
-            (funcall announcer paste
-                     :artefacts artefacts
-                     :grouped grouped))
-        *announcers*))
-
-(defun log-hit (paste &key artefacts grouped)
-  (declare (ignore artefacts))
+(defun log-hit (paste grouped)
   (msg :hit "~A - ~A" (content-id paste) (summarize-artefacts grouped :text)))
 
 (defmethod summarize-artefacts ((groups list) (view (eql :json)) &key)
@@ -186,7 +178,7 @@
     (let* ((artefacts (pastelyzer.config.context:job-artefacts job))
            (groups (group-artefacts artefacts)))
       (when groups
-        (announce-artefacts source artefacts groups))
+        (log-hit source groups))
       (values groups job))))
 
 (defun fetch-circl-pastes-loop (queue)

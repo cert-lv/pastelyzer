@@ -34,10 +34,6 @@
 (defvar *huge-fragment-bytes* (* 16 1024 1024)
   "Size of a fragment that is considered too big to process.")
 
-(defvar *announcers*
-  '(log-hit)
-  "A list of functions that are called with the results of paste analysis.")
-
 (defvar *ignored-paste-sites*
   '()
   "Paste sites to ignore when re-fetching broken pastes.")
