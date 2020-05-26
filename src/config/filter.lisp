@@ -42,11 +42,11 @@
   (let ((filter (make-instance 'filter
                                :name name
                                :function function
-                               :actions actions))
-        (cons (assoc name *filters*)))
-    (if cons
-        (setf (cdr cons) filter)
-        (setq *filters* (acons name filter *filters*))))
+                               :actions actions)))
+    (when (assoc name *filters*)
+      (warn "Redefining filter ~A" name)
+      (setq *filters* (remove name *filters* :key #'car)))
+    (setq *filters* (append *filters* (list (cons name filter)))))
   name)
 
 (defun apply-filter (filter value ctx)

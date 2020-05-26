@@ -38,6 +38,7 @@
               (super-domains . usr:super-domains)
               (cc-bins . usr:cc-bins)
               (strings . usr:strings)
+              (collect-into . usr:collect-into)
               (discard . usr:discard)
               (set-important . usr:set-important))
             tree)))
@@ -82,6 +83,24 @@
          (job (make-instance 'test-job :subject fragment)))
     (values (pastelyzer.config.context:job-artefacts (pastelyzer:process job))
             job)))
+
+(defclass test-sink-prototype (pastelyzer.config.sink::prototype)
+  ())
+
+(defvar *test-proto*
+  (make-instance 'test-sink-prototype))
+
+(defmethod pastelyzer.config.sink:get-prototype ((name (eql 'test-sink)))
+  *test-proto*)
+
+(defmethod pastelyzer.config.sink:finish-sink
+    ((proto test-sink-prototype) (sink pastelyzer.config.sink:sink))
+  ;; Nothing special to do.
+  sink)
+
+(defmethod collected-artefacts ((job test-job) (sink symbol))
+  (pastelyzer.config.sink:sink-artefacts
+   (pastelyzer.config.context::get-sink job sink)))
 
 (suite 'tests)
 
@@ -374,15 +393,28 @@
     (is (= 3 (count-if #'pastelyzer:important-artefact-p artefacts)))))
 
 (config-test discard.1 ()
+  (define-sink fake-stuff (test-sink))
+
+  ;; Collect before discarding.
+  (define-artefact-filter fake-news-outlet
+      (= "fake.news.test")
+    (collect-into fake-stuff))
+
   (define-artefact-filter fake-news
       (starts-with? "fake")
     (discard "Fake news"))
 
-  (let* ((content "Discard fake.news.test, register only real.news.test")
-         (artefacts (extract-artefacts content)))
-    (is (= 1 (length artefacts)))
-    (is (string= "real.news.test"
-                 (pastelyzer:artefact-source (first artefacts))))))
+  (let ((content "Discard fake.news.test, register only real.news.test"))
+    (multiple-value-bind (artefacts job)
+        (extract-artefacts content)
+      (is (= 1 (length artefacts)))
+      (is (string= "real.news.test"
+                   (pastelyzer:artefact-source (first artefacts))))
+
+      (let ((fake (collected-artefacts job 'fake-stuff)))
+        (is (= 1 (length fake)))
+        (is (string= "fake.news.test"
+                     (pastelyzer:artefact-source (first fake))))))))
 
 (config-test context.1 ()
   (define-artefact-filter ignore-inline-blob

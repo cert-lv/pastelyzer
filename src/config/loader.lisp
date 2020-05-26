@@ -116,5 +116,5 @@
           (filter::*filters* '()))
       (read-configuration source)
       (values sink::*known-configurations*
-              (reverse filter::*filters*))))
+              filter::*filters*)))
   (values))

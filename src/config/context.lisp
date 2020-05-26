@@ -33,6 +33,9 @@
     :initform '())))
 
 ;;; Maybe this function's name should include MATERIALIZE or ENSURE?
+(defmethod get-sink ((ctx configurable-job) (cfg symbol))
+  (get-sink ctx (resolve-configuration cfg)))
+
 (defmethod get-sink ((ctx configurable-job) (cfg configuration))
   (let* ((name (name-of cfg))
          (cons (assoc name (slot-value ctx 'sinks))))
