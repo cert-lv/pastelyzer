@@ -66,8 +66,7 @@
   value)
 
 (defgeneric parse-action (action &rest args)
-  (:documentation "Parse a filter action form.  Currently the only
-  known action form is: (COLLECT-INTO <sink>)."))
+  (:documentation "Parse a filter action form."))
 
 (defmethod parse-action ((action (eql 'usr:collect-into)) &rest args)
   (check-type args (cons symbol null))
