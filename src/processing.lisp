@@ -19,10 +19,11 @@
     :reader fragment-body
     :type (vector (unsigned-byte 8)))))
 
-(defgeneric artefact-source (artefact)
+(defgeneric artefact-source (artefact &optional displaced)
   (:documentation
    "Representation of the ARTEFACT in the sequence this artefact has
-  been detected in.  Usually a displaced array."))
+  been detected in.  Allowed to return a displaced array if DISPLACED
+  is true (default)."))
 
 (defgeneric artefact-parent (artefact)
   (:documentation
@@ -93,10 +94,11 @@
       artefact
     (values start end)))
 
-(defmethod artefact-source ((artefact artefact))
+(defmethod artefact-source ((artefact artefact) &optional (displaced t))
   (multiple-value-bind (start end)
       (artefact-source-seq-bounds artefact)
-    (dsubseq (artefact-source-seq artefact) start end)))
+    (funcall (if displaced #'dsubseq #'subseq)
+             (artefact-source-seq artefact) start end)))
 
 (defmethod artefact-key ((artefact artefact))
   (artefact-source artefact))
@@ -1094,7 +1096,7 @@
   ;; XXX: This really is a hack to only resolve domains that have not
   ;; been discarded by filters.
   (when (resolve-domains-p job)
-    (let* ((domain (artefact-source artefact))
+    (let* ((domain (artefact-source artefact nil))
            (addresses (resolve-hostname domain))
            (fragment (artefact-parent artefact))
            (start (artefact-source-seq-start artefact))
