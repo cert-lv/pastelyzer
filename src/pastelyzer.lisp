@@ -566,8 +566,7 @@ Usage:
   pastelyzer <options> --server
 
 Generic options:
-  --[no-]resolve-domains resolve domains; defaults to yes if --networks-file
-                         is specified, no otherwise
+  --[no-]resolve-domains resolve domains; defaults to no
 
 CLI options:
   -C, --color            colorize output
@@ -629,12 +628,9 @@ Environment variables:
   (with-logged-warnings
     (when config
       (read-config config))
-    (setq *resolve-domains*
-          (cond (resolve-domains-supplied-p
-                 resolve-domains)
-                (*interesting-networks*
-                 t)
-                (t nil)))
+    (setq *resolve-domains* (if resolve-domains-supplied-p
+                                resolve-domains
+                                nil))
     (setq keys (delete-from-plist keys
                                   :mode
                                   :interactive

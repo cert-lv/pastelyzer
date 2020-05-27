@@ -8,8 +8,6 @@
 
 (defvar *circl-zmq-address*)
 
-(defvar *interesting-networks* nil)
-
 (defvar *resolve-domains* nil
   "Whether to resolve domains.")
 
