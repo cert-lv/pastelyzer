@@ -355,7 +355,9 @@
     (ht:start *acceptor*)))
 
 (defclass web-job (job)
-  ())
+  ((artefacts
+    :type list
+    :initform '())))
 
 (defmethod resolve-domains-p ((job web-job))
   nil)
@@ -365,6 +367,12 @@
   (set-difference (call-next-method)
                   '(:m3u-entries
                     :windows-internals)))
+
+(defmethod register-artefact ((job web-job)
+                              (artefact string-artefact)
+                              (source t))
+  (push artefact (slot-value job 'artefacts))
+  artefact)
 
 (defun analyze-document (req)
   (setf (ht:header-out :content-type) "application/json")
@@ -412,8 +420,8 @@
                                                          :bol t))))
              ("type" . ,type)
              ("data" . ,(artefact-description artefact)))))
-    (let* ((artefacts (process (make-instance 'web-job :subject fragment)))
-           (groups (group-artefacts artefacts))
+    (let* ((job (process (make-instance 'web-job :subject fragment)))
+           (groups (group-artefacts (slot-value job 'artefacts)))
            (result '())
            (types '((domain . "domain")
                     (email . "email")
