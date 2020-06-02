@@ -16,9 +16,11 @@
                (let ((restart (find-restart :reconnect condition)))
                  (when (and restart
                             (or (null retries)
-                                (<= (incf reconnects) retries)))
-                   (msg :error "DB connection lost. Reconnect attempt ~D"
-                        reconnects)
+                                (< reconnects retries)))
+                   (incf reconnects)
+                   (msg :error "DB connection ~V[~;~:;still ~]~:*lost,~
+                                reconnect attempt ~D in ~Ds"
+                        reconnects interval)
                    (sleep interval)
                    (invoke-restart restart))))))
       (funcall thunk))))
