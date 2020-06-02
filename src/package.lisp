@@ -61,7 +61,8 @@
            #:dsubseq
            #:starts-with-subseq
            #:ends-with-subseq
-           #:mixed-case-p))
+           #:mixed-case-p
+           #:summarize-numbers))
 
 (defpackage #:pastelyzer
   (:use #:common-lisp)
@@ -96,7 +97,8 @@
                 #:string-context-before
                 #:dsubseq
                 #:starts-with-subseq
-                #:ends-with-subseq)
+                #:ends-with-subseq
+                #:summarize-numbers)
   #+sbcl
   (:import-from #:sb-concurrency
                 #:make-mailbox

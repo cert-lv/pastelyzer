@@ -279,3 +279,34 @@ assumed to be sorted."
              (when (and (< 0 lower) (< 0 upper))
                (return t))
         finally (return nil)))
+
+(defun summarize-numbers (numbers)
+  "NUMBERS is assumed to be sorted (order does not matter)."
+  (with-output-to-string (out)
+    (flet ((range (stream start end)
+             (format stream "~:[~D-~;~*~]~D" (= start end) start end)))
+      (prog ((start nil)
+             (last nil)
+             (n 0))
+         (go first)
+       next
+         (setq last n)
+       first
+         (when (null numbers)
+           (go done))
+         (setq n (pop numbers))
+         (when (null start)
+           (setq start n)
+           (go next))
+         (when (<= -1 (- last n) 1)
+           (go next))
+         (range out start last)
+         (write-string ", " out)
+         (setq start n)
+         (go next)
+       done
+         (cond (start
+                (range out start last))
+               (last
+                (princ last out)))
+         (return)))))

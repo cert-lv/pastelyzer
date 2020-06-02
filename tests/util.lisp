@@ -71,3 +71,21 @@
       (check
        " blah"
        (pastelyzer::string-context-after string 20 :limit 5)))))
+
+(test util.summarize-numbers ()
+  (macrolet ((check (input expected)
+               `(let ((.input. ,input)
+                      (.expected. ,expected)
+                      (.result. (util:summarize-numbers ,input)))
+                  (is (string= .expected. .result.)
+                      "~S should summarize to ~S, not ~S"
+                      .input. .expected. .result.))))
+    (check '() "")
+    (check '(1) "1")
+    (check '(1 1) "1")
+    (check '(1 2) "1-2")
+    (check '(1 2 3) "1-3")
+    (check '(1 4) "1, 4")
+    (check '(1 2 4) "1-2, 4")
+    (check '(1 3 4) "1, 3-4")
+    (check '(1 2 3 4) "1-4")))
