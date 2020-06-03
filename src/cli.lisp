@@ -1,5 +1,7 @@
 (in-package #:pastelyzer)
 
+(defconstant ESC (code-char 27))
+
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun resolve-sgr-code (code)
     (or (typecase code
@@ -23,9 +25,7 @@
         (error "Invalid SGR code: ~S" code)))
 
  (defun sgr (stream &rest codes)
-   (format stream "~C[~{~A~^;~}m"
-           (code-char 27)
-           (mapcar #'resolve-sgr-code codes))))
+   (format stream "~C[~{~A~^;~}m" ESC (mapcar #'resolve-sgr-code codes))))
 
 (define-compiler-macro sgr (&whole form stream &rest codes &environment env)
   (cond ((every (lambda (code) (constantp code env))
@@ -152,3 +152,32 @@
                                     (parse-namestring item))
                                 (if colour :color-term :mono-term))
           when morep do (terpri))))
+
+(defun update-status (stream)
+  (write-string #.(format nil "~C[K~C" ESC #\return) stream)
+  (finish-output stream))
+
+(defun process-unprocessed (&key (batch-size 1000000))
+  "Re-process contents that have not been processed by current version."
+  (check-type batch-size (integer 0 *))
+  (flet ((process-content (id size)
+           (format *standard-output* "PROC ~D (~/fmt:nbytes/)" id size)
+           (update-status *standard-output*)
+           #+sbcl
+           (when (< *huge-fragment-bytes* size)
+             ;; Reduce the chance of running out of memory when
+             ;; processing big documents.
+             (sb-ext:gc :full t))
+           (handler-case
+               (let ((content (fetch-content id)))
+                 (analyze content))
+             (error (condition)
+               (msg :error "Failed to process content ~D: ~A"
+                    id condition)))))
+    (db:with-connection ()
+      (loop
+        (format *standard-output* "WAIT Fetching next batch")
+        (update-status *standard-output*)
+        (when (zerop (db:map-unprocessed-content-ids #'process-content
+                                                     :limit batch-size))
+          (return))))))

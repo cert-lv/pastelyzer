@@ -97,8 +97,6 @@
         (msg :error "Problem recognising ~A in ~:[~A / ~A~;~*~A~]: ~A"
              extractor (eq target root) root target condition)))))
 
-(defgeneric log-artefacts (source))
-
 (defgeneric analyse (source &key force))
 
 (defgeneric artefact-store-value (artefact))
@@ -150,7 +148,7 @@
                                           (important-artefact-p artefact)
                                           (artefact-note artefact)))))
 
-(defmethod analyse ((target paste) &key (force nil))
+(defun analyze (target &key (force nil))
   (let* ((content-id (content-id target))
          (started (db:with-connection ()
                     (db:initiate-analysis content-id :force force))))
@@ -172,7 +170,7 @@
                 (db:finish-analysis content-id :null :null)))))
         (msg :debug "~A already [being] processed, skipping." target))))
 
-(defmethod log-artefacts ((source paste))
+(defun log-artefacts (source)
   (let ((job (make-instance 'batch-job :subject source))
         (discarded (make-hash-table :test 'equal))
         (discarded-count 0))
@@ -267,7 +265,7 @@
                                   (send-message broken item)
                                   (unless process-broken-p
                                     (return))))))
-                         (analyse item))))
+                         (analyze item))))
                  (serious-condition (condition)
                    (msg :error "Problem processing ~A: ~A" item condition)))))))
 
@@ -322,24 +320,9 @@
 
 (defun run-server (&key (parallel 4)
                         (process-broken-p t)
-                        (swank-port nil)
-                        (web-server-port nil)
-                        (web-server-external-host nil)
-                        (web-server-external-port nil))
+                        (swank-port nil))
   (check-type parallel fixnum)
   (check-type swank-port (or null fixnum))
-  (let ((db-params (append (list (or (uiop:getenv "DB_NAME") "pastelyzer")
-                                 (or (uiop:getenv "DB_USER") "pastelyzer")
-                                 (or (uiop:getenv "DB_PASS") "")
-                                 (or (uiop:getenv "DB_HOST") "localhost"))
-                           (list :port
-                                 (let ((port-string (uiop:getenv "DB_PORT")))
-                                   (if port-string
-                                       (parse-integer port-string)
-                                       5432)))
-                           (list :pooled-p t))))
-    (db:initialize :connection-parameters db-params
-                   :release *release*))
   (setq *circl-zmq-address*
         (or (uiop:getenv "CIRCL_ZMQ_ADDRESS")
             "tcp://crf.circl.lu:5556"))
@@ -347,10 +330,6 @@
     (setq *ignored-paste-sites* (split-sequence #\, string)))
   (when swank-port
     (setup-swank swank-port))
-  (when web-server-external-host
-    (setf (puri:uri-host *web-server-external-uri*) web-server-external-host))
-  (when-let ((port (or web-server-external-port web-server-port)))
-    (setf (puri:uri-port *web-server-external-uri*) port))
 
   ;; We unload foreign libraries required to run in server mode before
   ;; dumping the image so that the CLI version can be used without
@@ -388,8 +367,6 @@
                              broken-queue
                              nil)
           workers)
-    (when web-server-port
-      (start-web-server :port web-server-port))
     (unwind-protect
          ;; XXX: Do this in the main thread for now.  In the
          ;; future when we have multiple sources we will run them
@@ -554,6 +531,8 @@ the following instead:
                  (uiop:quit))
                 ((string= "--server" arg)
                  (collect :mode :server))
+                ((string= "--reprocess" arg)
+                 (collect :mode :reprocess))
                 ((or (string= "-C" arg)
                      (string= "--color" arg)
                      (string= "--colour" arg))
@@ -575,11 +554,12 @@ the following instead:
     (when args
       (setf paths (nconc paths args)))
     (when paths
-      (if (eq :server (getf keys :mode))
-          (fail "Unexpected argument~P in server mode: ~{~A~^, ~}"
-                (length paths) paths)
-          (setf (getf keys :paths) paths
-                (getf keys :mode) :cli)))
+      (let ((mode (getf keys :mode)))
+        (if (member mode '(:server :reprocess))
+            (fail "Unexpected argument~P in ~(~A~) mode: ~{~A~^, ~}"
+                  (length paths) mode paths)
+            (setf (getf keys :paths) paths
+                  (getf keys :mode) :cli))))
     keys))
 
 (defun usage ()
@@ -587,6 +567,16 @@ the following instead:
 Usage:
   pastelyzer <options> [-|path+]
   pastelyzer <options> --server
+  pastelyzer <options> --reprocess
+
+Operating modes:
+  --server            run in server mode
+  --reprocess         process all contents not processed by current version
+
+  If neither of the above are specified, CLI mode is assumed.  In this
+  mode all parameters that are not options are assumed to be files and
+  are analyzed in the order they appear on command line.  If no paths
+  are given content is read from standard input.
 
 Generic options:
   --[no-]resolve-domains resolve domains; defaults to no
@@ -637,12 +627,28 @@ Environment variables:
       (finish-output *error-output*)
       (uiop:quit 1))))
 
+(defun initialize-db ()
+  (let ((db-params `(,(or (uiop:getenv "DB_NAME") "pastelyzer")
+                     ,(or (uiop:getenv "DB_USER") "pastelyzer")
+                     ,(or (uiop:getenv "DB_PASS") "")
+                     ,(or (uiop:getenv "DB_HOST") "localhost")
+                     :port ,(let ((port-string (uiop:getenv "DB_PORT")))
+                              (if port-string
+                                  (parse-integer port-string)
+                                  5432))
+                     :pooled-p t)))
+    (db:initialize :connection-parameters db-params
+                   :release *release*)))
+
 (defun run (&rest keys
             &key interactive
                  (log-level :warning)
                  config
                  (resolve-domains nil resolve-domains-supplied-p)
                  mode
+                 (web-server-port nil)
+                 (web-server-external-host nil)
+                 (web-server-external-port nil)
             &allow-other-keys)
   (setup-logging :filter log-level
                  :message-class (if interactive
@@ -659,13 +665,28 @@ Environment variables:
                                   :interactive
                                   :log-level
                                   :config
-                                  :resolve-domains))
+                                  :resolve-domains
+                                  :web-server-port
+                                  :web-server-external-host
+                                  :web-server-external-port))
     (setq *default-http-user-agent*
           (or (uiop:getenv "HTTP_USER_AGENT")
               (format nil "Pastelyzer~@[-~A~]" *build-id*)))
     (case mode
-      (:server
-       (apply #'run-server keys))
+      ((:server :reprocess)
+       (when web-server-external-host
+         (setf (puri:uri-host *web-server-external-uri*)
+               web-server-external-host))
+       (when-let ((port (or web-server-external-port web-server-port)))
+         (setf (puri:uri-port *web-server-external-uri*) port))
+       (when web-server-port
+         (start-web-server :port web-server-port))
+       (initialize-db)
+       (case mode
+         (:server
+          (apply #'run-server keys))
+         (:reprocess
+          (process-unprocessed))))
       (:cli
        (apply #'run-cli keys))
       (t
@@ -676,8 +697,7 @@ Environment variables:
               (apply #'run-cli :paths '("-") keys)))))))
 
 (defun run-standalone (&optional (args (uiop:command-line-arguments)))
-  (let ((real-args (append (parse-cmdline args)
-                           '(:process-broken-p t))))
+  (let ((real-args (append (parse-cmdline args))))
     (catch 'exit-on-interrupt
       (cond ((getf real-args :interactive)
              #+sbcl (sb-ext:enable-debugger)

@@ -95,6 +95,9 @@
     (content-body content)
     (error "~S has no content" paste)))
 
+(defmethod paste-content ((content content))
+  content)
+
 (defclass circl-paste (paste)
   ()
   (:default-initargs

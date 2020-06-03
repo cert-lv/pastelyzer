@@ -156,7 +156,7 @@
     (loop for node = (pop queue)
           while node
           do (let ((artefacts (extract-artefacts node job)))
-               (setq queue (append queue artefacts))))
+               (setq queue (append artefacts queue))))
     job))
 
 (defmethod run-extractor ((extractor t) (target t) (job t))

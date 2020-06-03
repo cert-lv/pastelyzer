@@ -36,6 +36,7 @@
            #:finish-analysis
            #:flush-content-artefacts
            #:register-artefact
+           #:map-unprocessed-content-ids
 
            #:congested-content
            #:congested-content-id))

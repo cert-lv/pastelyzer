@@ -81,7 +81,10 @@ ON CONFLICT DO NOTHING"
     :single)
 
 (pomo:defprepared-with-names insert-content (content hash)
-    ("INSERT INTO contents (body, hash) VALUES ($1, $2) RETURNING id"
+    ("
+INSERT INTO contents (body, hash, size)
+VALUES ($1, $2, length($1::bytea))
+RETURNING id"
      content hash)
     :single)
 
@@ -221,6 +224,31 @@ INSERT INTO artefacts (content_id, type, value, extra, important, note)
            type content-id value extra))
     (cl-postgres:database-error (condition)
       (msg :error "Failed to register artefact: ~A" condition))))
+
+(defun map-unprocessed-content-ids (function
+                                    &key (limit 100)
+                                         (version-id *current-version-id*)
+                                         (size :null))
+  ;; XXX: We count (and return) number of rows processed manually
+  ;; since there's no way to know whether the query returned any
+  ;; results or not.
+  (let ((count 0))
+    (pomo:doquery ("
+SELECT c.id, c.size
+  FROM contents c
+ WHERE ($3::integer IS NULL OR c.size <= $3)
+   AND NOT EXISTS (
+     SELECT 1
+       FROM analysis a
+      WHERE a.content_id = c.id
+        AND ($1::integer IS NULL OR a.version_id = $1))
+ LIMIT $2
+ FOR NO KEY UPDATE SKIP LOCKED"
+                   (or version-id :null) limit size)
+        (id size)
+      (incf count)
+      (funcall function id size))
+    count))
 
 (defvar *schema-updates*
   '(("0000-base"
@@ -346,7 +374,13 @@ CREATE INDEX IF NOT EXISTS artefacts_content_id_idx
      "ALTER TABLE artefacts ADD COLUMN note VARCHAR")
 
     ("0005-add-discarded-to-analysis"
-     "ALTER TABLE analysis ADD COLUMN discarded INTEGER")))
+     "ALTER TABLE analysis ADD COLUMN discarded INTEGER")
+
+    ("0006-add-content-size-column"
+     "ALTER TABLE contents ADD COLUMN size integer"
+     "UPDATE contents SET size = length(body) WHERE size IS NULL"
+     "CREATE INDEX IF NOT EXISTS contents_size_idx ON contents (size)"
+     "ALTER TABLE contents ALTER COLUMN size SET NOT NULL")))
 
 (pomo:defprepared all-schema-updates
     "SELECT name FROM schema_updates"
