@@ -438,10 +438,7 @@ be generated using forms provided in the attribute.
   The digits of a bank card number with no separators.
 
 - ~note~ ::
-  Note associated with an artefact.  For
-  [[#IMPORTANT-CARD-NUMBER][~important-card-number~]] it is the comment
-  associated with the BIN.  See ~--important-cc-bins~
-  [[#common-cli-options][option]].
+  Note associated with an artefact.
 
 *** ~WEB-SINK~
 :PROPERTIES:
@@ -671,7 +668,7 @@ filter expressions are supported:
     (:title
      (fmt "~@[~A: ~]~A probable card number~:P"
           (extract source-url)
-          (unique-count important-card-number)))
+          (unique-count bank-card-number)))
     (:sharing-group "Finance")
     (:document-action
      (add-tags "CardFraud" "tlp:amber"))
@@ -719,7 +716,6 @@ classes are described in the following sections.
   │  └─ ENCODED-STRING
   └─ STRING-ARTEFACT
      ├─ BANK-CARD-NUMBER
-     │  └─ IMPORTANT-CARD-NUMBER
      ├─ CREDENTIAL
      ├─ DOMAIN
      │  └─ ONION
@@ -807,23 +803,6 @@ Applicable extractors:
 
 - ~digits~ ::
   A string of all the bank card digits with separators removed.
-
-*** ~IMPORTANT-CARD-NUMBER~
-:PROPERTIES:
-:CUSTOM_ID: IMPORTANT-CARD-NUMBER
-:END:
-
-Artefact class of [[#BANK-CARD-NUMBER][bank card number]] whose BIN (prefix)
-is listed in the important bank card BIN file (see
-[[#common-cli-options][~--important-cc-bins~]] option).
-
-Applicable extractors:
-
-- ~digits~ ::
-  Inherited from [[#BANK-CARD-NUMBER][~BANK-CARD-NUMBER~]].
-- ~note~ ::
-  Comment associated with the bin this artefact has been matched to.  See
-  section [[#important-cc-bins-file]].
 
 *** ~CREDENTIAL~
 :PROPERTIES:
