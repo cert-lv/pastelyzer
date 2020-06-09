@@ -558,8 +558,6 @@ filter is executed.  If the result is true (i.e., the filter matches), all
 ~<action>~ items are executed in order.  Currently the only supported action
 is to collect the artefact into a sink.
 
-Actions have the following syntax: ~(collect-into <sink-name>)~.
-
 Filter expressions have an implicit argument: an artefact.  The following
 filter expressions are supported:
 
@@ -634,6 +632,19 @@ filter expressions are supported:
 
 - ~(contains? <subsequence>)~ ::
   True if the context value is a sequence that contains the given subsequence.
+
+If an artefact matches the filter expression all actions are executed on it.
+The following actions are currently supported:
+
+- ~(collect-into <sink-name>)~ ::
+  Put the artefact into a previously defined sink.
+
+- ~(set-important)~ ::
+  Mark artefact as important.
+
+- ~(discard)~ ::
+  Artefact is discarded.  Filters that follow current one in the configuration
+  file will not be applied.
 
 ** Example configuration
 :PROPERTIES:
