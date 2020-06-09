@@ -109,7 +109,7 @@
   (artefact-source artefact))
 
 (defmethod artefact-store-extra ((artefact artefact))
-  (artefact-note artefact))
+  nil)
 
 (defmethod artefact-store-value ((artefact bank-card-number))
   (bank-card-number-digits artefact))
@@ -143,10 +143,12 @@
   (loop for (class unique) in groups
         do (loop for bag being each hash-value in unique
                  for artefact = (first bag)
-                 do (let ((type (string class))
-                          (value (artefact-store-value artefact))
-                          (extra (artefact-store-extra artefact)))
-                      (db:register-artefact content-id type value extra)))))
+                 do (db:register-artefact content-id
+                                          (string class)
+                                          (artefact-store-value artefact)
+                                          (artefact-store-extra artefact)
+                                          (important-artefact-p artefact)
+                                          (artefact-note artefact)))))
 
 (defmethod analyse ((target paste) &key (force nil))
   (let* ((content-id (content-id target))

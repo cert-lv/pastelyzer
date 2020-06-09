@@ -202,19 +202,20 @@ RETURNING updated_at"
     :single)
 
 (pomo:defprepared-with-names %register-artefact
-    (content-id type value extra)
+    (content-id type value extra important note)
     ("
-INSERT INTO artefacts (content_id, type, value, extra)
-  VALUES ($1, $2, $3, $4)"
-     content-id (or type :null) (or value :null) (or extra :null))
+INSERT INTO artefacts (content_id, type, value, extra, important, note)
+  VALUES ($1, $2, $3, $4, $5, $6)"
+     content-id type value extra important note)
     :single)
 
 (pomo:defprepared-with-names flush-content-artefacts (content-id)
     ("DELETE FROM artefacts WHERE content_id = $1" content-id))
 
-(defun register-artefact (content-id type value extra)
+(defun register-artefact (content-id type value extra important note)
   (handler-case
-      (%register-artefact content-id type value extra)
+      (%register-artefact content-id type value
+                          (or extra :null) important (or note :null))
     (cl-postgres-error:unique-violation ()
       (msg :notice "~A for ~A already registered: ~A~@[:~A~]"
            type content-id value extra))
@@ -338,7 +339,11 @@ CREATE INDEX IF NOT EXISTS artefacts_extra_idx
      "ALTER TABLE artefacts DROP COLUMN IF EXISTS version_id"
      "
 CREATE INDEX IF NOT EXISTS artefacts_content_id_idx
-  ON artefacts(content_id)")))
+  ON artefacts(content_id)")
+
+    ("0004-add-important-and-note-to-artefacts"
+     "ALTER TABLE artefacts ADD COLUMN important BOOLEAN DEFAULT FALSE"
+     "ALTER TABLE artefacts ADD COLUMN note VARCHAR")))
 
 (pomo:defprepared all-schema-updates
     "SELECT name FROM schema_updates"
