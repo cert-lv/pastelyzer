@@ -157,18 +157,19 @@
     (if started
         (let ((finishedp nil))
           (unwind-protect
-               (let ((groups (log-artefacts target)))
+               (multiple-value-bind (groups discarded)
+                   (log-artefacts target)
                  (setq finishedp t)
                  (let ((summary (summarize-artefacts groups :json)))
                    (db:with-connection ()
-                     (db:finish-analysis content-id summary)
+                     (db:finish-analysis content-id summary discarded)
                      (db:with-transaction ()
                        (db:flush-content-artefacts content-id)
                        (register-artefacts-from-groups content-id groups))))
                  groups)
             (unless finishedp
               (db:with-connection ()
-                (db:finish-analysis content-id :null)))))
+                (db:finish-analysis content-id :null :null)))))
         (msg :debug "~A already [being] processed, skipping." target))))
 
 (defmethod log-artefacts ((source paste))
@@ -200,7 +201,7 @@
              (when groups (summarize-artefacts groups :text))
              (and groups (< 0 discarded-count))
              discarded-count))
-      (values groups job))))
+      (values groups discarded-count job))))
 
 (defun fetch-circl-pastes-loop (queue)
   (with-logged-warnings

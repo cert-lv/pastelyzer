@@ -191,14 +191,14 @@ is cleared to a state as if it was just created."
          nil)))
 
 (pomo:defprepared-with-names finish-analysis
-    (content-id summary &key (version-id *current-version-id*))
+    (content-id summary discarded &key (version-id *current-version-id*))
     ("
 UPDATE analysis
-   SET updated_at = now(), summary = $2
+   SET updated_at = now(), summary = $2, discarded = $3
  WHERE content_id = $1
-   AND version_id = $3
+   AND version_id = $4
 RETURNING updated_at"
-     content-id summary version-id)
+     content-id summary discarded version-id)
     :single)
 
 (pomo:defprepared-with-names %register-artefact
@@ -343,7 +343,10 @@ CREATE INDEX IF NOT EXISTS artefacts_content_id_idx
 
     ("0004-add-important-and-note-to-artefacts"
      "ALTER TABLE artefacts ADD COLUMN important BOOLEAN DEFAULT FALSE"
-     "ALTER TABLE artefacts ADD COLUMN note VARCHAR")))
+     "ALTER TABLE artefacts ADD COLUMN note VARCHAR")
+
+    ("0005-add-discarded-to-analysis"
+     "ALTER TABLE analysis ADD COLUMN discarded INTEGER")))
 
 (pomo:defprepared all-schema-updates
     "SELECT name FROM schema_updates"
