@@ -428,7 +428,8 @@
 
 (defun parse-cmdline (args)
   (let ((keys '())
-        (paths '()))
+        (paths '())
+        (obsolete-options-used nil))
     (flet ((collect (key value)
              (setq keys (list* key value keys))))
       (loop
@@ -460,11 +461,26 @@
                  (collect :resolve-domains t))
                 ((string= "--no-resolve-domains" arg)
                  (collect :resolve-domains nil))
+                ((string= "--networks-file" arg)
+                 (let ((arg (pop args)))
+                   (setq obsolete-options-used t)
+                   (warn "~
+--networks-file option has been removed.  Use configuration like
+the following instead:
+
+  (define-set cidrs (ipv4-networks)
+    :file \"~A\")
+
+  (define-artefact-filter check-network
+      (and (type? ip-address)
+           (not (member? cidrs)))
+    (set-important))~%" arg)))
                 ((string= "--tlds-file" arg)
                  (let ((arg (pop args)))
+                   (setq obsolete-options-used t)
                    (warn "~
---tlds-file option has been removed.  Use configuration like the
-following instead:
+--tlds-file option has been removed.  Use configuration like
+the following instead:
 
   (define-set tlds (super-domains)
     :file \"~A\")
@@ -475,9 +491,10 @@ following instead:
     (discard \"Unknown TLD\"))~%" arg)))
                 ((string= "--important-cc-bins" arg)
                  (let ((arg (pop args)))
+                   (setq obsolete-options-used t)
                    (warn "~
---important-cc-bins option has been removed.  Use configuration like the
-following instead:
+--important-cc-bins option has been removed.  Use configuration like
+the following instead:
 
   (define-set bins (cc-bins)
     :file \"~A\")
@@ -488,11 +505,12 @@ following instead:
     (set-important))~%" arg)))
                 ((string= "--interesting-tlds" arg)
                  (let ((arg (pop args)))
+                   (setq obsolete-options-used t)
                    (warn "~
---interesting-tlds option has been removed.  Use configuration like the
-following instead:
+--interesting-tlds option has been removed.  Use configuration like
+the following instead:
 
-  (define-set interesting-tlds (cc-bins)
+  (define-set interesting-tlds (super-domains)
     :entries (~{~S~^ ~}))
 
   (define-artefact-filter interesting-tld
@@ -551,6 +569,8 @@ following instead:
                          (ignore-errors (probe-file arg)))
                      (push arg paths)
                      (fail "Invalid argument: ~A" arg))))))
+      (when obsolete-options-used
+        (fail "Please update your configuration and try again."))
       (setq paths (nreverse paths)))
     (when args
       (setf paths (nconc paths args)))

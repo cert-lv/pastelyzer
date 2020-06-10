@@ -73,33 +73,11 @@ standalone mode:
 - ~-v, --version~ ::
   Show version.
 
-- ~--networks-file~ ::
-  Path to a file that contains networks (in
-  [[https://tools.ietf.org/html/rfc4632#section-3.1][CIDR notation]]), one per
-  line.  Empty lines and lines starting with a ~#~ character are ignored.  See
-  https://nic.lv/local.net for an example of such a file.
-
 - ~--[no-]resolve-damains~ ::
   If ~--resolve-domains~ option is present, domain names are resolved to IP
   addresses.  If ~--no-resolve-domains~ is present, domains are not resolved.
   If this option is not provided, domain resolution is automatically enabled
   if ~--networks-file~ is provided and loaded.
-
-- ~--tlds-file~ ::
-  Path to a file containing valid Top Level Domains (e.g.,
-  https://data.iana.org/TLD/tlds-alpha-by-domain.txt).  Empty lines and lines
-  starting with ~#~ character are ignored.  Used to reduce the number of false
-  positives.
-
-- ~--interesting-tlds~ ::
-  A comma-separated list of TLDs that should be considered interesting.  These
-  are used by comparing the domains from the end, so the period should be
-  included to compare the complete TLD.  Example: ~.abc,.xyz~.
-
-- ~--important-cc-bins~ ::
-  Path to a file containing important bank card
-  [[https://en.wikipedia.org/wiki/Payment_card_number][BINs]].  The format of
-  the file is described [[#cc-bins-set][below]].
 
 ** Interactive mode
 :PROPERTIES:
