@@ -687,14 +687,14 @@ filter expressions are supported:
 - ~(length)~ ::
   Returns the length of current context value.
 
-- ~(= <number>)~ ::
-  True if the current context value is equal to the given number.
+- ~(= <number-or-string>)~ ::
+  True if the current context value is equal to the given value.
 
-- ~(< <number>)~ ::
-  True if the current context value is less than the given number.
+- ~(< <number-or-string>)~ ::
+  True if the current context value is less than the given value.
 
-- ~(> <number>)~ ::
-  True if the current context value is greater than the given number.
+- ~(> <number-or-string>)~ ::
+  True if the current context value is greater than the given value.
 
 - ~(starts-with? <subsequence>)~ ::
   True if the context value is a sequence that starts with the given

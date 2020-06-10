@@ -155,11 +155,29 @@
 (defmethod equals ((left number) (right number))
   (= left right))
 
+(defmethod lessp ((left number) (right number))
+  (< left right))
+
+(defmethod greaterp ((left number) (right number))
+  (> left right))
+
 (defmethod equals ((left string) (right string))
   (string= left right))
 
 (defmethod equals ((left string) (right pastelyzer:string-artefact))
   (string= left (pastelyzer:artefact-source right)))
+
+(defmethod lessp ((left string) (right string))
+  (string< left right))
+
+(defmethod lessp ((left string) (right pastelyzer:string-artefact))
+  (string< left (pastelyzer:artefact-source right)))
+
+(defmethod greaterp ((left string) (right string))
+  (string> left right))
+
+(defmethod greaterp ((left string) (right pastelyzer:string-artefact))
+  (string> left (pastelyzer:artefact-source right)))
 
 (defmethod generate-filter-function ((operator (eql 'usr:=)) &rest body)
   (check-type body (cons (or number string) null))
@@ -171,13 +189,13 @@
   (check-type body (cons number null))
   (let ((number (first body)))
     (make-function > (value cont)
-      (funcall cont (> value number)))))
+      (funcall cont (greaterp value number)))))
 
 (defmethod generate-filter-function ((operator (eql 'usr:<)) &rest body)
   (check-type body (cons number null))
   (let ((number (first body)))
     (make-function < (value cont)
-      (funcall cont (< value number)))))
+      (funcall cont (lessp value number)))))
 
 (defmethod generate-filter-function ((operator (eql 'usr:type?)) &rest body)
   (check-type body (cons symbol null))
