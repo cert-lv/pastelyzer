@@ -7,11 +7,13 @@
 #+LATEX_COMPILER: xelatex
 #+LATEX_HEADER: \hypersetup{colorlinks,allcolors=,urlcolor=blue}
 #+LATEX_HEADER: \usepackage{fontspec}
-#+LATEX_HEADER: \setmonofont[Scale=0.85,BoldFont=* Semibold,BoldItalicFont=* Semibold Italic]{Iosevka Custom}
+#+LATEX_HEADER: \setmonofont[Scale=0.85]{Iosevka Custom Slab}
 
 #+BIND: org-latex-listings minted
 #+BIND: org-latex-packages-alist (("newfloat,outputdir=/tmp/tex" "minted"))
 #+BIND: org-latex-minted-langs ((sexpr "lisp"))
+
+#+HTML_HEAD_EXTRA: <style>body { max-width: 38em; margin: auto; }</style>
 
 * Introduction
 :PROPERTIES:
@@ -50,14 +52,10 @@ not all discovered artefacts are shown.  For example not all groups of four
 numbers separated with periods are IP addresses — more commonly than not the
 numbers are actually version numbers.  To make the IP address extraction
 useful there is an option to only show the IP addresses that fall into
-specific networks (see section [[#common-cli-options][~--networks-file~
-option]]).  In this case we say that the IP addresses that belong to the
-specified networks are "interesting."  Similarly for top-level domains and
-bank cards.
-
-There are still some cases hard-coded in the system.  The intention is to make
-the configuration facility flexible enough so that these can be removed from
-the code and into the configuration.
+specific networks (see section [[#sec-user-sets]]).  In this case we say that
+the IP addresses that belong to the specified networks are "interesting."
+Similarly for top-level domains and bank cards.  Which artefacts gets shown in
+the dashboard and stored in the database is user-configurable.
 
 ** Common command-line options
 :PROPERTIES:
@@ -75,9 +73,8 @@ standalone mode:
 
 - ~--[no-]resolve-damains~ ::
   If ~--resolve-domains~ option is present, domain names are resolved to IP
-  addresses.  If ~--no-resolve-domains~ is present, domains are not resolved.
-  If this option is not provided, domain resolution is automatically enabled
-  if ~--networks-file~ is provided and loaded.
+  addresses.  If ~--no-resolve-domains~ is present, domains are not resolved
+  (default).
 
 ** Interactive mode
 :PROPERTIES:
@@ -253,9 +250,9 @@ sections): ~define-set~, ~define-sink~ and ~define-artefact-filter~[fn:4].
 :CUSTOM_ID: sec-user-sets
 :END:
 
-~define-set~ defines a set of values that can then be used in filters.  One
-such set is a list of valid TLDs (top-level domains) that can be applied to
-filter out domain-looking strings.  The syntax of the directive is like this:
+~define-set~ defines a set of values that can then be used in filters.  As an
+example consider a list of valid TLDs (top-level domains) that can be applied
+to filter domain-looking strings.  The syntax of the directive is like this:
 
 #+begin_src sexpr
   (define-set <name> (<type>) <attribute>*)
@@ -265,12 +262,13 @@ filter out domain-looking strings.  The syntax of the directive is like this:
 ~<type>~ is one of the built-in set types (described below).  Attributes
 common to all of the sets are:
 
-- ~:entries ("entry1" ("entry2" "Note for entry2") ... "entryN")~ ::
+- ~:entries ("entry1" ("entry2" "Note for entry2") ...)~ ::
   Entries of the set provided in the configuration file itself.  Mutually
-  exclusive with the ~:file~ attribute.  Each entry in the list is a string
-  representing the entry or a list where first element is the entry and the
-  second element is a note to be attached to the matching artefact (see
-  [[#sec-artefact-export]]).
+  exclusive with the ~:file~ attribute.  Each entry in the list can be:
+  - like ~entry1~ --- a plain string, or
+  - like ~entry2~ --- a list where first element is the entry and the second
+    element is a note to be attached to the matching artefact (see
+    [[#sec-artefact-export]]).
 
 - ~:file "path/to-file"~ ::
   Path to a file where to read the set entries from.  Each line of the file is
@@ -300,9 +298,12 @@ Descriptions of defined set types follow.
 *** ~super-domains~
 
 Each entry is a "super-domain" and can be used for sub-domain membership test.
-As an example here is a configuration to mark ~domain~ artefacts matching your
-organization as important (see [[#filters][filters]] below):
+As an example listing [[sample-super-domain-set]] shows configuration to mark
+~domain~ artefacts matching your organization as important (see
+[[#filters][filters]] below):
 
+#+CAPTION: Sample super-domain set
+#+NAME: sample-super-domain-set
 #+begin_src sexpr
   (define-set our-org (super-domains)
     :entries ("our.org" "our-org.com"))
@@ -313,15 +314,17 @@ organization as important (see [[#filters][filters]] below):
     (set-important))
 #+end_src
 
-Important note: super-domain membership tests are case-insensitive!
+*Note*: super-domain membership tests are case-insensitive!
 
 *** ~ipv4-networks~
 
 Each entry specifies an IPv4 network (in
 [[https://tools.ietf.org/html/rfc4632#section-3.1][CIDR notation]]).  For
 example if you are not interested in local IP addresses you could use the
-following configuration:
+configuration shown in listing [[sample-ipv4-networks-set]]:
 
+#+CAPTION: Sample IPv4 networks set
+#+NAME: sample-ipv4-networks-set
 #+begin_src sexpr
   (define-set private-networks (ipv4-networks)
     :entries ("10.0.0.0/8" "172.16.0.0/12" "192.168.0.0/16"))
@@ -344,11 +347,14 @@ digit and placeholder characters should match the number of bank card digits
 corresponding to the bin (e.g., 16 for Visa and Mastercard).  Spaces are
 ignored (in both prefix and placeholder parts).
 
-The following example file defines 5 bins for 2 banks.  The first bank uses
+Listing [[sample-bin-file]] defines 5 bins for 2 banks.  The first bank uses
 16-digit numbers that start with ~123456~, ~424242~ and ~111122~.  The second
-bank uses 15-digit numbers that start with ~23~ and ~32~.
+bank uses 15-digit numbers that start with ~23~ and ~32~.  A set with the
+entries from this file can then be defined as shown in listing
+[[using-sample-bin-file]] (~:attach-comments~ option defaults to ~true~ when
+reading bank card BINs).
 
-#+CAPTION: Sample important BIN file
+#+CAPTION: Sample bank card BIN file
 #+NAME: sample-bin-file
 #+begin_src text
   # This is just an example.  The note before each block will be
@@ -364,17 +370,19 @@ bank uses 15-digit numbers that start with ~23~ and ~32~.
   32xxxxxxxxxxxxx
 #+end_src
 
-A set with the entries from this file can be defined as follows
-(~:attach-comments~ option defaults to ~true~ when reading bank card BINs):
-
+#+CAPTION: Using sample bank card BIN file
+#+NAME: using-sample-bin-file
 #+begin_src sexpr
   (define-set special-bins (cc-bins)
     :file "path/to/above/file.ext")
 #+end_src
 
-Or the same, but in-line (notice that the note has to be repeated for each
-entry separately):
+The same bins can also be defined in-line, as shown in listing
+[[sample-inline-bins]] (notice that the note has to be specified for each
+entry individually):
 
+#+CAPTION: Sample in-line bank card BINs
+#+NAME: sample-inline-bins
 #+begin_src sexpr
   (define-set special-bins (cc-bins)
     :entries (("1234 56xx xxxx xxxx" "National bank")
@@ -399,7 +407,7 @@ entry separately):
 [[#filters][filters]] or as a parent in another sink.
 
 ~<parent>~ should be either one of the built-in sink implementations
-(described in the following sections), or another thing that has been defined
+(described in the following sections), or another sink that has been defined
 previously.  Even though a sink can only have one parent it has to be
 specified as a single-element list (i.e., it has to be surrounded by
 parenthesis).
@@ -471,10 +479,10 @@ be generated using forms provided in the attribute.
 
 - ~(unique-count <artefact-class>)~ ::
   Not really a filter function or an extractor, but can be used in sink
-  attribute [[#templates][templates]] to calculate the number unique artefacts
-  of the given ~artefact-class~ in a document currently being processed.
-  Note: this is a hack, and most probably will change once we come up with a
-  more general way to access this information.
+  attribute [[#templates][templates]] to calculate the number of unique
+  artefacts of the given ~artefact-class~ in a document currently being
+  processed.  Note: this is a hack, and most probably will change once we come
+  up with a more general way to access this information.
 
 **** Sink (document) level field extractors:
 :PROPERTIES:
@@ -512,7 +520,7 @@ be generated using forms provided in the attribute.
   Note associated with an artefact.
 
 - ~source-string~ ::
-  String representation of current artefact as it is in source document.
+  String representation of the current artefact as it is in source document.
 
 - ~source-context~ ::
   The whole text (string) where current artefact has been found, usually the
@@ -525,12 +533,12 @@ be generated using forms provided in the attribute.
   Text following current artefact in source document.
 
 - ~bytes~ ::
-  (Applies to ~EMBEDDED-BINARY~ artefacts only) the bytes of the artefact
-  after decoding.
+  (Applies to ~EMBEDDED-BINARY~ artefacts only) bytes of an artefact after
+  decoding.
 
 - ~digits~ ::
-  (Applies to ~BANK-CARD-NUMBER~ only) the digits of a bank card number with
-  no separators.
+  (Applies to ~BANK-CARD-NUMBER~ only) digits of a bank card number with no
+  separators.
 
 *** ~WEB-SINK~
 :PROPERTIES:
@@ -692,13 +700,13 @@ filter expressions are supported:
   the filter is indeed an [[#EMBEDDED-BINARY][~EMBEDDED-BINARY~]] then the
   value of ~and~ will be the value of second form: ~->~.
 
-  First it calls ~(extract bytes)~ (see below), and replaces the current
-  context with returned value.  The next form is ~or~, and for this form the
-  context is the binary bytes of the current artefact (which we know is an
-  [[#EMBEDDED-BINARY][~EMBEDDED-BINARY~]]).  The forms enclosed in ~or~ are
-  executed in order; if any of them returns true the value of the ~or~ form is
-  also true.  In any case, the value of ~->~ form will be the value of the
-  ~or~ form applied to the byte content of the
+  First it calls ~(extract bytes)~ (see [[#item-field-extractors]]), and
+  replaces the current context with returned value.  The next form is ~or~,
+  and for this form the context is the binary bytes of the current artefact
+  (which we know is an [[#EMBEDDED-BINARY][~EMBEDDED-BINARY~]]).  The forms
+  enclosed in ~or~ are executed in order; if any of them returns true the
+  value of the ~or~ form is also true.  In any case, the value of ~->~ form
+  will be the value of the ~or~ form applied to the byte content of the
   [[#EMBEDDED-BINARY][~EMBEDDED-BINARY~]] artefact.
 
 - ~(length)~ ::
@@ -773,14 +781,6 @@ table, ~summary~ column.  The number of discarded artefacts is stored in
 #+begin_src sexpr
   (define-sink dashboard (web-sink))
 
-  (define-artefact-filter web
-      ;; Everything except playlist entries and PNG images.
-      (not (or (type? m3u-entry)
-               (and (type? embedded-binary)
-                    (-> (extract bytes)
-                        (starts-with? [89 50 4E 47])))))
-    (collect-into dashboard))
-
   (define-sink local-misp (misp-sink)
     (:server "https://127.0.0.1:5000/")
     (:api-key (env "MISP_API_KEY"))
@@ -822,10 +822,77 @@ table, ~summary~ column.  The number of discarded artefacts is stored in
            (extract artefact-descriptions))
     (:recipients "pastelyzer-notifications@your.org"))
 
+  (define-set important-ccs (cc-bins)
+    :file "path/to/BIN-file")
+
   (define-artefact-filter important-cc
-      (type? important-card-number)
+      (and (type? bank-card-number)
+           (member? important-ccs))
     (collect-into misp-cc-event)
     (collect-into email))
+
+  ;; Get this from https://data.iana.org/TLD/tlds-alpha-by-domain.txt
+  (define-set known-tlds (super-domains)
+    :file "tlds-alpha-by-domain.txt")
+
+  (define-artefact-filter bad-domain
+      (and (type? domain)
+           (not (member? tlds)))
+    (discard "Unknown TLD"))
+
+  (define-set important-tlds (super-domains)
+    :entries ("important.gov.tld" "other.gov.tld"))
+
+  (define-filter important-tld
+      (and (type? domain)
+           (member? important-tlds))
+    (set-important))
+
+  (define-artefact-filter m3u
+      (type? m3u-entry)
+    (discard "M3U entry"))
+
+  (define-artefact-filter png
+      (and (type? embedded-binary)
+           (-> (extract bytes)
+               (starts-with? [89 50 4E 47])))
+    (discard "PNG image"))
+
+  (define-artefact-filter small-binary
+      (and (type? embedded-binary)
+           (-> (extract bytes)
+               (length)
+               (< 500)))
+    (discard "Small binary"))
+
+  (define-artefact-filter keybase-proof
+      (and (type? base64-blob)
+           (-> (extract source-context)
+               (or (starts-with? "### Keybase proof")
+                   (starts-with? "Keybase proof"))))
+    (discard "Keybase proof"))
+
+  (define-artefact-filter html-inline-blob
+      (and (type? base64-blob)
+           (-> (extract context-before)
+               (ends-with? ";base64,")))
+    (discard "HTML inline blob"))
+
+  (define-artefact-filter ignore-ordinary-urls
+      (and (type? uri)
+           (not (starts-with? "hxxp")))
+    (discard "Ordinary URL"))
+
+  (define-artefact-filter web
+      ;; IP addresses are usually not very interesting, but we might be
+      ;; interested in open-proxy lists (artefact type IP-SERVICE, which
+      ;; is a sub-type of IP-ADDRESS).
+      ;;
+      ;; Instead of listing everything we want to include we use
+      ;; negation, and list everything we want to exclude.
+      (not (or (exact-type? ip-address)
+               (exact-type? resolved-ip-address)))
+    (collect-into dashboard))
 #+end_src
 
 * Artefact classes
@@ -834,7 +901,7 @@ table, ~summary~ column.  The number of discarded artefacts is stored in
 :END:
 
 The list of artefact classes recognized by ~pastelyzer~ and their
-relationships are shown [[artefact-class-tree][below]].  These artefact
+relationships are shown in listing [[artefact-class-tree]].  These artefact
 classes are described in the following sections.
 
 #+CAPTION: Artefact relationships
@@ -1084,14 +1151,11 @@ One of the strings from the following [[windows-internals][table]]:
 | ~NtCreateUserProcess~           | ~WriteProcessMemory~   |
 | ~NtGetContextThread~            |                        |
 
-# Taken out of context there is nothing wrong about these functions, but they
-# might raise suspicion if encountered together with other binary artefacts
-# (usually shell-code).
 
 * Footnotes
 
 [fn:4] The word ~define~ is there to let text editors that have support for
-lisp-like languages recognize and treat these expressions specially (i.e., for
+Lisp-like languages recognize and treat these expressions specially (i.e., for
 syntax highlighting and automatic indentation).
 
 [fn:1] Currently only CIRCL.LU AIL paste feed is supported.
