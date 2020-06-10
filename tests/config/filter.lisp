@@ -40,7 +40,8 @@
               (strings . usr:strings)
               (collect-into . usr:collect-into)
               (discard . usr:discard)
-              (set-important . usr:set-important))
+              (set-important . usr:set-important)
+              (set-note . usr:set-note))
             tree)))
 
 (defmacro with-filter (var filter &body body)
@@ -439,7 +440,7 @@
       (and (type? pastelyzer:base64-blob)
            (-> (extract source-context)
                (starts-with? "### Keybase proof")))
-    (set-important))
+    (set-note "keybase proof"))
 
   (let* ((bytes (coerce (loop for i from 0 below 48 collect i)
                         '(vector (unsigned-byte 8))))
@@ -450,4 +451,5 @@
                           (base64:usb8-array-to-base64-string (reverse bytes))))
          (artefacts (extract-artefacts content)))
     (is (= 1 (length artefacts)))
-    (is (pastelyzer:important-artefact-p (first artefacts)))))
+    (is (string= "keybase proof"
+                 (pastelyzer:artefact-note (first artefacts))))))

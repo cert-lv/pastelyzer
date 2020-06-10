@@ -13,6 +13,11 @@
 
 (in-package #:pastelyzer.config.sets)
 
+(defun cfg-bool (value)
+  (ecase value
+    ((cl:nil usr:no usr:false) nil)
+    ((cl:t usr:yes usr:true) t)))
+
 (defgeneric add-entry (set key &optional value))
 (defgeneric load-set (type source &key &allow-other-keys))
 (defgeneric contains? (datum set))
@@ -70,7 +75,7 @@
                           (with-simple-restart
                               (continue "Ignore invalid entry.")
                             (add-entry set line note)))
-                         (attach-comments
+                         ((cfg-bool attach-comments)
                           (let ((start (position-if-not #'util:whitespace-char-p
                                                         line
                                                         :start mm)))
@@ -253,7 +258,7 @@
           (gethash (car path) tree)
         (if found
             (if (typep table 'hash-table)
-                (hashtree-add-path table (cdr path))
+                (hashtree-add-path table (cdr path) value)
                 (warn "Entry already present for ~S (~A); ignoring ~S (~A)"
                       (car path) table (cdr path) value))
             (let ((new (setf (gethash (car path) tree)
@@ -281,7 +286,8 @@
 (defmethod add-entry ((set super-domain-set) (value string) &optional note)
   (with-slots (entries)
       set
-    (hashtree-add-path entries (reverse (split-sequence #\. value)) note)))
+    (let ((labels (split-sequence #\. value :remove-empty-subseqs t)))
+      (hashtree-add-path entries (reverse labels) note))))
 
 (defmethod load-set ((type (eql 'usr:super-domains)) (list cons) &rest keys)
   (apply #'populate-set

@@ -88,6 +88,14 @@
     (msg :debug "Marking ~S as important")
     (setf (pastelyzer:important-artefact-p artefact) t)))
 
+(defmethod parse-action ((action (eql 'usr:set-note)) &rest args)
+  (check-type args (cons string null))
+  (let ((note (first args)))
+    (lambda (artefact ctx)
+      (declare (ignore ctx))
+      (msg :debug "Setting note of ~S to ~S" artefact note)
+      (setf (pastelyzer:artefact-note artefact) note))))
+
 (defmacro make-function (op (&rest args) &body body)
   (declare (ignorable op))
   `(lambda (&rest .args.)

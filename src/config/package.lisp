@@ -29,6 +29,7 @@
            #:collect-into
            #:discard
            #:set-important
+           #:set-note
            #:fmt
            #:env
            #:file-contents

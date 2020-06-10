@@ -99,43 +99,7 @@ standalone mode:
 - ~--important-cc-bins~ ::
   Path to a file containing important bank card
   [[https://en.wikipedia.org/wiki/Payment_card_number][BINs]].  The format of
-  the file is described [[#important-cc-bins-file][below]].
-
-*** Important bank card BINs file
-:PROPERTIES:
-:CUSTOM_ID: important-cc-bins-file
-:END:
-
-Each line of the file can be one of the following:
-
-- A comment line, starting with a ~#~ character.  There can be multiple
-  consecutive comment lines.  The last comment line preceding a BIN
-  specification is used as a note for that BIN.
-- An empty line, clears the note.
-- A BIN specification.  The format is: digit characters followed by number
-  placeholder characters.  The number of digit and placeholder characters
-  should match the number of bank card digits corresponding to the bin (e.g.,
-  16 for Visa and Mastercard).  Spaces are ignored (in both prefix and
-  placeholder parts).
-
-The following example file defines 5 bins for 2 banks.  The first bank uses
-16-digit numbers that start with ~123456~, ~424242~ and ~111122~.  The second
-bank uses 15-digit numbers that start with ~23~ and ~32~.
-
-#+CAPTION: Sample important BIN file
-#+NAME: sample-bin-file
-#+begin_src text
-  # This is just an example.
-
-  # National bank
-  1234 56xx xxxx xxxx
-  424242 xx xxxx xxxx
-  111122xxxxxxxxxx
-
-  # Other bank
-  23xx xxxxxx xxxxx
-  32xxxxxxxxxxxxx
-#+end_src
+  the file is described [[#cc-bins-set][below]].
 
 ** Interactive mode
 :PROPERTIES:
@@ -277,11 +241,10 @@ Example:
 
 Currently configuration file is used only when running in
 [[#standalone-mode][standalone mode]].  By default received documents are
-stored in the database, processed, and the summary of findings (what kind of
-artefacts and how many) also stored in the database.  [[#sinks][Sinks]] are
-additional destinations where artefacts can be collected, and
-[[#filters][filters]] are used to control what artefacts end up in which
-sinks.
+stored in the database, processed, and extracted artefacts are stored in the
+database.  [[#sinks][Sinks]] are additional destinations where artefacts can
+be collected, and [[#filters][filters]] are used to control what artefacts end
+up in which sinks.
 
 Current sink and filter implementation is good enough to support basic use
 cases.  The implementation is expected to change in the future to accommodate
@@ -304,11 +267,144 @@ brackets can be used to specify byte-vectors.  The elements between opening
 and closing square brackets are expected to be space-separated hexadecimal
 8-bit numbers (case-insensitive).  Example: ~[7f 45 4c 46]~.
 
-Currently there are two recognized configuration directives (described in
-following sections): ~define-sink~ and ~define-artefact-filter~.  The word
-~define~ in both of them is there to let text editors that have support for
-lisp-like languages recognize and treat these expressions specially (i.e., for
-syntax highlighting and automatic indentation).
+The following configuration directives are recognized (described in following
+sections): ~define-set~, ~define-sink~ and ~define-artefact-filter~[fn:4].
+
+** User sets
+:PROPERTIES:
+:CUSTOM_ID: sec-user-sets
+:END:
+
+~define-set~ defines a set of values that can then be used in filters.  One
+such set is a list of valid TLDs (top-level domains) that can be applied to
+filter out domain-looking strings.  The syntax of the directive is like this:
+
+#+begin_src sexpr
+  (define-set <name> (<type>) <attribute>*)
+#+end_src
+
+~<name>~ is used in other parts of the configuration to refer to this set.
+~<type>~ is one of the built-in set types (described below).  Attributes
+common to all of the sets are:
+
+- ~:entries ("entry1" ("entry2" "Note for entry2") ... "entryN")~ ::
+  Entries of the set provided in the configuration file itself.  Mutually
+  exclusive with the ~:file~ attribute.  Each entry in the list is a string
+  representing the entry or a list where first element is the entry and the
+  second element is a note to be attached to the matching artefact (see
+  [[#sec-artefact-export]]).
+
+- ~:file "path/to-file"~ ::
+  Path to a file where to read the set entries from.  Each line of the file is
+  read as a set entry.
+
+- ~:comment-start <string>~ ::
+  (Only when reading entries from file) line starting with the provided string
+  (defaults to ~"#"~) are treated as comment lines and are not included as
+  entries in the set.  For now only a single comment start string can be
+  provided.
+
+- ~:attach-comments <bool>~ ::
+  When [[#specifying-values][true]] (default is false) comments are attached
+  to all artefacts matching the following entries as notes (see
+  [[#sec-artefact-export]]).  An empty comment or an empty line can be used to
+  clear the comment for the following entries.  Only single-line comments are
+  used as notes and each consecutive comment line will override the comment
+  set before.
+
+- ~:trim-space <bool>~ ::
+  (Only when reading entries from file) when [[#specifying-values][true]]
+  (default) leading and trailing white-space characters are removed from each
+  line read (including comment lines).
+
+Descriptions of defined set types follow.
+
+*** ~super-domains~
+
+Each entry is a "super-domain" and can be used for sub-domain membership test.
+As an example here is a configuration to mark ~domain~ artefacts matching your
+organization as important (see [[#filters][filters]] below):
+
+#+begin_src sexpr
+  (define-set our-org (super-domains)
+    :entries ("our.org" "our-org.com"))
+
+  (define-filter our-domain
+      (and (type? domain)
+           (member? our-org))
+    (set-important))
+#+end_src
+
+Important note: super-domain membership tests are case-insensitive!
+
+*** ~ipv4-networks~
+
+Each entry specifies an IPv4 network (in
+[[https://tools.ietf.org/html/rfc4632#section-3.1][CIDR notation]]).  For
+example if you are not interested in local IP addresses you could use the
+following configuration:
+
+#+begin_src sexpr
+  (define-set private-networks (ipv4-networks)
+    :entries ("10.0.0.0/8" "172.16.0.0/12" "192.168.0.0/16"))
+
+  (define-filter private-ip
+      (and (type? ip-address)
+           (member? private-networks))
+    (discard "Private network"))
+#+end_src
+
+*** ~cc-bins~
+:PROPERTIES:
+:CUSTOM_ID: cc-bins-set
+:END:
+
+Each entry specifies a bank card
+[[https://en.wikipedia.org/wiki/Payment_card_number][BIN]].  The format is:
+digit characters followed by number placeholder characters.  The number of
+digit and placeholder characters should match the number of bank card digits
+corresponding to the bin (e.g., 16 for Visa and Mastercard).  Spaces are
+ignored (in both prefix and placeholder parts).
+
+The following example file defines 5 bins for 2 banks.  The first bank uses
+16-digit numbers that start with ~123456~, ~424242~ and ~111122~.  The second
+bank uses 15-digit numbers that start with ~23~ and ~32~.
+
+#+CAPTION: Sample important BIN file
+#+NAME: sample-bin-file
+#+begin_src text
+  # This is just an example.  The note before each block will be
+  # attached to all following entries.
+
+  # National bank
+  1234 56xx xxxx xxxx
+  424242 xx xxxx xxxx
+  111122xxxxxxxxxx
+
+  # Other bank
+  23xx xxxxxx xxxxx
+  32xxxxxxxxxxxxx
+#+end_src
+
+A set with the entries from this file can be defined as follows
+(~:attach-comments~ option defaults to ~true~ when reading bank card BINs):
+
+#+begin_src sexpr
+  (define-set special-bins (cc-bins)
+    :file "path/to/above/file.ext")
+#+end_src
+
+Or the same, but in-line (notice that the note has to be repeated for each
+entry separately):
+
+#+begin_src sexpr
+  (define-set special-bins (cc-bins)
+    :entries (("1234 56xx xxxx xxxx" "National bank")
+              ("424242 xx xxxx xxxx" "National bank")
+              ("111122xxxxxxxxxx"    "National bank")
+              ("23xx xxxxxx xxxxx"   "Other bank")
+              ("32xxxxxxxxxxxxx"     "Other bank")))
+#+end_src
 
 ** Sinks
 :PROPERTIES:
@@ -633,6 +729,12 @@ filter expressions are supported:
 - ~(contains? <subsequence>)~ ::
   True if the context value is a sequence that contains the given subsequence.
 
+- ~(member? <user-set>)~ ::
+  True if the context value belongs to a user set defined earlier using
+  ~define-set~ directive (see [[#sec-user-sets]]).  If the matching set entry
+  has a comment attached and the context value is an artefact then the comment
+  is automatically stored in the artefact's ~note~ field.
+
 If an artefact matches the filter expression all actions are executed on it.
 The following actions are currently supported:
 
@@ -642,9 +744,28 @@ The following actions are currently supported:
 - ~(set-important)~ ::
   Mark artefact as important.
 
+- ~(set-note <string>)~ ::
+  Set artefact's ~note~ field.
+
 - ~(discard)~ ::
   Artefact is discarded.  Filters that follow current one in the configuration
   file will not be applied.
+
+** Artefact export
+:PROPERTIES:
+:CUSTOM_ID: sec-artefact-export
+:END:
+
+After all artefacts are processed the ones that are not discarded in the
+process are saved in the database (~artefacts~ table).  If the artefact has
+been marked as important (using ~set-important~ action), the ~important~
+column is set to ~true~.  If the note field has been set (using ~set-note~
+action or automatically by successful user membership test), it is saved in
+the ~note~ column.
+
+Summary of what kinds of artefacts and how many is stored in ~analysis~
+table, ~summary~ column.  The number of discarded artefacts is stored in
+~discarded~ column.
 
 ** Example configuration
 :PROPERTIES:
@@ -807,8 +928,8 @@ expected to be the checksum digit (according to
 
 These rules are very lax and are expected to generate false-positives.  This
 is because the [[https://en.wikipedia.org/wiki/Payment_card_number][BINs]]
-change, and we want to avoid updating the software when they do.  In the
-future we expect to allow specifying the BINs in an external file.
+change, and we want to avoid updating the software when they do.
+[[#cc-bins-set][cc-bins]] user set can be used with bank card numbers.
 
 Applicable extractors:
 
@@ -981,6 +1102,10 @@ One of the strings from the following [[windows-internals][table]]:
 # (usually shell-code).
 
 * Footnotes
+
+[fn:4] The word ~define~ is there to let text editors that have support for
+lisp-like languages recognize and treat these expressions specially (i.e., for
+syntax highlighting and automatic indentation).
 
 [fn:1] Currently only CIRCL.LU AIL paste feed is supported.
 
