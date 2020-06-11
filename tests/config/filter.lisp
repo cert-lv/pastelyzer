@@ -26,6 +26,7 @@
               (mixed-case? . usr:mixed-case?)
               (member? . usr:member?)
               (note . usr:note)
+              (important . usr:important)
               (digits . usr:digits)
               (bytes . usr:bytes)
               (source-string . usr:source-string)

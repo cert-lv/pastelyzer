@@ -39,6 +39,7 @@
            #:false
            #:digits
            #:note
+           #:important
            #:source-string
            #:source-context
            #:context-before

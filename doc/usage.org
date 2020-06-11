@@ -519,6 +519,9 @@ be generated using forms provided in the attribute.
 - ~note~ ::
   Note associated with an artefact.
 
+- ~important~ ::
+  Important flag set on an artefact.
+
 - ~source-string~ ::
   String representation of the current artefact as it is in source document.
 

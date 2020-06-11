@@ -87,6 +87,9 @@
 (defun usr::note (artefact)
   (pastelyzer:artefact-note artefact))
 
+(defun usr::important (artefact)
+  (pastelyzer:important-artefact-p artefact))
+
 (defun usr::source-string (artefact)
   (pastelyzer:artefact-source artefact))
 
