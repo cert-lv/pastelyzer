@@ -368,10 +368,12 @@
                              nil)
           workers)
     (unwind-protect
-         ;; XXX: Do this in the main thread for now.  In the
-         ;; future when we have multiple sources we will run them
-         ;; in their own threads, and have a supervisor thread.
-         (fetch-circl-pastes-loop store-queue)
+         (if (string= "" *circl-zmq-address*)
+             (loop (sleep most-positive-fixnum))
+             ;; XXX: Do this in the main thread for now.  In the
+             ;; future when we have multiple sources we will run them
+             ;; in their own threads, and have a supervisor thread.
+             (fetch-circl-pastes-loop store-queue))
       (stop-web-server)
       (send-message store-queue nil)
       (loop repeat (1- parallel)
@@ -621,7 +623,8 @@ Environment variables:
   DB_PASS             database password (default: empty)
   DB_HOST             database host (default: \"localhost\")
   DB_PORT             database port (default: 5432)
-  CIRCL_ZMQ_ADDRESS   paste feed endpoint (default \"tcp://crf.circl.lu:5556\")
+  CIRCL_ZMQ_ADDRESS   paste feed endpoint (default \"tcp://crf.circl.lu:5556\",
+                      can be empty to work without feed)
   IGNORED_PASTESITES  Comma-separated list of paste sites to not re-fetch
                       broken pastes from
   HTTP_USER_AGENT     User agent to use when fetching web pages

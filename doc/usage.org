@@ -165,7 +165,8 @@ will be created automatically whenever ~pastelyzer~ is run in standalone mode.
   Database port.  Default: ~5432~.
 
 - ~CIRCL_ZMQ_ADDRESS~ ::
-  Paste feed endpoint[fn:3].  Default: ~tcp://crf.circl.lu:5556~.
+  Paste feed endpoint[fn:3].  Default: ~tcp://crf.circl.lu:5556~.  Can be set
+  to an empty value to not connect to the feed.
 
 - ~IGNORED_PASTESITES~ ::
   Comma-separated list of paste sites to not re-fetch broken pastes from.  It
