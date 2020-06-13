@@ -35,55 +35,10 @@ Make sure you consult the documentation that corresponds to the version of
 :CUSTOM_ID: running-pastelyzer
 :END:
 
-~pastelyzer~ can be run in two modes:
-
-- interactively as an ordinary command-line utility, and
-- as a background service with no user interaction.
-
-Both of these modes are described in the following sections.
-
-** Interesting artefacts
-:PROPERTIES:
-:CUSTOM_ID: interesting-artefacts
-:END:
-
-In order to keep the amount of information presented to the user manageable
-not all discovered artefacts are shown.  For example not all groups of four
-numbers separated with periods are IP addresses — more commonly than not the
-numbers are actually version numbers.  To make the IP address extraction
-useful there is an option to only show the IP addresses that fall into
-specific networks (see section [[#sec-user-sets]]).  In this case we say that
-the IP addresses that belong to the specified networks are "interesting."
-Similarly for top-level domains and bank cards.  Which artefacts gets shown in
-the dashboard and stored in the database is user-configurable.
-
-** Common command-line options
-:PROPERTIES:
-:CUSTOM_ID: common-cli-options
-:END:
-
-The following options affect artefact extraction and apply in both CLI and
-standalone mode:
-
-- ~-h, --help~ ::
-  Show short usage information.
-
-- ~-v, --version~ ::
-  Show version.
-
-- ~--[no-]resolve-damains~ ::
-  If ~--resolve-domains~ option is present, domain names are resolved to IP
-  addresses.  If ~--no-resolve-domains~ is present, domains are not resolved
-  (default).
-
-** Interactive mode
-:PROPERTIES:
-:CUSTOM_ID: interactive-mode
-:END:
-
-The simplest way to use ~pastelyzer~ is to pass it one or more file names.
-~pastelyzer~ will analyze given files and print all detected artefacts in a
-tree structure (see figure [[cli-usage-sample][below]]).
+The simplest way to use ~pastelyzer~ is on the command-line and to pass it one
+or more file names.  ~pastelyzer~ will analyze given documents and print all
+detected artefacts in a tree structure (see figure
+[[cli-usage-sample][below]]).
 
 #+CAPTION: Sample CLI usage
 #+NAME: cli-usage-sample
@@ -91,20 +46,42 @@ tree structure (see figure [[cli-usage-sample][below]]).
 #+ATTR_LATEX: :width 0.95\textwidth :float nil
 [[file:img/cli-33E400e1.png]]
 
-Currently in this mode it is only possible to view what and where ~pastelyzer~
-can detect.  In the future it will be possible to control what is extracted
-(i.e., limit output to a subset of "interesting" artefact classes) and what to
-do with the results (i.e,. write to a file, or generate JSON).
+Currently in this mode ~pastelyzer~ outputs what artefacts and where it has
+found.  In the future it will be possible to control what is extracted (i.e.,
+limit output to a subset of "interesting" artefact classes) and what to do
+with the results (i.e,. write to a file, or generate JSON).
+
+~pastelyzer~ can also be run as a background service, and this mode is
+described in [[#standalone-mode]] section below.
+
+** Common command-line options
+:PROPERTIES:
+:CUSTOM_ID: common-cli-options
+:END:
+
+- ~-h, --help~ ::
+  Show short usage information.
+
+- ~-v, --version~ ::
+  Show version.
+
+The following options affect artefact extraction and apply in all modes:
+
+- ~--[no-]resolve-damains~ ::
+  If ~--resolve-domains~ option is present, domain names are resolved to IP
+  addresses.  If ~--no-resolve-domains~ is present, domains are not resolved
+  (default).
 
 ** Standalone mode
 :PROPERTIES:
 :CUSTOM_ID: standalone-mode
 :END:
 
-In standalone mode ~pastelyzer~ receives documents from a feed[fn:1], stores
-them in database and analyzes them.  It is possible to control what to do with
-the discovered artefacts using [[#configuration][configuration]].  A sample
-systemd service file is provided in
+Standalone mode is selected by passing ~server~ as a command-line option.  In
+this mode ~pastelyzer~ receives documents from a feed[fn:1], stores them in
+database and analyzes them.  It is possible to control what to do with the
+discovered artefacts using [[#configuration][configuration]].  A sample
+~systemd~ service file is provided in
 [[file:../support/pastelyzer.service][support/pastelyzer.service]] file.
 
 *** Prerequisites
@@ -169,8 +146,8 @@ will be created automatically whenever ~pastelyzer~ is run in standalone mode.
   to an empty value to not connect to the feed.
 
 - ~IGNORED_PASTESITES~ ::
-  Comma-separated list of paste sites to not re-fetch broken pastes from.  It
-  is a good idea to have at least ~pastebin.com~ in this list.
+  Comma-separated list of paste sites to not re-fetch broken[fn:6] pastes
+  from.  It is a good idea to have at least ~pastebin.com~ in this list[fn:5].
 
 - ~HTTP_USER_AGENT~ ::
   User agent to use when fetching web pages.  This will be used verbatim as
@@ -182,7 +159,9 @@ will be created automatically whenever ~pastelyzer~ is run in standalone mode.
 :END:
 
 The ~public~ directory in the source distribution is expected to be located in
-the same directory where the ~pastelyzer~ binary is run from.
+the "working directory" (or "current directory") of the ~pastelyzer~ process.
+It is safe to make this directory read-only, or keep it on a read-only
+file system because ~pastelyzer~ does not write to any files.
 
 *** Submitting documents
 :PROPERTIES:
@@ -210,17 +189,44 @@ Example:
   curl 'http://localhost:8080/store' -F data=@/path/to/a/file
 #+end_example
 
+** Reprocessing documents
+:PROPERTIES:
+:CUSTOM_ID: sec-reprocessing-documents
+:END:
+
+There are a number of circumstances when the documents that are already in the
+database might need to be reprocessed.  These circumstances include, but are
+not limited to:
+
+- Newer ~pastelyzer~ versions might process documents differently and extract
+  different set of artefacts (hopefully more or higher quality).
+- User configuration affects the number and kinds of artefacts that are
+  extracted.
+- Documents have been inserted into the database manually.
+
+The ~reprocess~ mode is very similar to the ~server~ mode described above,
+except instead of connecting to a feed the documents already present in the
+database (and not processed by the current version of ~pastelyzer~) are
+processed.  The process exits as soon as there are no documents to process.
+
+*Important*: if ~pastelyzer~ configuration contains rules to send emails or
+interact with other systems/programs then the reprocessing might trigger these
+rules again.  It is therefore advisable to create a separate configuration
+file for reprocessing and either omit these rules or change them so that the
+information does not go to production systems.
+
 * Configuration
 :PROPERTIES:
 :CUSTOM_ID: configuration
 :END:
 
 Currently configuration file is used only when running in
-[[#standalone-mode][standalone mode]].  By default received documents are
-stored in the database, processed, and extracted artefacts are stored in the
-database.  [[#sinks][Sinks]] are additional destinations where artefacts can
-be collected, and [[#filters][filters]] are used to control what artefacts end
-up in which sinks.
+[[#standalone-mode][standalone]] (or
+[[#sec-reprocessing-documents][reprocess]]) mode.  By default received
+documents are stored in the database, processed, and extracted artefacts are
+stored in the database.  [[#sinks][Sinks]] are additional destinations where
+artefacts can be collected, and [[#filters][filters]] are used to control what
+artefacts end up in which sinks.
 
 Current sink and filter implementation is good enough to support basic use
 cases.  The implementation is expected to change in the future to accommodate
@@ -1157,6 +1163,15 @@ One of the strings from the following [[windows-internals][table]]:
 
 
 * Footnotes
+
+[fn:6] This only applies do documents received from CIRCL.LU feed, and broken
+means that all non-ASCII characters in source document have been replaced by
+"REPLACEMENT CHARACTER" (U+FFFD), and therefore documents with non-ASCII
+characters and binary documents are corrupted.
+
+[fn:5] ~pastelyzer~ rate-limits requests to paste sites, currently one request
+per ~8+~ seconds, but in our experience this is still more than pastebin.com
+is willing to allow.
 
 [fn:4] The word ~define~ is there to let text editors that have support for
 Lisp-like languages recognize and treat these expressions specially (i.e., for

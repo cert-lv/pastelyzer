@@ -581,13 +581,13 @@ the following instead:
 (defun usage ()
   (format t "~
 Usage:
-  pastelyzer <options> [-|path+]
-  pastelyzer <options> --server
-  pastelyzer <options> --reprocess
+  pastelyzer <options> [--] [-|path+]
+  pastelyzer server    <options>
+  pastelyzer reprocess <options>
 
 Operating modes:
-  --server            run in server mode
-  --reprocess         process all contents not processed by current version
+  server                 run in server mode
+  reprocess              process all contents not processed by current version
 
   If neither of the above are specified, CLI mode is assumed.  In this
   mode all parameters that are not options are assumed to be files and
@@ -601,33 +601,35 @@ CLI options:
   -C, --color            colorize output
   +C, --no-color         don't colorize output
 
-Server options:
+Server/reprocess options:
   -c, --config           path to configuration file
-  -w, --workers          use N worker threads (default: 4)
   --server-port          start web server on port N (default: 7000)
-  --server-ext-host      web server host (for emails; default: \"localhost\")
+  --server-ext-host      web server host (for emails; default: 'localhost')
   --server-ext-port      web server port (for emails; no default)
+
+Server only options:
+  -w, --workers          use N worker threads (default: 4)
   --[no-]process-broken  process pastes with broken UTF-8 content (in addition
                          to trying to fix them; defaults to yes)
 
 Miscellaneous options:
-  --log-level         set logging level; allowed values: DEBUG, INFO, NOTICE,
-                      WARNING (default), ERROR, CRITICAL
-  --swank-port        start swank server (SLIME) on this port
-  --interactive       debugger will be entered on errors
+  --log-level            set logging level; allowed values: DEBUG, INFO,
+                         NOTICE, WARNING (default), ERROR, CRITICAL
+  --swank-port           start swank server (SLIME) on this port
+  --interactive          debugger will be entered on errors
 
 Environment variables:
 
-  DB_NAME             database name (default: \"pastelyzer\")
-  DB_USER             database user (default: \"pastelyzer\")
-  DB_PASS             database password (default: empty)
-  DB_HOST             database host (default: \"localhost\")
-  DB_PORT             database port (default: 5432)
-  CIRCL_ZMQ_ADDRESS   paste feed endpoint (default \"tcp://crf.circl.lu:5556\",
-                      can be empty to work without feed)
-  IGNORED_PASTESITES  Comma-separated list of paste sites to not re-fetch
-                      broken pastes from
-  HTTP_USER_AGENT     User agent to use when fetching web pages
+  DB_NAME                database name (default: 'pastelyzer')
+  DB_USER                database user (default: 'pastelyzer')
+  DB_PASS                database password (default: empty)
+  DB_HOST                database host (default: 'localhost')
+  DB_PORT                database port (default: 5432)
+  CIRCL_ZMQ_ADDRESS      paste feed address (default: 'tcp://crf.circl.lu:5556',
+                         can be empty to work without feed)
+  IGNORED_PASTESITES     Comma-separated list of paste sites to not re-fetch
+                         broken pastes from
+  HTTP_USER_AGENT        User agent to use when fetching web pages
 "))
 
 (defun read-config (namestring)
