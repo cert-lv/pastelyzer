@@ -1196,6 +1196,11 @@ the entry for ~EMBEDDED-BINARY~ applies to its sub-classes (~BASE64-BLOB~,
 | ~IP-SERVICE~          | IP address             | port number                |
 | ~RESOLVED-IP-ADDRESS~ | IP address             | resolved domain            |
 
+By default both value search endpoints limit the number of search results to
+~500~.  A different value can be specified using ~limit~ parameter.  To remove
+the limit altogether (i.e., return all matches) an empty value must be
+specified as the ~limit~ parameter value.
+
 ** Generic value search
 
 The first query endpoint is ~/artefacts~ which can be used to search all

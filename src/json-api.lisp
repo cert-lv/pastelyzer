@@ -101,13 +101,31 @@
                             (provider-urls provider provider-id)))
          ("content" . ,(princ-to-string (content-uri content-id)))))
 
+(defun parse-limit (value)
+  (cond ((null value)
+         500)
+        ((string= "" value)
+         nil)
+        ((every #'digit-char-p value)
+         (parse-integer value))
+        (t
+         :invalid)))
+
 (define-handler filter-artefacts :post "/artefacts"
-  (let ((value (ht:parameter "value"))
-        (extra (ht:parameter "extra")))
-    (cond ((or value extra)
+  (let* ((value (ht:parameter "value"))
+         (extra (ht:parameter "extra"))
+         (limit (ht:parameter "limit"))
+         (parsed-limit (parse-limit limit)))
+    (cond ((eq :invalid parsed-limit)
+           (msg :notice "~A -> /artefacts: invalid limit value: ~S"
+                (ht:remote-addr*) limit)
+           (values nil ht:+http-bad-request+))
+          ((or value extra)
            (let ((artefacts
                    (db:with-connection ()
-                     (db:search-artefacts :value value :extra extra))))
+                     (db:search-artefacts :value value
+                                          :extra extra
+                                          :limit limit))))
              (setf (ht:header-out :content-type) "application/json")
              (jsown:to-json
               (loop for artefact in artefacts
@@ -159,9 +177,20 @@
            (values nil ht:+http-not-found+)))))
 
 (define-handler filter-artefacts/typed :post "/artefacts/typed"
-  (let ((parameters '()))
+  (let ((parameters '())
+        (options '(:limit 500)))
     (loop for (name . value) in (ht:post-parameters*)
           do (string-case (name)
+               ("limit"
+                (let ((parsed (parse-limit value)))
+                  (cond ((eq :invalid parsed)
+                         (msg :notice
+                              "~A -> /artefacts: invalid limit value: ~S"
+                              (ht:remote-addr*) value)
+                         (return-from filter-artefacts/typed
+                           (values nil ht:+http-bad-request+)))
+                        (t
+                         (setq options (list* :limit parsed options))))))
                ("ip"
                 (push (list :types '("IP-ADDRESS"
                                      "IP-SERVICE"
@@ -199,13 +228,12 @@
                       parameters))
                (t
                 (msg :notice "~A -> /artefacts/typed: unknown parameter: ~A=~A"
-                     (ht:remote-addr*)
-                     name value)
+                     (ht:remote-addr*) name value)
                 (return-from filter-artefacts/typed
                   (values nil ht:+http-bad-request+)))))
     (let ((artefacts
             (db:with-connection ()
-              (db:search-artefacts-multi parameters))))
+              (apply #'db:search-artefacts-multi parameters options))))
       (setf (ht:header-out :content-type) "application/json")
       (jsown:to-json
        (loop for artefact in artefacts
