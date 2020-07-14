@@ -862,12 +862,12 @@
     (cons (ip:ipv4-address-bits address) port)))
 
 (defclass resolved-ip-address (ip-address)
-  ((note
+  ((domain
     :initarg :domain
     :type string)))
 
 (defmethod artefact-domain ((artefact resolved-ip-address))
-  (slot-value artefact 'note))
+  (slot-value artefact 'domain))
 
 (defmethod artefact-description ((artefact resolved-ip-address))
   (with-accessors ((address artefact-address)

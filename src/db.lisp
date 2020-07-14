@@ -485,7 +485,14 @@ CREATE INDEX IF NOT EXISTS artefacts_content_id_idx
      "ALTER TABLE contents ADD COLUMN size integer"
      "UPDATE contents SET size = length(body) WHERE size IS NULL"
      "CREATE INDEX IF NOT EXISTS contents_size_idx ON contents (size)"
-     "ALTER TABLE contents ALTER COLUMN size SET NOT NULL")))
+     "ALTER TABLE contents ALTER COLUMN size SET NOT NULL")
+
+    ("0007-fix-resolved-ip-addresses"
+     "
+UPDATE artefacts
+   SET extra = note, note = NULL
+ WHERE type = 'RESOLVED-IP-ADDRESS'
+   AND extra is null")))
 
 (pomo:defprepared all-schema-updates
     "SELECT name FROM schema_updates"

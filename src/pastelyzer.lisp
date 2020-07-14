@@ -127,6 +127,9 @@
 (defmethod artefact-store-extra ((artefact ip-service))
   (princ-to-string (ip-service-port artefact)))
 
+(defmethod artefact-store-extra ((artefact resolved-ip-address))
+  (artefact-domain artefact))
+
 (defmethod artefact-store-value ((artefact embedded-binary))
   (let* ((bytes (fragment-body (embedded-binary-bytes artefact)))
          (hash (ironclad:digest-sequence 'ironclad:sha1 bytes)))
