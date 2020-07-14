@@ -921,8 +921,7 @@
 
 ;;; This is a hack, until we can better "classify" content.
 (defun viable-domain-p (string start end &aux (length (length string)))
-  (let ((tld-re (ppcre:create-scanner
-                 "^(?:xn--[A-Za-z0-9]{2,60}|[A-Za-z]{2,64})$")))
+  (let ((tld-re "^(?:xn--[A-Za-z0-9]{2,60}|[A-Za-z]{2,64})$"))
     (flet ((accept (reason)
              (return-from viable-domain-p (values t reason)))
            (reject (reason)
