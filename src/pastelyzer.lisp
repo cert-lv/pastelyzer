@@ -323,7 +323,8 @@
 
 (defun run-server (&key (parallel 4)
                         (process-broken-p t)
-                        (swank-port nil))
+                        (swank-port nil)
+                   &allow-other-keys)
   (check-type parallel fixnum)
   (check-type swank-port (or null fixnum))
   (setq *circl-zmq-address*
@@ -565,6 +566,8 @@ the following instead:
                      (string= "--no-color" arg)
                      (string= "--no-colour" arg))
                  (collect :colour nil))
+                ((string= "--export-embedded" arg)
+                 (collect :export t))
                 (t
                  (if (or (string= "-" arg)
                          (ignore-errors (probe-file arg)))
@@ -603,6 +606,7 @@ Generic options:
 CLI options:
   -C, --color            colorize output
   +C, --no-color         don't colorize output
+  --export-embedded      save embedded artefacts in the current directory
 
 Server/reprocess options:
   -c, --config           path to configuration file

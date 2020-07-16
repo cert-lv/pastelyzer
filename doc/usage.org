@@ -36,23 +36,9 @@ Make sure you consult the documentation that corresponds to the version of
 :END:
 
 The simplest way to use ~pastelyzer~ is on the command-line and to pass it one
-or more file names.  ~pastelyzer~ will analyze given documents and print all
-detected artefacts in a tree structure (see figure
-[[cli-usage-sample][below]]).
-
-#+CAPTION: Sample CLI usage
-#+NAME: cli-usage-sample
-#+ATTR_HTML: :width 100%
-#+ATTR_LATEX: :width 0.95\textwidth :float nil
-[[file:img/cli-33E400e1.png]]
-
-Currently in this mode ~pastelyzer~ outputs what artefacts and where it has
-found.  In the future it will be possible to control what is extracted (i.e.,
-limit output to a subset of "interesting" artefact classes) and what to do
-with the results (i.e,. write to a file, or generate JSON).
-
-~pastelyzer~ can also be run as a background service, and this mode is
-described in [[#standalone-mode]] section below.
+or more file names.  ~pastelyzer~ can also be run as a background service.
+These modes and applicable command-line options are described in the sections
+below.
 
 ** Common command-line options
 :PROPERTIES:
@@ -71,6 +57,38 @@ The following options affect artefact extraction and apply in all modes:
   If ~--resolve-domains~ option is present, domain names are resolved to IP
   addresses.  If ~--no-resolve-domains~ is present, domains are not resolved
   (default).
+
+** Interactive mode
+:PROPERTIES:
+:CUSTOM_ID: interactive-mode
+:END:
+
+Unless specified otherwise ~pastelyzer~ operates in an interactive mode and
+processes documents specified on the command line, showing all detected
+artefacts in a tree structure (see figure [[cli-usage-sample][below]]).
+
+#+CAPTION: Sample CLI usage
+#+NAME: cli-usage-sample
+#+ATTR_HTML: :width 100%
+#+ATTR_LATEX: :width 0.95\textwidth :float nil
+[[file:img/cli-33E400e1.png]]
+
+Each line in the tree structure contains the following information:
+
+- Start and end character position of the artefact in the parent object.
+- Artefact class.
+- Short description of the artefact (depends on the class).
+
+The following options apply to the interactive mode:
+
+- ~-C, --color~ ::
+  Enable colors in output (default if run interactively in a terminal).
+
+- ~+C, --no-color~ ::
+  Disable colors in output.
+
+- ~--extract-embedded~ ::
+  Embedded binary artefacts are extracted and saved in the current directory.
 
 ** Standalone mode
 :PROPERTIES:

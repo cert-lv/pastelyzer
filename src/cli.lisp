@@ -34,8 +34,6 @@
         (t
          form)))
 
-(defvar *color-output* nil)
-
 (defclass cli-job (job)
   ())
 
@@ -121,13 +119,66 @@
              (draw-children (funcall children-fn node)
                             (append prefix (list (if lastp "   " "│  ")))))
            (draw-children (list prefix)
-             (loop for (child . morep) on list
-                   do (draw-node child prefix (not morep)))))
+             (loop for (child . more) on list
+                   do (draw-node child prefix (not more)))))
     (let ((*print-length* 16)
           (*print-pretty* nil))
       (dolist (root roots)
         (format stream "~A~%" root)
         (draw-children (funcall children-fn root) nil)))))
+
+(defvar *export-artefacts* nil)
+
+;;; Not really an artefact, but an easy (the only) way to add
+;;; something to the rendered artefact tree.
+(defclass exported-artefact ()
+  ((path
+    :initarg :path
+    :reader exported-artefact-path)))
+
+(defmethod artefact-source-seq-start ((node exported-artefact))
+  -1)
+
+(defmethod analysable-parts ((node exported-artefact) (job cli-job))
+  nil)
+
+(defmethod render-node
+    ((view (eql :mono-term)) (node exported-artefact) (job cli-job)
+     &optional (stream *standard-output*))
+  (format stream "Exported as ~A" (exported-artefact-path node)))
+
+(defmethod render-node
+    ((view (eql :color-term)) (node exported-artefact) (job cli-job)
+     &optional (stream *standard-output*))
+  (write-string "Exported as " stream)
+  (sgr stream :dim :green)
+  (princ (exported-artefact-path node) stream)
+  (sgr stream :clear))
+
+(defun export-artefact (subject artefact)
+  (let* ((bytes (fragment-body (embedded-binary-bytes artefact)))
+         (hash (ironclad:digest-sequence 'ironclad:sha1 bytes))
+         (filename (format nil "~A-~/fmt:bytes/"
+                           (typecase subject
+                             (pathname
+                              (file-namestring subject))
+                             (t
+                              subject))
+                           (subseq hash 0 4))))
+    (with-open-file (out filename
+                         :direction :output
+                         :element-type '(unsigned-byte 8)
+                         :if-exists :supersede)
+      (write-sequence bytes out)
+      (file-namestring out))))
+
+(defmethod extract-artefacts :around ((node embedded-binary) (job cli-job))
+  (let ((result (call-next-method)))
+    (if *export-artefacts*
+        (let ((namestring (export-artefact (job-subject job) node)))
+          (list* (make-instance 'exported-artefact :path namestring)
+                 result))
+        result)))
 
 (defun walk (job view)
   (render-tree (list (job-subject job))
@@ -143,15 +194,15 @@
     (error (condition)
       (format *error-output* "~&~A~%" condition))))
 
-(defun run-cli (&key paths (colour (isatty *standard-output*))
+(defun run-cli (&key paths (colour (isatty *standard-output*)) export
                 &allow-other-keys)
-  (let ((*color-output* colour))
-    (loop for (item . morep) on paths
+  (let ((*export-artefacts* export))
+    (loop for (item . more) on paths
           collect (process-item (if (string= "-" item)
                                     :stdin
                                     (parse-namestring item))
                                 (if colour :color-term :mono-term))
-          when morep do (terpri))))
+          when more do (terpri))))
 
 (defun update-status (stream)
   (write-string #.(format nil "~C[K~C" ESC #\return) stream)
