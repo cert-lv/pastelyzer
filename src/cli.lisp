@@ -59,10 +59,7 @@
 (defmethod noteworthy-artefact-p ((target t) (ctx cli-job))
   nil)
 
-(defmethod noteworthy-artefact-p ((target base64-blob) (ctx cli-job))
-  t)
-
-(defmethod noteworthy-artefact-p ((target hex-blob) (ctx cli-job))
+(defmethod noteworthy-artefact-p ((target string-artefact) (ctx cli-job))
   t)
 
 (defmethod render-node ((view (eql :mono-term)) (node artefact) (job cli-job)
