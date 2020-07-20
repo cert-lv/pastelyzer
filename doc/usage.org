@@ -1255,7 +1255,7 @@ the following fields:
   account ~--server-ext-host~ and ~--server-ext-port~
   [[#standalone-options][command-line options]]).
 
-Example requests and possible :
+Example requests:
 
 : curl 'http://pastelyzer.your.org/artefacts' -F 'value=%example.com' | jq .
 
