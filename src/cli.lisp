@@ -62,13 +62,15 @@
 (defmethod noteworthy-artefact-p ((target string-artefact) (ctx cli-job))
   t)
 
-(defmethod render-node ((view (eql :mono-term)) (node artefact) (job cli-job)
-                        &optional (stream *standard-output*))
+(defmethod render-node
+    ((view (eql :mono-term)) (node artefact) (job cli-job) (count integer)
+     &optional (stream *standard-output*))
   (let ((imp (noteworthy-artefact-p node job)))
     (multiple-value-bind (start end)
         (artefact-source-seq-bounds node)
-      (format stream "~A..~A ~A: ~A"
-              start end (type-of node)
+      (format stream "~A..~A ~[~:;~:*(+~D) ~]~A: ~A"
+              start end (1- count)
+              (type-of node)
               (one-line (if imp
                             (artefact-source node)
                             (artefact-description node))
@@ -76,12 +78,13 @@
                         :continuation "…"
                         :mode :squeeze)))))
 
-(defmethod render-node ((view (eql :color-term)) (node artefact) (job cli-job)
-                        &optional (stream *standard-output*))
+(defmethod render-node
+    ((view (eql :color-term)) (node artefact) (job cli-job) (count integer)
+     &optional (stream *standard-output*))
   (let ((imp (noteworthy-artefact-p node job)))
     (multiple-value-bind (start end)
         (artefact-source-seq-bounds node)
-      (format stream "~A..~A " start end)
+      (format stream "~A..~A ~[~:;~:*(+~D) ~]" start end (1- count))
       (sgr stream (if imp :green :white))
       (format stream "~A" (type-of node))
       (sgr stream :dim :white)
@@ -108,16 +111,31 @@
 
 (defun render-tree (roots &key (stream *standard-output*)
                                (children-fn (constantly '()))
-                               (print-fn #'princ))
-  (labels ((draw-node (node prefix lastp)
+                               (print-fn #'princ)
+                               (dedup t))
+  (labels ((draw-node (node prefix lastp count)
              (format stream "~&~{~A~}~:[├~;└~]─ " prefix lastp)
-             (funcall print-fn node stream)
+             (funcall print-fn node count stream)
              (fresh-line stream)
              (draw-children (funcall children-fn node)
                             (append prefix (list (if lastp "   " "│  ")))))
            (draw-children (list prefix)
-             (loop for (child . more) on list
-                   do (draw-node child prefix (not more)))))
+             (if dedup
+                 (let ((table (make-hash-table :test 'equal)))
+                   (loop for node in list
+                         for i upfrom 0
+                         for key = (artefact-key node)
+                         for value = (gethash key table)
+                         do (if value
+                                (incf (second value))
+                                (setf (gethash key table)
+                                      (list i 1 node))))
+                   (loop for (list . more)
+                           on (sort (hash-table-values table) #'< :key #'first)
+                         do (draw-node
+                             (third list) prefix (not more) (second list))))
+                 (loop for (child . more) on list
+                       do (draw-node child prefix (not more) 1)))))
     (let ((*print-length* 16)
           (*print-pretty* nil))
       (dolist (root roots)
@@ -144,14 +162,19 @@
 (defmethod extract-artefacts ((node exported-artefact) (job cli-job))
   (exported-artefact-children node))
 
+(defmethod artefact-key ((node exported-artefact))
+  node)
+
 (defmethod render-node
-    ((view (eql :mono-term)) (node exported-artefact) (job cli-job)
+    ((view (eql :mono-term)) (node exported-artefact) (job cli-job) count
      &optional (stream *standard-output*))
+  (declare (ignore count))
   (format stream "* Exported as ~A" (exported-artefact-path node)))
 
 (defmethod render-node
-    ((view (eql :color-term)) (node exported-artefact) (job cli-job)
+    ((view (eql :color-term)) (node exported-artefact) (job cli-job) count
      &optional (stream *standard-output*))
+  (declare (ignore count))
   (write-string "* Exported as " stream)
   (sgr stream :dim :green)
   (princ (exported-artefact-path node) stream)
@@ -188,8 +211,8 @@
                :children-fn (lambda (node)
                               (sort (extract-artefacts node job)
                                     #'< :key #'artefact-source-seq-start))
-               :print-fn (lambda (node stream)
-                           (render-node view node job stream))))
+               :print-fn (lambda (node count stream)
+                           (render-node view node job count stream))))
 
 (defun process-item (item view)
   (handler-case
