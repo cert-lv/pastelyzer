@@ -131,23 +131,27 @@
 (defclass exported-artefact ()
   ((path
     :initarg :path
-    :reader exported-artefact-path)))
+    :reader exported-artefact-path)
+   (children
+    :initarg :children
+    :reader exported-artefact-children
+    :type list)))
 
 (defmethod artefact-source-seq-start ((node exported-artefact))
   -1)
 
-(defmethod analysable-parts ((node exported-artefact) (job cli-job))
-  nil)
+(defmethod extract-artefacts ((node exported-artefact) (job cli-job))
+  (exported-artefact-children node))
 
 (defmethod render-node
     ((view (eql :mono-term)) (node exported-artefact) (job cli-job)
      &optional (stream *standard-output*))
-  (format stream "Exported as ~A" (exported-artefact-path node)))
+  (format stream "* Exported as ~A" (exported-artefact-path node)))
 
 (defmethod render-node
     ((view (eql :color-term)) (node exported-artefact) (job cli-job)
      &optional (stream *standard-output*))
-  (write-string "Exported as " stream)
+  (write-string "* Exported as " stream)
   (sgr stream :dim :green)
   (princ (exported-artefact-path node) stream)
   (sgr stream :clear))
@@ -172,9 +176,9 @@
 (defmethod extract-artefacts :around ((node embedded-binary) (job cli-job))
   (let ((result (call-next-method)))
     (if *export-artefacts*
-        (let ((namestring (export-artefact (job-subject job) node)))
-          (list* (make-instance 'exported-artefact :path namestring)
-                 result))
+        (list (make-instance 'exported-artefact
+                             :path (export-artefact (job-subject job) node)
+                             :children result))
         result)))
 
 (defun walk (job view)
