@@ -76,6 +76,9 @@ artefacts in a tree structure (see figure [[cli-usage-sample][below]]).
 Each line in the tree structure contains the following information:
 
 - Start and end character position of the artefact in the parent object.
+- Number of additional instances of this artefact (if there are any, and if
+  the ~--show-duplicates~ option is not given) in the form of ~(+N)~, where
+  ~N~ is the number of additional occurrences.
 - Artefact class.
 - Short description of the artefact (depends on the class).
 
@@ -89,6 +92,10 @@ The following options apply to the interactive mode:
 
 - ~--extract-embedded~ ::
   Embedded binary artefacts are extracted and saved in the current directory.
+
+- ~--show-duplicates~ ::
+  Do not detect duplicate artefacts.  In this case all artefacts and their
+  locations will be shown.
 
 ** Standalone mode
 :PROPERTIES:

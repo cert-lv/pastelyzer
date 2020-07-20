@@ -568,6 +568,8 @@ the following instead:
                  (collect :colour nil))
                 ((string= "--export-embedded" arg)
                  (collect :export t))
+                ((string= "--show-duplicates" arg)
+                 (collect :dedup nil))
                 (t
                  (if (or (string= "-" arg)
                          (ignore-errors (probe-file arg)))
@@ -607,6 +609,7 @@ CLI options:
   -C, --color            colorize output
   +C, --no-color         don't colorize output
   --export-embedded      save embedded artefacts in the current directory
+  --show-duplicates      show all occurrences of artefacts
 
 Server/reprocess options:
   -c, --config           path to configuration file

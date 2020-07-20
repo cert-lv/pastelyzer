@@ -206,28 +206,30 @@
                              :children result))
         result)))
 
-(defun walk (job view)
+(defun walk (job view dedup)
   (render-tree (list (job-subject job))
                :children-fn (lambda (node)
                               (sort (extract-artefacts node job)
                                     #'< :key #'artefact-source-seq-start))
                :print-fn (lambda (node count stream)
-                           (render-node view node job count stream))))
+                           (render-node view node job count stream))
+               :dedup dedup))
 
-(defun process-item (item view)
+(defun process-item (item view dedup)
   (handler-case
-      (walk (make-instance 'cli-job :subject item) view)
+      (walk (make-instance 'cli-job :subject item) view dedup)
     (error (condition)
       (format *error-output* "~&~A~%" condition))))
 
-(defun run-cli (&key paths (colour (isatty *standard-output*)) export
+(defun run-cli (&key paths (colour (isatty *standard-output*)) export (dedup t)
                 &allow-other-keys)
   (let ((*export-artefacts-counter* (if export 0 nil)))
     (loop for (item . more) on paths
           collect (process-item (if (string= "-" item)
                                     :stdin
                                     (parse-namestring item))
-                                (if colour :color-term :mono-term))
+                                (if colour :color-term :mono-term)
+                                dedup)
           when more do (terpri))))
 
 (defun update-status (stream)
