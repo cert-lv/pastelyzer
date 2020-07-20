@@ -124,7 +124,8 @@
         (format stream "~A~%" root)
         (draw-children (funcall children-fn root) nil)))))
 
-(defvar *export-artefacts* nil)
+(defvar *export-artefacts-counter* nil
+  "The number of last exported artefact if exporting artefacts.")
 
 ;;; Not really an artefact, but an easy (the only) way to add
 ;;; something to the rendered artefact tree.
@@ -159,12 +160,13 @@
 (defun export-artefact (subject artefact)
   (let* ((bytes (fragment-body (embedded-binary-bytes artefact)))
          (hash (ironclad:digest-sequence 'ironclad:sha1 bytes))
-         (filename (format nil "~A-~/fmt:bytes/"
+         (filename (format nil "~A-~D-~/fmt:bytes/"
                            (typecase subject
                              (pathname
                               (file-namestring subject))
                              (t
                               subject))
+                           (incf *export-artefacts-counter*)
                            (subseq hash 0 4))))
     (with-open-file (out filename
                          :direction :output
@@ -175,7 +177,7 @@
 
 (defmethod extract-artefacts :around ((node embedded-binary) (job cli-job))
   (let ((result (call-next-method)))
-    (if *export-artefacts*
+    (if *export-artefacts-counter*
         (list (make-instance 'exported-artefact
                              :path (export-artefact (job-subject job) node)
                              :children result))
@@ -197,7 +199,7 @@
 
 (defun run-cli (&key paths (colour (isatty *standard-output*)) export
                 &allow-other-keys)
-  (let ((*export-artefacts* export))
+  (let ((*export-artefacts-counter* (if export 0 nil)))
     (loop for (item . more) on paths
           collect (process-item (if (string= "-" item)
                                     :stdin
