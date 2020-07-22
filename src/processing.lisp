@@ -878,7 +878,7 @@
 (defclass domain (string-artefact)
   ())
 
-(defclass onion (domain)
+(defclass onion (string-artefact)
   ())
 
 (defparameter *known-file-extensions*

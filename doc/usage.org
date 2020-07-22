@@ -950,7 +950,6 @@ classes are described in the following sections.
      ├─ BANK-CARD-NUMBER
      ├─ CREDENTIAL
      ├─ DOMAIN
-     │  └─ ONION
      ├─ EMAIL
      ├─ EMBEDDED-BINARY
      │  ├─ BASE64-BLOB
@@ -960,6 +959,7 @@ classes are described in the following sections.
      │  ├─ IP-SERVICE
      │  └─ RESOLVED-IP-ADDRESS
      ├─ M3U-ENTRY
+     ├─ ONION
      ├─ URI
      └─ WINDOWS-INTERNAL
 #+END_SRC
