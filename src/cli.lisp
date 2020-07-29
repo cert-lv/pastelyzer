@@ -1,8 +1,8 @@
 (in-package #:pastelyzer)
 
-(defconstant ESC (code-char 27))
-
 (eval-when (:compile-toplevel :load-toplevel :execute)
+  (defconstant ESC (code-char 27))
+
   (defun resolve-sgr-code (code)
     (or (typecase code
           (integer
@@ -24,8 +24,8 @@
              (:white 37))))
         (error "Invalid SGR code: ~S" code)))
 
- (defun sgr (stream &rest codes)
-   (format stream "~C[~{~A~^;~}m" ESC (mapcar #'resolve-sgr-code codes))))
+  (defun sgr (stream &rest codes)
+    (format stream "~C[~{~A~^;~}m" ESC (mapcar #'resolve-sgr-code codes))))
 
 (define-compiler-macro sgr (&whole form stream &rest codes &environment env)
   (cond ((every (lambda (code) (constantp code env))
