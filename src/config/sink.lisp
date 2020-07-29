@@ -165,7 +165,7 @@
       (loop
         (when (endp specs)
           (if args
-              (error 'too-many-sink-attribute-values
+              (error 'too-many-attribute-values
                      :sink sink
                      :attribute attribute)
               (return (nreverse result))))
