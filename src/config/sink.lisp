@@ -28,7 +28,6 @@
            #:sink-artefacts
            #:group-artefacts
            #:attribute-value
-           #:attribute-value-using-configuration
            #:attribute-value-in-context
            #:make-attribute-value-composer
            #:finish-sink
@@ -210,8 +209,7 @@
              :attribute attribute))))
 
 (defmethod attribute-value ((sink sink) (attribute t))
-  (let ((config (sink-configuration sink)))
-    (attribute-value-using-configuration config sink attribute)))
+  (attribute-value (sink-configuration sink) attribute))
 
 (defmethod add-artefact ((sink sink) (artefact t))
   (push artefact (slot-value sink 'artefacts)))
@@ -282,6 +280,12 @@
 (defmethod configuration-class ((proto prototype))
   'configuration)
 
+(defmethod attribute-value ((cfg configuration) (attribute t))
+  (let ((spec (find attribute (attributes-of cfg) :key #'car)))
+    (if spec
+        (second spec)
+        (attribute-value (parent-of cfg) attribute))))
+
 ;;; XXX: Consider using symbol plist for this.
 (defvar *known-configurations* nil
   "An association list of known sink configurations.")
@@ -331,34 +335,23 @@
 (defun make-attribute-value-composer (values)
   (lambda (context)
     (with-output-to-string (out)
-      (mapc (lambda (value)
-              (case value
-                (:nl (terpri out))
-                (:fl (fresh-line out))
-                (t
-                 (when-let (value (attribute-value-in-context value context))
-                   (princ value out)))))
-            values))))
+      (dolist (value values)
+        (cond ((eql :nl value)
+               (terpri out))
+              ((eql :fl value)
+               (fresh-line out))
+              ((functionp value)
+               (when-let (datum (funcall value context))
+                 (princ datum out)))
+              (t
+               (princ value out)))))))
 
-(defmethod attribute-value-using-configuration ((cfg configuration)
-                                                (sink t)
-                                                (attribute t))
-  (let ((spec (find attribute (attributes-of cfg) :key #'car)))
-    (if spec
-        (let ((value (second spec)))
-          (attribute-value-in-context value sink))
-        (attribute-value-using-configuration (parent-of cfg) sink attribute))))
-
-(defmethod attribute-value-using-configuration ((cfg prototype)
-                                                (sink t)
-                                                (attribute t))
+(defmethod attribute-value ((cfg prototype) (attribute t))
   (error 'unknown-attribute
          :sink cfg
          :attribute attribute))
 
-(defmethod attribute-value-using-configuration ((cfg null)
-                                                (sink t)
-                                                (attribute t))
+(defmethod attribute-value ((cfg null) (attribute t))
   (error "Programming is hard"))
 
 ;;; XXX FIXME: Prevent recursive definitions.

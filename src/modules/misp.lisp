@@ -119,8 +119,7 @@
           (t
            (call-next-method)))))
 
-(defmethod sink:attribute-value-using-configuration
-    ((cfg proto-misp) (sink t) (attribute (eql :alert)))
+(defmethod sink:attribute-value ((cfg proto-misp) (attribute (eql :alert)))
   ;; Default value for :alert parameter.
   nil)
 
@@ -128,8 +127,7 @@
     ((impl proto-misp) (attribute (eql :alert)) &rest args)
   (list* attribute (sink:check-args impl attribute args '((:type boolean)))))
 
-(defmethod sink:attribute-value-using-configuration
-    ((cfg proto-misp) (sink t) (attribute (eql :publish)))
+(defmethod sink:attribute-value ((cfg proto-misp) (attribute (eql :publish)))
   ;; Default value for :publish parameter.
   t)
 
