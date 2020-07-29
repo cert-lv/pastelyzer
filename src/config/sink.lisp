@@ -323,9 +323,6 @@
                    :parent (resolve-configuration parent)
                    :attributes attributes)))
 
-(defmethod attribute-value ((cfg configuration) (attribute t))
-  (attribute-value-using-configuration cfg cfg attribute))
-
 (defun attribute-value-in-context (value context)
   (if (functionp value)
       (funcall value context)
