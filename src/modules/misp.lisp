@@ -172,15 +172,20 @@
       (add-tag misp uuid tag))))
 
 (defun make-action/add-attribute (&key category type value comment)
-  (when (consp value)
-    (setq value (util:parse-item-function value)))
-  (when (consp comment)
-    (setq comment (util:parse-item-function comment)))
-  (lambda (item &key misp event-id uuid)
-    (declare (ignore uuid))
-    (add-event-attribute misp event-id category type
-                         (sink:attribute-value-in-context value item)
-                         (sink:attribute-value-in-context comment item))))
+  (flet ((attribute-retriever (datum)
+           (let ((parsed (util:parse-dynamic-attribute datum)))
+             (if (functionp parsed)
+                 parsed
+                 (lambda (context)
+                   (declare (ignore context))
+                   parsed)))))
+    (let ((value (attribute-retriever value))
+          (comment (attribute-retriever comment)))
+      (lambda (item &key misp event-id uuid)
+        (declare (ignore uuid))
+        (add-event-attribute misp event-id category type
+                             (funcall value item)
+                             (funcall comment item))))))
 
 (defmethod sink:parse-action ((impl proto-misp)
                               (scope (eql :document))

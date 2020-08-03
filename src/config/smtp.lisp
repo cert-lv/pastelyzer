@@ -14,7 +14,6 @@
                 #:group-artefacts
                 #:attribute-value
                 #:attribute-value-in-context
-                #:make-attribute-value-composer
                 #:finish-sink
                 #:invalid-attribute-type)
   (:local-nicknames (#:util #:pastelyzer.config.util))

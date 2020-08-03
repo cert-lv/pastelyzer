@@ -327,24 +327,15 @@
                    :parent (resolve-configuration parent)
                    :attributes attributes)))
 
-(defun attribute-value-in-context (value context)
-  (if (functionp value)
-      (funcall value context)
-      value))
-
-(defun make-attribute-value-composer (values)
-  (lambda (context)
-    (with-output-to-string (out)
-      (dolist (value values)
-        (cond ((eql :nl value)
-               (terpri out))
-              ((eql :fl value)
-               (fresh-line out))
-              ((functionp value)
-               (when-let (datum (funcall value context))
-                 (princ datum out)))
-              (t
-               (princ value out)))))))
+(defun attribute-value-in-context (cfg attribute context)
+  (flet ((resolve (value)
+           (if (functionp value)
+               (funcall value context)
+               value)))
+    (let ((value (attribute-value cfg attribute)))
+      (if (consp value)
+          (mapcar #'resolve value)
+          (resolve value)))))
 
 (defmethod attribute-value ((cfg prototype) (attribute t))
   (error 'unknown-attribute

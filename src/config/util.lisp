@@ -1,9 +1,13 @@
 (defpackage #:pastelyzer.config.util
   (:use #:common-lisp)
+  (:import-from #:alexandria
+                #:when-let)
   (:local-nicknames (#:sink #:pastelyzer.config.sink)
                     (#:filter #:pastelyzer.config.filter)
                     (#:usr #:pastelyzer.config.user))
   (:export #:parse-item-function
+           #:parse-dynamic-attribute
+           #:make-attribute-value-composer
            #:parse-user-template))
 
 (in-package #:pastelyzer.config.util)
@@ -18,17 +22,35 @@
       (apply #'format nil control-string
              (mapcar (lambda (fn) (funcall fn context)) values)))))
 
+(defun parse-dynamic-attribute (attr)
+  (typecase attr
+    (cons
+     (case (car attr)
+           (usr:fmt
+            (apply #'make-formatter (rest attr)))
+           (t
+            (parse-item-function attr))))
+    ((or string keyword)
+     attr)
+    (t
+     (error "Don't know what to do with attribute ~S" attr))))
+
+(defun make-attribute-value-composer (values)
+  (lambda (context)
+    (with-output-to-string (out)
+      (dolist (value values)
+        (cond ((eql :nl value)
+               (terpri out))
+              ((eql :fl value)
+               (fresh-line out))
+              ((functionp value)
+               (when-let (datum (funcall value context))
+                 (princ datum out)))
+              (t
+               (princ value out)))))))
+
 (defun parse-user-template (args)
-  (sink:make-attribute-value-composer
-   (mapcar (lambda (arg)
-             (etypecase arg
-               ((or string (member :fl :nl))
-                arg)
-               ((cons (eql usr:fmt))
-                (apply #'make-formatter (rest arg)))
-               ((cons (eql usr:extract))
-                (parse-item-function arg (second arg)))))
-           args)))
+  (make-attribute-value-composer (mapcar #'parse-dynamic-attribute args)))
 
 ;;; Extractors.
 ;;;
