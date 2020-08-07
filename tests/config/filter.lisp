@@ -27,12 +27,7 @@
               (member? . usr:member?)
               (note . usr:note)
               (important . usr:important)
-              (digits . usr:digits)
-              (bytes . usr:bytes)
-              (source-string . usr:source-string)
-              (source-context . usr:source-context)
-              (context-before . usr:context-before)
-              (context-after . usr:context-after)
+              (^ . usr:^)
 
               (define-set . usr:define-set)
               (ipv4-networks . usr:ipv4-networks)
@@ -454,3 +449,29 @@
     (is (= 1 (length artefacts)))
     (is (string= "keybase proof"
                  (pastelyzer:artefact-note (first artefacts))))))
+
+(config-test cmd.1 ()
+  (define-process-filter add-note
+      (-> (extract stdout)
+          (^ ^)
+          (not (or (= "") (= "data"))))
+    (set-note ^))
+
+  (define-sink file (usr:cmd-sink)
+    (:command "file" "-b" "-")
+    (:stdin (extract bytes))
+    (:stdout :collect-string)
+    (:action add-note))
+
+  (define-artefact-filter test
+      (type? pastelyzer:embedded-binary)
+    (collect-into file))
+
+  (let* ((content (format nil "H4sIAAAAAAAAAytILC5JzamsSlUoycgsVlRQSM~
+                               xLATJT8xSK83NTFXLzi1L1uACZ2lphJQAAAA=="))
+         (artefacts (extract-artefacts content)))
+    (is (some (lambda (artefact)
+                (pastelyzer.util:starts-with-subseq
+                 "gzip compressed data"
+                 (pastelyzer:artefact-note artefact)))
+              artefacts))))

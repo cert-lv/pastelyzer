@@ -1,5 +1,7 @@
 (defpackage #:pastelyzer.config.filter
   (:use :common-lisp)
+  (:import-from #:alexandria
+                #:when-let)
   (:import-from #:pastelyzer
                 #:starts-with-subseq
                 #:ends-with-subseq)
@@ -49,11 +51,23 @@
     (setq *filters* (append *filters* (list (cons name filter)))))
   name)
 
+(defvar *variables* '())
+
+(defun set-variable (name value)
+  (setf *variables* (acons name value *variables*)))
+
+(defun get-variable (name)
+  (let ((cons (assoc name *variables*)))
+    (if cons
+        (cdr cons)
+        (error "Variable ~S is not set." name))))
+
 (defun apply-filter (filter value ctx)
   (handler-case
-      (when (funcall (filter-function filter) value)
-        (dolist (action (filter-actions filter))
-          (funcall action value ctx)))
+      (let ((*variables* '()))
+        (when (funcall (filter-function filter) value)
+          (dolist (action (filter-actions filter))
+            (funcall action value ctx))))
     (serious-condition (condition)
       (msg :error "While applying filter ~S to ~S: ~A"
            (filter-name filter)
@@ -89,12 +103,20 @@
     (setf (pastelyzer:important-artefact-p artefact) t)))
 
 (defmethod parse-action ((action (eql 'usr:set-note)) &rest args)
-  (check-type args (cons string null))
-  (let ((note (first args)))
-    (lambda (artefact ctx)
-      (declare (ignore ctx))
-      (msg :debug "Setting note of ~S to ~S" artefact note)
-      (setf (pastelyzer:artefact-note artefact) note))))
+  (let ((datum (first args)))
+    (etypecase datum
+      (string
+       (lambda (artefact ctx)
+         (declare (ignore ctx))
+         (msg :debug "Setting note of ~S to ~S" artefact datum)
+         (setf (pastelyzer:artefact-note artefact) datum)))
+      (symbol
+       (lambda (artefact ctx)
+         (declare (ignore ctx))
+         (let ((note (get-variable datum)))
+           (msg :debug "Setting note of ~S to value of ~A: ~S"
+                artefact datum note)
+           (setf (pastelyzer:artefact-note artefact) note)))))))
 
 (defmacro make-function (op (&rest args) &body body)
   (declare (ignorable op))
@@ -109,6 +131,13 @@
 (defmethod generate-filter-function ((operator t) &rest body)
   (declare (ignore body))
   (error "Unknown operator: ~S" operator))
+
+(defmethod generate-filter-function ((operator (eql 'usr:^)) &rest body)
+  (check-type body (or null (cons symbol)))
+  (let ((name (or (first body) 'usr:^)))
+    (make-function ^ (value cont)
+      (set-variable name value)
+      (funcall cont value))))
 
 (defmethod generate-filter-function ((operator (eql 'usr:and)) &rest body)
   (if (endp body)
