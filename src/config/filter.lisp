@@ -7,6 +7,8 @@
                 #:ends-with-subseq)
   (:import-from #:pastelyzer.log
                 #:msg)
+  (:import-from #:pastelyzer.config.package
+                #:user-package)
   (:local-nicknames (#:usr #:pastelyzer.config.user)
                     (#:sink #:pastelyzer.config.sink)
                     (#:util #:pastelyzer.util))
@@ -241,7 +243,7 @@
 
 (defmethod generate-filter-function ((operator (eql 'usr:extract)) &rest body)
   (check-type body (cons symbol null))
-  (let ((accessor (first body)))
+  (let ((accessor (find-symbol (symbol-name (first body)) (user-package))))
     (make-function extract (value cont)
       (funcall cont (funcall accessor value)))))
 
