@@ -114,7 +114,7 @@
   (if (endp body)
       (make-function and (value cont)
         (declare (ignorable value))
-        (funcall cont t))
+        (funcall cont value))
       (let ((head (apply #'generate-filter-function (first body)))
             (tail (apply #'generate-filter-function operator (rest body))))
         (declare (type function head tail))
@@ -139,7 +139,7 @@
                    ;; XXX Allocates a closure at runtime.
                    (lambda (result)
                      (if result
-                         (funcall cont t)
+                         (funcall cont result)
                          (funcall tail value cont))))))))
 
 (defmethod generate-filter-function ((operator (eql 'usr:not)) &rest body)

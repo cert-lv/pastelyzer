@@ -128,11 +128,11 @@
 
 (test filter.and.0 ()
   (with-filter f (and)
-    (is (eq 't (f 42)))))
+    (is (eql 42 (f 42)))))
 
 (test filter.and ()
   (with-filter f (and (> 40) (< 50))
-    (is (eq 't (f 42)))
+    (is (eql 42 (f 42)))
     (is (eq 'nil (f 40)))
     (is (eq 'nil (f 50)))))
 
@@ -239,7 +239,7 @@
 (test filter.composite.1 ()
   (with-filter f (and (type? cl:string)
                       (-> (length) (> 3)))
-    (is (eq 't (f "fubar")))
+    (is (eq #1="fubar" (f #1#)))
     (is (eq 'nil (f "foo")))
     (is (eq 'nil (f (coerce "fubar" 'list))))))
 
@@ -248,9 +248,9 @@
                           (starts-with? "fu"))
                      (and (type? cl:list)
                           (starts-with? #(#x4d #x5a))))
-    (is (eq 't (f "fubar")))
+    (is (eq #1="fubar" (f #1#)))
     (is (eq 'nil (f "foo")))
-    (is (eq 't (f '(77 90 144))))
+    (is (eq #2='(77 90 144) (f #2#)))
     (is (eq 'nil (f 42)))))
 
 (config-test ipv4-network-set.1 ()
