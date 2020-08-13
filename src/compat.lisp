@@ -183,18 +183,3 @@
   (flexi-streams:with-output-to-sequence (out)
     (flexi-streams:with-input-from-sequence (in blob)
       (funcall (find-symbol "INFLATE-GZIP-STREAM" '#:ql-gunzipper) in out))))
-
-(defun resolve-stream (stream)
-  (if (typep stream 'synonym-stream)
-      (resolve-stream (symbol-value (synonym-stream-symbol stream)))
-      stream))
-
-#+sbcl
-(defun isatty (stream &aux (terminal (resolve-stream stream)))
-  (and (sb-sys:fd-stream-p terminal)
-       (not (zerop (sb-unix:unix-isatty (sb-sys:fd-stream-fd terminal))))))
-
-#-sbcl
-(defun isatty (stream)
-  (declare (ignore stream))
-  nil)

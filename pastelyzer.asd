@@ -36,6 +36,7 @@
                 :serial t
                 :components ((:file "package")
                              (:file "vars")
+                             (:file "sys")
                              (:file "compat")
                              (:file "util")
                              (:file "fmt")

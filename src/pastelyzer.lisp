@@ -683,6 +683,7 @@ Environment variables:
                  :message-class (if interactive
                                     'pastelyzer.log:timestamped-message
                                     'pastelyzer.log:plain-message))
+  (sys:initialize-directories)
   (with-logged-warnings
     (when config
       (read-config config))
@@ -719,7 +720,7 @@ Environment variables:
       (:cli
        (apply #'run-cli keys))
       (t
-       (cond ((isatty *standard-input*)
+       (cond ((sys:isatty *standard-input*)
               (usage)
               (uiop:quit))
              (t

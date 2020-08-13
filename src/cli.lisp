@@ -221,7 +221,10 @@
     (error (condition)
       (format *error-output* "~&~A~%" condition))))
 
-(defun run-cli (&key paths (colour (isatty *standard-output*)) export (dedup t)
+(defun run-cli (&key paths
+                     (colour (sys:isatty *standard-output*))
+                     export
+                     (dedup t)
                 &allow-other-keys)
   (let ((*export-artefacts-counter* (if export 0 nil)))
     (loop for (item . more) on paths
