@@ -2,7 +2,8 @@
   (:use #:common-lisp #:2am)
   (:local-nicknames (#:usr #:pastelyzer.config.user)
                     (#:sink #:pastelyzer.config.sink)
-                    (#:filter #:pastelyzer.config.filter))
+                    (#:filter #:pastelyzer.config.filter)
+                    (#:cmd #:pastelyzer.config.cmd))
   (:export #:tests))
 
 (in-package #:pastelyzer.tests.config.filter)

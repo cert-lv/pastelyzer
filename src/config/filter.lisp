@@ -12,7 +12,10 @@
   (:local-nicknames (#:usr #:pastelyzer.config.user)
                     (#:sink #:pastelyzer.config.sink)
                     (#:util #:pastelyzer.util))
-  (:export #:add-artefact-filter
+  (:export #:filter
+           #:add-filter
+           #:get-filter
+           #:apply-filter
            #:apply-filters
            #:collect-into
            #:generate-filter-function
@@ -41,9 +44,9 @@
   (or (cdr (assoc name *filters*))
       (error "Unknown filter: ~S." name)))
 
-(defun register-filter (name function actions)
+(defun register-filter (class name function actions)
   (check-type name symbol)
-  (let ((filter (make-instance 'filter
+  (let ((filter (make-instance class
                                :name name
                                :function function
                                :actions actions)))
@@ -76,8 +79,9 @@
            value
            condition))))
 
-(defun apply-filters (value ctx)
+(defun apply-filters (value ctx &key (class (find-class 'filter)))
   (loop for (nil . filter) in *filters*
+        when (eq class (class-of filter))
         do (apply-filter filter value ctx))
   value)
 
@@ -363,8 +367,8 @@
                      result))))
       #'identity))
 
-(defun add-artefact-filter (name code actions)
-  (register-filter name
+(defun add-filter (class name code actions)
+  (register-filter class name
                    (parse-filter name code)
                    (mapcar (lambda (action)
                              (apply #'parse-action

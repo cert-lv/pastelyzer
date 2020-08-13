@@ -34,8 +34,13 @@
            #:run-document-actions
            #:run-item-actions
 
+           #:attribute-problem
+           #:sink-problem
+           #:attribute-error
            #:configuration-error
-           #:invalid-attribute-type))
+           #:invalid-attribute-type
+           #:missing-attribute-value
+           #:too-many-attribute-values))
 
 (in-package #:pastelyzer.config.sink)
 
@@ -146,6 +151,7 @@
            (signal 'file-does-not-exist :path path))))
     ((cons (eql usr:or))
      (some #'resolve-user-value (rest form)))
+    (keyword form)
     (string form)))
 
 (defun check-args (sink attribute args specs)

@@ -4,13 +4,14 @@
                 #:make-configuration
                 #:register-configuration)
   (:import-from #:pastelyzer.config.filter
-                #:add-artefact-filter)
+                #:add-filter)
   (:import-from #:pastelyzer.log
                 #:msg)
   (:local-nicknames (#:usr #:pastelyzer.config.user)
                     (#:sink #:pastelyzer.config.sink)
                     (#:filter #:pastelyzer.config.filter))
-  (:export #:load-configuration))
+  (:export #:load-configuration
+           #:apply-directive))
 
 (in-package #:pastelyzer.config.loader)
 
@@ -60,7 +61,7 @@
   (destructuring-bind (name code &rest actions)
       args
     (msg :debug "Defining artefact filter ~S" name)
-    (add-artefact-filter name code actions)))
+    (add-filter 'filter:filter name code actions)))
 
 (defmethod load-configuration ((source pathname))
   (with-open-file (stream source :direction :input)
@@ -116,5 +117,4 @@
           (filter::*filters* '()))
       (read-configuration source)
       (values sink::*known-configurations*
-              filter::*filters*)))
-  (values))
+              filter::*filters*))))
