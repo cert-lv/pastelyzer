@@ -260,7 +260,7 @@ SELECT c.id, c.size
 
 (pomo:defprepared-with-names content-artefacts (content-id)
     ("
-SELECT content_id, type, value, extra
+SELECT content_id, type, value, extra, important, note
   FROM artefacts
  WHERE content_id = $1"
      content-id)
