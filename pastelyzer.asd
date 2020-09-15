@@ -2,7 +2,7 @@
   :description "Leak analyser"
   :author "Jānis Džeriņš <janis.dzerins@cert.lv>"
   :version (:read-file-form "src/vars.lisp" :at (1 2))
-  :license "n/a"
+  :license "Zlib"
   :long-description "Monitor data posted on the interwebs -- mainly
   (but not only) on paste sites."
   :build-operation program-op
