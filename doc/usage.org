@@ -1036,7 +1036,7 @@ change, and we want to avoid updating the software when they do.
 :CUSTOM_ID: CREDENTIAL
 :END:
 
-An username/passphrase pair, separated by colon (~:~), semicolon (~;~),
+A username/passphrase pair, separated by colon (~:~), semicolon (~;~),
 vertical bar (~|~), comma (~,~) or tab character.  At the moment regular
 expressions are used to match both.  Even though the character repertoire for
 passphrases is quite generous, there are some limitations:
@@ -1314,7 +1314,7 @@ Fields in the result records are named depending on the artefact type.  This
 is nothing more than a straight forward mapping from database columns to
 record fields, as summarized in the table [[typed-query-results]].  As with
 generic search the ~important~ field is only included if its value is ~true~,
-and ~note~ field is only include if it has a value.
+and ~note~ field is only included if it has a value.
 
 #+CAPTION: Typed artefact record fields
 #+NAME: typed-query-results
