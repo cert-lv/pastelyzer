@@ -773,7 +773,7 @@ filter expressions are supported:
   has a comment attached and the context value is an artefact then the comment
   is automatically stored in the artefact's ~note~ field.
 
-- ~(mixed-case? <string>)~ ::
+- ~(mixed-case?)~ ::
   True if the context value has both lower and upper case letters.
 
 If an artefact matches the filter expression all actions are executed on it.
