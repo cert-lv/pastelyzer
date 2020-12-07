@@ -136,7 +136,7 @@
            (values nil ht:+http-bad-request+)))))
 
 (define-handler content-artefacts :get
-    ("^/content/(\\d+)/artefacts$" content-id)
+    ("^/content/(\\d+)/artefacts(/typed)?$" content-id typed)
   (let ((artefacts
           (db:with-connection ()
             (db:content-artefacts content-id))))
@@ -145,7 +145,8 @@
     (setf (ht:header-out :content-type) "application/json")
     (jsown:to-json
      (loop for artefact in artefacts
-           collect (apply #'artefact-to-jsown artefact)))))
+           collect (apply (if typed #'artefact-to-jsown* #'artefact-to-jsown)
+                          artefact)))))
 
 (define-handler content-meta :get
     ("^/content/(\\d+)/?$" (#'parse-integer content-id))
