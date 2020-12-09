@@ -97,7 +97,7 @@
            :attribute attribute
            :sink proto))
   (let ((input (first args)))
-    (list attribute (util:parse-dynamic-attribute input))))
+    (list attribute (util:parse-dynamic-attribute input attribute))))
 
 (defmethod sink:parse-sink-attribute
     ((proto cmd) (attribute (eql :stdout)) &rest args)
@@ -127,14 +127,9 @@
   ;; directory of the pastelyzer (in case we supply any useful
   ;; scripts).  Or the ID of the current document.
   (list* attribute
-         (mapcar (lambda (datum)
-                   (destructuring-bind (name value) datum
-                     (if (consp value)
-                         (let ((fn (util:parse-dynamic-attribute value)))
-                           (lambda (context)
-                             (cons name (funcall fn context))))
-                         (cons name value))))
-                 args)))
+         (loop for (name value) in args
+               collect (cons name
+                             (util:parse-dynamic-attribute value attribute)))))
 
 (defmethod sink:parse-sink-attribute
     ((proto cmd) (attribute (eql :action)) &rest args)

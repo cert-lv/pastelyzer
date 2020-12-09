@@ -22,7 +22,7 @@
       (apply #'format nil control-string
              (mapcar (lambda (fn) (funcall fn context)) values)))))
 
-(defun parse-dynamic-attribute (attr)
+(defun parse-dynamic-attribute (attr &optional name)
   (typecase attr
     (cons
      (case (car attr)
@@ -32,8 +32,10 @@
             (parse-item-function attr))))
     ((or string keyword)
      attr)
+    (null
+     nil)
     (t
-     (error "Don't know what to do with attribute ~S" attr))))
+     (error "Invalid value~@[ for attribute ~S~]: ~S" name attr))))
 
 (defun make-attribute-value-composer (values)
   (lambda (context)

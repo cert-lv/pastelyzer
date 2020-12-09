@@ -172,15 +172,15 @@
       (add-tag misp uuid tag))))
 
 (defun make-action/add-attribute (&key category type value comment)
-  (flet ((attribute-retriever (datum)
-           (let ((parsed (util:parse-dynamic-attribute datum)))
+  (flet ((attribute-retriever (name datum)
+           (let ((parsed (util:parse-dynamic-attribute datum name)))
              (if (functionp parsed)
                  parsed
                  (lambda (context)
                    (declare (ignore context))
                    parsed)))))
-    (let ((value (attribute-retriever value))
-          (comment (attribute-retriever comment)))
+    (let ((value (attribute-retriever :value value))
+          (comment (attribute-retriever :comment comment)))
       (lambda (item &key misp event-id uuid)
         (declare (ignore uuid))
         (add-event-attribute misp event-id category type
