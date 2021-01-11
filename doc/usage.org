@@ -276,6 +276,8 @@ and closing square brackets are expected to be space-separated hexadecimal
 
 The following configuration directives are recognized (described in following
 sections): ~define-set~, ~define-sink~ and ~define-artefact-filter~[fn:4].
+These directives, as well as other /symbolic/ identifiers are *case
+insensitive*.
 
 ** User sets
 :PROPERTIES:
