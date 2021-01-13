@@ -3,7 +3,9 @@
   (:local-nicknames (#:usr #:pastelyzer.config.user)
                     (#:sink #:pastelyzer.config.sink)
                     (#:filter #:pastelyzer.config.filter)
-                    (#:cmd #:pastelyzer.config.cmd))
+                    (#:cmd #:pastelyzer.config.cmd)
+                    (#:cfg.util #:pastelyzer.config.util)
+                    (#:ctx #:pastelyzer.config.context))
   (:export #:tests))
 
 (in-package #:pastelyzer.tests.config.filter)
@@ -44,7 +46,7 @@
 (defmacro with-filter (var filter &body body)
   (let ((filter (translate-user-symbols filter)))
     `(let ((.filter.
-             (pastelyzer.config.filter::parse-filter 'test-filter ',filter)))
+             (filter::parse-filter 'test-filter ',filter)))
        (declare (type function .filter.))
        (flet ((,var (value)
                 (funcall .filter. value)))
@@ -67,7 +69,7 @@
                                  form))
                            form)))))
 
-(defclass test-job (pastelyzer.config.context:configurable-job)
+(defclass test-job (ctx:configurable-job)
   ())
 
 (defun extract-artefacts (subject)
@@ -79,26 +81,21 @@
                      (otherwise
                       subject)))
          (job (make-instance 'test-job :subject fragment)))
-    (values (pastelyzer.config.context:job-artefacts (pastelyzer:process job))
+    (values (ctx:job-artefacts (pastelyzer:process job))
             job)))
 
-(defclass test-sink-prototype (pastelyzer.config.sink::prototype)
+(defclass test-sink-prototype (sink::prototype)
   ())
 
-(defvar *test-proto*
+(defmethod sink:get-prototype ((name (eql 'test-sink)))
   (make-instance 'test-sink-prototype))
 
-(defmethod pastelyzer.config.sink:get-prototype ((name (eql 'test-sink)))
-  *test-proto*)
-
-(defmethod pastelyzer.config.sink:finish-sink
-    ((proto test-sink-prototype) (sink pastelyzer.config.sink:sink))
+(defmethod sink:finish-sink ((proto test-sink-prototype) (sink sink:sink))
   ;; Nothing special to do.
   sink)
 
 (defmethod collected-artefacts ((job test-job) (sink symbol))
-  (pastelyzer.config.sink:sink-artefacts
-   (pastelyzer.config.context::get-sink job sink)))
+  (sink:sink-artefacts (ctx::get-sink job sink)))
 
 (suite 'tests)
 
