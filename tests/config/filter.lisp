@@ -534,12 +534,12 @@
 
 (config-test template.1 ()
   (define-sink a-sink (template-test-sink)
-    (:template (extract usr::source-url)))
+    (:template (extract usr::origin)))
 
   ;; XXX: It would be nice if we could test template processing without
   ;; artificial artefacts.  But at least one artefact is needed for document
   ;; post-processing to kick in.
-  (define-artefact-filter source-url-test
+  (define-artefact-filter origin-test
       (= "artefact.test")
     (collect-into a-sink))
 
@@ -557,7 +557,7 @@
     (:template (extract usr::remote-url)))
 
   ;; XXX: Same as above.
-  (define-artefact-filter source-url-test
+  (define-artefact-filter origin-test
       (= "artefact.test")
     (collect-into a-sink))
 

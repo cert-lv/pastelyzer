@@ -316,8 +316,9 @@
    :provider "web"))
 
 (defmethod paste-source ((paste web-paste))
-  (let ((uri (puri:uri (paste-provider-id paste))))
-    (values (puri:uri-host uri) nil uri)))
+  (let* ((provider-id (paste-provider-id paste))
+         (uri (puri:uri provider-id)))
+    (values (puri:uri-host uri) provider-id uri)))
 
 (defun store-fixed-content (&key broken-id uri data)
   (declare (type unsigned-byte broken-id)

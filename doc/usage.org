@@ -523,7 +523,7 @@ be generated using forms provided in the attribute.
 :CUSTOM_ID: sink-field-extractors
 :END:
 
-- ~source-url~ ::
+- ~origin~ ::
   Source site of the document being processed.  E.g., ~pastebin.com~.
 
 - ~remote-url~ ::
@@ -833,7 +833,7 @@ table, ~summary~ column.  The number of discarded artefacts is stored in
     (:publish yes)
     (:title
      (fmt "~@[~A: ~]~A probable card number~:P"
-          (extract source-url)
+          (extract origin)
           (unique-count bank-card-number)))
     (:sharing-group "Finance")
     (:document-action
@@ -841,7 +841,7 @@ table, ~summary~ column.  The number of discarded artefacts is stored in
     (:document-action
      (add-attribute :category "External analysis"
                     :type "url"
-                    :value (extract source-url)))
+                    :value (extract origin)))
     (:item-action
      (add-attribute :category "Financial fraud"
                     :type "cc-number"

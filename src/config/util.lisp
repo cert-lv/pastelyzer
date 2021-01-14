@@ -61,6 +61,10 @@
 ;;; checking.
 
 (defun usr::source-url (document)
+  (warn "SOURCE-URL extractor is deprecated, use ORIGIN instead.")
+  (usr::origin document))
+
+(defun usr::origin (document)
   (pastelyzer:paste-source document))
 
 (defun usr::local-url (document)
