@@ -664,7 +664,7 @@ This sink is used to send emails.  Attributes:
 
   - ~(add-attribute :category <string> :type <string> :value <string> :comment <string>)~ ::
     Add an attribute to the event with the given ~category~, ~type~, ~value~
-    and ~comment~ (optional).  The subject of the action is sink (document).
+    and ~comment~ (optional).  The context of the action is sink document.
 
 - ~(:item-action <form>)~ ::
   An action to perform after the MISP event is created, and all document
@@ -674,8 +674,7 @@ This sink is used to send emails.  Attributes:
 
   - ~(add-attribute :category <string> :type <string> :value <string> :comment <string>)~ ::
     Add an attribute to the event with the given ~category~, ~type~, ~value~
-    and ~comment~ (optional).  The subject (context) of the action is an
-    artefact.
+    and ~comment~ (optional).  The context of the action is an artefact.
 
 ** Filters
 :PROPERTIES:

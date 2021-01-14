@@ -72,7 +72,17 @@
 (defclass test-job (ctx:configurable-job)
   ())
 
-(defun extract-artefacts (subject)
+(defun filter-artefacts-by-class (artefacts types)
+  (if types
+      (let ((classes (mapcar #'find-class types)))
+        (loop for item in artefacts
+              when (find (class-of item) classes)
+                collect item))
+      artefacts))
+
+;;; XXX: This is basically the same as PASTELYZER.TESTS::EXTRACT-ARTEFACTS,
+;;; except here our TEST-JOB class is different.
+(defun extract-artefacts (subject &rest types)
   (let* ((fragment (typecase subject
                      (string
                       (make-instance 'pastelyzer:string-fragment :body subject))
@@ -80,8 +90,9 @@
                       (make-instance 'pastelyzer:binary-fragment :body subject))
                      (otherwise
                       subject)))
-         (job (make-instance 'test-job :subject fragment)))
-    (values (ctx:job-artefacts (pastelyzer:process job))
+         (job (make-instance 'test-job :subject fragment))
+         (result (ctx:job-artefacts (pastelyzer:process job))))
+    (values (filter-artefacts-by-class result types)
             job)))
 
 (defclass test-sink-prototype (sink::prototype)
@@ -94,8 +105,9 @@
   ;; Nothing special to do.
   sink)
 
-(defmethod collected-artefacts ((job test-job) (sink symbol))
-  (sink:sink-artefacts (ctx::get-sink job sink)))
+(defun collected-artefacts (job sink &rest types)
+  (filter-artefacts-by-class (sink:sink-artefacts (ctx::get-sink job sink))
+                                types))
 
 (suite 'tests)
 
@@ -473,3 +485,87 @@
                  "gzip compressed data"
                  (pastelyzer:artefact-note artefact)))
               artefacts))))
+
+(defclass template-test-prototype (test-sink-prototype)
+  ())
+
+(defmethod sink:get-prototype ((name (eql 'template-test-sink)))
+  (make-instance 'template-test-prototype))
+
+(defmethod sink:parse-sink-attribute
+    ((proto template-test-prototype) (attr (eql :template)) &rest args)
+  (list attr (cfg.util:parse-user-template args)))
+
+(defclass fake-artefact (pastelyzer:string-artefact)
+  ())
+
+(defmethod sink:finish-sink ((proto template-test-prototype) (sink sink:sink))
+  (let* ((document (sink:sink-document sink))
+         (value (sink:attribute-value-in-context sink :template document))
+         (fragment (make-instance 'pastelyzer:string-fragment :body value))
+         (artefact (make-instance 'fake-artefact :source fragment)))
+    (sink:add-artefact sink artefact)))
+
+(defclass fake-paste (pastelyzer:paste)
+  ())
+
+(defun make-fake-paste (string &optional (id 0))
+  (let* ((bytes (map '(vector (unsigned-byte 8)) #'char-code string))
+         (content (make-instance 'pastelyzer:content :id id :body bytes)))
+    (make-instance 'fake-paste
+                   :id id
+                   :provider "test"
+                   :provider-id "a-paste"
+                   :content content)))
+
+(defmethod pastelyzer:paste-source ((paste fake-paste))
+  (let ((id (pastelyzer:paste-id paste)))
+    (values (format nil "~A:~A"
+                    (pastelyzer:paste-provider paste)
+                    (pastelyzer:paste-provider-id paste))
+            (make-instance 'puri:uri
+                           :scheme :test
+                           :host "test.local"
+                           :path (format nil "/~A" id))
+            (make-instance 'puri:uri
+                           :scheme :test
+                           :host "test.local"
+                           :path (format nil "/~A/raw" id)))))
+
+(config-test template.1 ()
+  (define-sink a-sink (template-test-sink)
+    (:template (extract usr::source-url)))
+
+  ;; XXX: It would be nice if we could test template processing without
+  ;; artificial artefacts.  But at least one artefact is needed for document
+  ;; post-processing to kick in.
+  (define-artefact-filter source-url-test
+      (= "artefact.test")
+    (collect-into a-sink))
+
+  (let ((paste (make-fake-paste "aaa artefact.test zzz")))
+    (multiple-value-bind (artefacts job)
+        (extract-artefacts paste)
+      (declare (ignore artefacts))
+      (let ((rendered (collected-artefacts job 'a-sink 'fake-artefact)))
+        (is (= 1 (length rendered)))
+        (is (string= "test:a-paste"
+                     (pastelyzer:artefact-source (first rendered))))))))
+
+(config-test template.2 ()
+  (define-sink a-sink (template-test-sink)
+    (:template (extract usr::remote-url)))
+
+  ;; XXX: Same as above.
+  (define-artefact-filter source-url-test
+      (= "artefact.test")
+    (collect-into a-sink))
+
+  (let ((paste (make-fake-paste "aaa artefact.test zzz" 42)))
+    (multiple-value-bind (artefacts job)
+        (extract-artefacts paste)
+      (declare (ignore artefacts))
+      (let ((rendered (collected-artefacts job 'a-sink 'fake-artefact)))
+        (is (= 1 (length rendered)))
+        (is (string= "test://test.local/42"
+                     (pastelyzer:artefact-source (first rendered))))))))

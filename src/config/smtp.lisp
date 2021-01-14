@@ -54,14 +54,15 @@
   ;; TODO: The presence of these fields should be checked after
   ;; loading the configuration.
   (flet ((ensure-value (name)
-           (let ((value (attribute-value sink name)))
+           (let* ((document (sink-document sink))
+                  (value (attribute-value-in-context sink name document)))
              (cond ((plusp (length value))
                     value)
                    (t
                     (msg :error "Missing value for field ~S in ~S for ~S"
                          name
                          (sink-configuration sink)
-                         (sink-document sink))
+                         document)
                     (return-from finish-sink nil))))))
     (cl-smtp:send-email
      (ensure-value :server)

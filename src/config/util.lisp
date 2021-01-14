@@ -63,27 +63,24 @@
 (defun usr::source-url (document)
   (pastelyzer:paste-source document))
 
-(defun usr::local-url (sink)
-  (let ((document (sink:sink-document sink)))
-    (pastelyzer::external-url-to document)))
+(defun usr::local-url (document)
+  (pastelyzer::external-url-to document))
 
-(defun usr::remote-url (sink)
-  (let ((document (sink:sink-document sink)))
-    ;; Should cache this result.
-    (multiple-value-bind (source url raw-url)
-        (pastelyzer::paste-source document)
-      (declare (ignore source raw-url))
-      (when url
-        (puri:render-uri url nil)))))
+(defun usr::remote-url (document)
+  ;; Should cache this result.
+  (multiple-value-bind (source url raw-url)
+      (pastelyzer::paste-source document)
+    (declare (ignore source raw-url))
+    (when url
+      (puri:render-uri url nil))))
 
-(defun usr::remote-raw-url (sink)
-  (let ((document (sink:sink-document sink)))
-    ;; Should use the cached result.
-    (multiple-value-bind (source url raw-url)
-        (pastelyzer::paste-source document)
-      (declare (ignore source url))
-      (when raw-url
-        (puri:render-uri raw-url nil)))))
+(defun usr::remote-raw-url (document)
+  ;; Should use the cached result.
+  (multiple-value-bind (source url raw-url)
+      (pastelyzer::paste-source document)
+    (declare (ignore source url))
+    (when raw-url
+      (puri:render-uri raw-url nil))))
 
 (defun usr::artefact-descriptions (sink)
   (with-output-to-string (out)
