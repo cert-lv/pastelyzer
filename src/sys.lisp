@@ -174,14 +174,13 @@
              (funcall function stream)
           (close stream))))))
 
-(defmacro with-temporary-file ((var &key directory
-                                         element-type
+(defmacro with-temporary-file ((var &key directory element-type
                                          (prefix "pastelyzer-"))
-                               &body body
-                               &environment env)
-  (let* ((name-form (if (constantp prefix env)
-                        (concatenate 'base-string prefix "XXXXXX")
-                        `(concatenate 'base-string ,prefix "XXXXXX")))
+                               &body body &environment env)
+  (let* ((name-form
+           (if (constantp prefix env)
+               (concatenate 'string prefix "XXXXXX")
+               `(concatenate 'string (or ,prefix "pastelyzer-") "XXXXXX")))
          (template-form
            (if directory
                `(merge-pathnames (make-pathname :name ,name-form)

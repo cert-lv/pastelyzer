@@ -513,6 +513,30 @@
                         (pastelyzer:artefact-note artefact)))
               artefacts))))
 
+#+sbcl
+(config-test cmd.3 ()
+  (define-process-filter add-note
+      (-> (extract stdout)
+          (and (starts-with? "abcdef-")
+               (^)))
+    (set-note ^))
+
+  (define-sink basename (usr:cmd-sink)
+    (:command "basename" (store-tmpfile "abcdef-"))
+    (:stdout :collect-string)
+    (:action add-note))
+
+  ;; XXX: A synthetic artefact to attach output from our command to.
+  (define-artefact-filter origin-test
+      (= "artefact.test")
+    (collect-into basename))
+
+  (let* ((string "aaa artefact.test zzz")
+         (artefacts (extract-artefacts string)))
+    (is (= 1 (length artefacts)))
+    (is (pastelyzer.util:starts-with-subseq
+         "abcdef-" (pastelyzer:artefact-note (first artefacts))))))
+
 (defun string-lines (string)
   (with-input-from-string (stream string)
     (loop for line = (read-line stream nil nil)

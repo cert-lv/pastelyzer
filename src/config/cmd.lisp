@@ -169,40 +169,52 @@
 (defvar *cmd-dir* nil
   "Directory (temporary) where external command is being executed.")
 
-(defmethod dump-to-tmpfile ((seq vector) (directory pathname))
+(defmethod dump-to-tmpfile ((seq vector) (directory pathname) &optional prefix)
   (let ((element-type (etypecase seq
                         ((vector (unsigned-byte 8)) '(unsigned-byte 8))
                         (base-string                'base-char)
                         (string                     'character))))
     (sys:with-temporary-file (out :directory directory
-                                  :element-type element-type)
+                                  :element-type element-type
+                                  :prefix prefix)
       (write-sequence seq out)
       (pathname out))))
 
 (defmethod dump-to-tmpfile ((fragment pastelyzer:binary-fragment)
-                            (directory pathname))
+                            (directory pathname)
+                            &optional prefix)
   (sys:with-temporary-file (out :directory directory
-                                :element-type '(unsigned-byte 8))
+                                :element-type '(unsigned-byte 8)
+                                :prefix prefix)
     (write-sequence (pastelyzer:fragment-body fragment) out)
     (pathname out)))
 
 (defmethod dump-to-tmpfile ((fragment pastelyzer:string-fragment)
-                            (directory pathname))
+                            (directory pathname)
+                            &optional prefix)
   (sys:with-temporary-file (out :directory directory
-                                :element-type 'character)
+                                :element-type 'character
+                                :prefix prefix)
     (write-sequence (pastelyzer:fragment-body fragment) out)
     (pathname out)))
 
-(defmethod dump-to-tmpfile ((datum (eql :null)) (directory pathname))
+(defmethod dump-to-tmpfile ((artefact pastelyzer:artefact)
+                            (directory pathname)
+                            &optional prefix)
+  (dump-to-tmpfile (pastelyzer:artefact-source artefact) directory prefix))
+
+(defmethod dump-to-tmpfile ((datum (eql :null)) (directory pathname)
+                            &optional prefix)
+  (declare (ignore prefix))
   nil)
 
 (defmethod filter:generate-filter-function
     ((operator (eql (user-identifier "STORE-TMPFILE"))) &rest body)
-  (check-type body null)
+  (check-type body (or null (cons string null)))
   (filter:make-function store-tmpfile (value cont)
     (unless *cmd-dir*
       (error "STORE-TMPFILE called in invalid context."))
-    (funcall cont (namestring (dump-to-tmpfile value *cmd-dir*)))))
+    (funcall cont (namestring (dump-to-tmpfile value *cmd-dir* (first body))))))
 
 (defmethod pastelyzer:artefact-note ((process finished-process))
   (pastelyzer:artefact-note (finished-process-artefact process)))
