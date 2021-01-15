@@ -58,7 +58,7 @@
                                            (:file "util")
                                            (:file "sets")
                                            (:file "smtp")
-                                           (:file "cmd")))
+                                           (:file "cmd" :if-feature :sbcl)))
                              (:file "server")
                              (:file "json-api")
                              (:file "rest")

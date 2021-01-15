@@ -31,6 +31,7 @@
               (note . usr:note)
               (important . usr:important)
               (^ . usr:^)
+              (store-tmpfile . usr:store-tmpfile)
 
               (define-set . usr:define-set)
               (ipv4-networks . usr:ipv4-networks)
@@ -460,6 +461,7 @@
     (is (string= "keybase proof"
                  (pastelyzer:artefact-note (first artefacts))))))
 
+#+sbcl
 (config-test cmd.1 ()
   (define-process-filter add-note
       (-> (extract stdout)
@@ -485,6 +487,68 @@
                  "gzip compressed data"
                  (pastelyzer:artefact-note artefact)))
               artefacts))))
+
+#+sbcl
+(config-test cmd.2 ()
+  (define-process-filter add-note
+      (-> (extract stdout)
+          (^ ^)
+          (not (or (= "") (= "data"))))
+    (set-note ^))
+
+  (define-sink file (usr:cmd-sink)
+    (:command "file" "-b" (-> (extract bytes) (store-tmpfile)))
+    (:stdout :collect-string)
+    (:action add-note))
+
+  (define-artefact-filter test
+      (type? pastelyzer:embedded-binary)
+    (collect-into file))
+
+  (let* ((content (format nil "H4sIAAAAAAAAAytILC5JzamsSlUoycgsVlRQSM~
+                               xLATJT8xSK83NTFXLzi1L1uACZ2lphJQAAAA=="))
+         (artefacts (extract-artefacts content)))
+    (is (some (lambda (artefact)
+                (search "gzip compressed data"
+                        (pastelyzer:artefact-note artefact)))
+              artefacts))))
+
+(defun string-lines (string)
+  (with-input-from-string (stream string)
+    (loop for line = (read-line stream nil nil)
+          while line
+          collect line)))
+
+#+sbcl
+(config-test cmd.env.1 ()
+  (define-process-filter add-note
+      (-> (extract stdout)
+          (^ environment))
+    (set-note environment))
+
+  (define-sink env (usr:cmd-sink)
+    (:command "env")
+    (:environment ("EXTRA_VAR_1" "value-1"))
+    (:stdout :collect-string)
+    (:action add-note))
+
+  ;; XXX: A synthetic artefact to attach output from our command to.
+  (define-artefact-filter origin-test
+      (= "artefact.test")
+    (collect-into env))
+
+  (let* ((string "aaa artefact.test zzz")
+         (artefacts (extract-artefacts string)))
+    (is (= 1 (length artefacts)))
+    (let* ((env (pastelyzer:artefact-note (first artefacts)))
+           (lines (string-lines env)))
+      (is (= 2 (length lines)))
+      (is (some (lambda (line)
+                  (pastelyzer.util:starts-with-subseq
+                   "PASTELYZER_HOME=" line))
+                lines))
+      (is (some (lambda (line) (string= "EXTRA_VAR_1=value-1" line))
+                lines)))))
 
 (defclass template-test-prototype (test-sink-prototype)
   ())

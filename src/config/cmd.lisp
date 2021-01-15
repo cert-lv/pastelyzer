@@ -1,3 +1,6 @@
+;;; This file is only loaded for SBCL (see system definition) because CCL does
+;;; not (yet) support :directory parameter to RUN-PROGRAM.
+
 (defpackage #:pastelyzer.config.cmd
   (:use #:common-lisp)
   (:import-from #:alexandria
@@ -20,20 +23,24 @@
 (defclass cmd (sink:prototype)
   ((default-environment
     :reader cmd-sink-default-environment
-    :type list)))
+    :type list
+    :documentation "External processes are executed in a clean environment
+    with only the environment variables listed here present (populated in
+    INITIALIZE-INSTANCE :after method).")))
 
 (defmethod initialize-instance :after ((object cmd) &key)
   ;; The default enviroment should be re-generated when configuration
   ;; changes (when we support that).
-  (setf (slot-value object 'default-environment)
-        `(("PASTELYZER_SERVER" . ,(princ-to-string pastelyzer::*web-server-external-uri*))
-          ("PASTELYZER_HOME" . ,(namestring sys:*home*)))))
-
-(defvar *cmd-prototype* nil)
+  (let ((home (namestring (merge-pathnames "")))
+        (server (if pastelyzer::*acceptor*
+                    (princ-to-string pastelyzer::*web-server-external-uri*)
+                    nil)))
+    (setf (slot-value object 'default-environment)
+         `(("PASTELYZER_HOME" . ,home)
+           ,@(when server `(("PASTELYZER_SERVER" . ,server)))))))
 
 (defmethod sink:get-prototype ((name (eql (user-identifier "CMD-SINK"))))
-  (or *cmd-prototype*
-      (setq *cmd-prototype* (make-instance 'cmd))))
+  (make-instance 'cmd))
 
 (defclass finished-process ()
   ((artefact
@@ -115,21 +122,10 @@
 
 (defmethod sink:parse-sink-attribute
     ((proto cmd) (attribute (eql :environment)) &rest args)
-  ;; Value should be a list of lists of two elements, specifying
-  ;; environment variable and its value.  The value can also be an
-  ;; expression that evaluates to a string.
-
-  ;; XXX: Care must be taken to not leak sensitive values of
-  ;; pastelyzer process (such as database credentials or other API
-  ;; keys).  Might consider running the child process in a clean
-  ;; environment, pre-populated with pastelyzer specific values such
-  ;; as the host and port number of the web server, or the working
-  ;; directory of the pastelyzer (in case we supply any useful
-  ;; scripts).  Or the ID of the current document.
-  (list* attribute
-         (loop for (name value) in args
-               collect (cons name
-                             (util:parse-dynamic-attribute value attribute)))))
+  (list attribute
+        (loop for (name value) in args
+              collect (cons name
+                            (util:parse-dynamic-attribute value attribute)))))
 
 (defmethod sink:parse-sink-attribute
     ((proto cmd) (attribute (eql :action)) &rest args)
@@ -164,11 +160,7 @@
   nil)
 
 (defmethod sink:attribute-value ((cfg cmd) (attribute (eql :time-limit)))
-  :nil)
-
-;; (defmethod sink:attribute-value-using-configuration
-;;     ((cfg sink:configuration) (sink sink:sink) (attribute (eql :stdin)))
-;;   (break "Must fish out :stdin from ~S" cfg))
+  nil)
 
 ;;; XXX: We might want the binding of this be an instance of
 ;;; EXTERNAL-PROCESS, which would have slots for the (temporary)
@@ -201,7 +193,7 @@
     (write-sequence (pastelyzer:fragment-body fragment) out)
     (pathname out)))
 
-(defmethod dump-to-tmpfile ((datum null) (directory pathname))
+(defmethod dump-to-tmpfile ((datum (eql :null)) (directory pathname))
   nil)
 
 (defmethod filter:generate-filter-function
@@ -266,16 +258,16 @@
               nil)))
          (process (item actions stdout stderr)
            (let ((env (append
-                       (sink:attribute-value-in-context sink :environment item)
+                       (sink:attribute-value sink :environment)
                        (cmd-sink-default-environment proto)))
-                 (command (sink:attribute-value-in-context sink :command item))
                  (stdin (sink:attribute-value-in-context sink :stdin item)))
              (sys:with-temporary-directory (tmpdir)
-               (let ((*cmd-dir* tmpdir)
-                     (out (open-stream stdout tmpdir "stdout-"))
-                     (err (open-stream stderr tmpdir "stderr-")))
+               (let* ((*cmd-dir* tmpdir)
+                      (cmd (sink:attribute-value-in-context sink :command item))
+                      (out (open-stream stdout tmpdir "stdout-"))
+                      (err (open-stream stderr tmpdir "stderr-")))
                  (multiple-value-bind (status)
-                     (sys:run-program command
+                     (sys:run-program cmd
                                       :stdin (dump-to-tmpfile stdin tmpdir)
                                       :stdout out
                                       :stderr err
