@@ -249,7 +249,7 @@
   (check-type body (cons symbol null))
   (let ((accessor (find-symbol (symbol-name (first body)) (user-package))))
     (make-function extract (value cont)
-      (funcall cont (funcall accessor value)))))
+      (funcall cont (extract accessor value)))))
 
 (defmethod generate-filter-function ((operator (eql 'usr:->)) &rest body)
   (if (endp body)

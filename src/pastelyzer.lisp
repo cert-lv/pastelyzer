@@ -614,8 +614,8 @@ CLI options:
 Server/reprocess options:
   -c, --config           path to configuration file
   --server-port          start web server on port N (default: 7000)
-  --server-ext-host      web server host (for emails; default: 'localhost')
-  --server-ext-port      web server port (for emails; no default)
+  --server-ext-host      web server external host (default: 'localhost')
+  --server-ext-port      web server external port (default: server port)
 
 Server only options:
   -w, --workers          use N worker threads (default: 4)

@@ -59,13 +59,13 @@
 (import 'finished-process (user-package))
 (export 'finished-process (user-package))
 
-(defun usr::stdout (artefact)
-  (finished-process-stdout artefact))
+(defmethod usr::stdout ((proc finished-process))
+  (finished-process-stdout proc))
 
-(defun usr::stderr (artefact)
+(defmethod usr::stderr ((proc finished-process))
   (finished-process-stderr artefact))
 
-(defun usr::status (artefact)
+(defmethod usr::status ((proc finished-process))
   (finished-process-status artefact))
 
 (defmethod sink:parse-sink-attribute

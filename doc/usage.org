@@ -137,9 +137,9 @@ will be created automatically whenever ~pastelyzer~ is run in standalone mode.
   interact with the application using HTTP protocol.
 
 - ~--server-ext-host~, ~--server-ext-port~ ::
-  Web server host and port to use when generating links to documents in
-  emails.  If not specified, links of the form ~http://localhost/...~ will be
-  generated.
+  Web server host and port to use when generating links to documents (see
+  ~local-url~ [[#sink-field-extractors][extractor]]).  If not specified, links
+  of the form ~http://localhost/...~ will be generated.
 
 - ~--[no-]process-broken~ ::
   Process pastes with broken UTF-8 content[fn:2] (in addition to trying to fix
@@ -466,7 +466,7 @@ the value must be enclosed in double quotes (i.e., ~"this is a string"~).
 
 Values can also be forms:
 
-- ~<string>~ ::
+- ~"string"~ ::
   A string value stands for itself.
 
 - ~yes~, ~true~ ::
@@ -503,8 +503,8 @@ be generated using forms provided in the attribute.
 
 - ~(extract <field>)~ ::
   Extracts ~field~ from the context variable.  See
-  [[#sink-field-extractors][sink]] and [[#item-field-extractors][item]] field
-  extractors below.
+  [[#sink-field-extractors][document]] and
+  [[#item-field-extractors][artefact]] field extractors below.
 
 - ~(fmt <format-string> <form>+)~ ::
   Formats given parameters using Common-lisp
@@ -518,7 +518,7 @@ be generated using forms provided in the attribute.
   processed.  Note: this is a hack, and most probably will change once we come
   up with a more general way to access this information.
 
-**** Sink (document) level field extractors:
+*** Document field extractors
 :PROPERTIES:
 :CUSTOM_ID: sink-field-extractors
 :END:
@@ -545,7 +545,7 @@ be generated using forms provided in the attribute.
   Generates a comma-separated string with artefact class and the number of
   artefacts with this class collected in the sink.
 
-**** Item (artefact) level field extractors:
+*** Artefact field extractors
 :PROPERTIES:
 :CUSTOM_ID: item-field-extractors
 :END:
@@ -576,6 +576,21 @@ be generated using forms provided in the attribute.
 - ~digits~ ::
   (Applies to ~BANK-CARD-NUMBER~ only) digits of a bank card number with no
   separators.
+
+*** Extractors valid in process filters
+:PROPERTIES:
+:CUSTOM_ID: sec-process-extractors
+:END:
+
+The following extractors are only valid in [[#sec-process-filters][process
+filters]]:
+
+- ~stdout~ ::
+  Standard output of the finished process.
+- ~stderr~ ::
+  Standard error output of the finished process.
+- ~status~ ::
+  Exit status of the finished process.
 
 *** ~WEB-SINK~
 :PROPERTIES:
@@ -676,6 +691,68 @@ This sink is used to send emails.  Attributes:
     Add an attribute to the event with the given ~category~, ~type~, ~value~
     and ~comment~ (optional).  The context of the action is an artefact.
 
+*** ~CMD-SINK~
+:PROPERTIES:
+:CUSTOM_ID: CMD-SINK
+:END:
+
+- ~(:action <process-filter-name>+)~ ::
+  Specifies one or more [[#sec-process-filters][process filters]] to invoke on
+  the result of this command.
+- ~(:environment (<name> <value>)+)~ ::
+  Provides extra environment variables for the external process.  The process
+  is invoked in an otherwise empty environment, with the following variables
+  provided by ~pastelyzer~:
+
+  - ~PASTELYZER_HOME~ ::
+    Directory where ~pastelyzer~ itself is running.
+  - ~PASTELYZER_SERVER~ ::
+    URI of the ~pastelyzer~ web server if the web server is enabled (i.e.,
+    ~--server-port~ command line option is provided; see
+    [[#standalone-options][command-line options]]).
+
+- ~(:stdout :discard|:collect-bytes|:collect-string)~ ::
+- ~(:stderr :discard|:collect-bytes|:collect-string)~ ::
+  What to do with standard output and error output of the executed process.
+  Possible values are:
+  - ~:discard~ :: Discard output (same as redirecting to ~/dev/null~).
+  - ~:collect-bytes~ ::  Collect the output, and treat it as a binary blob.
+  - ~:collect-string~ :: Collect the output, and treat it as a string (in
+    UTF-8 encoding).
+- ~(:stdin)~ ::
+  Value is fed to the standard input of the child process.  Strings are
+  converted to bytes using UTF-8 encoding.
+- ~(:command <command> <argument>*)~ ::
+  Command to execute, followed by zero or more arguments.  The command is
+  invoked in a temporary directory.  ~<command>~ specifies the path to the
+  program that is to be executed, as a string.  Each ~<argument>~ can be a
+  string or an expression that yields a string.  A very useful expression that
+  works only in ~CMD-SINK~ is ~store-tmpfile~ which writes the current context
+  value to a temporary file and returns the path to this file.
+- ~(:target :artefact|:document)~ ::
+  Specifies the context value the external process is invoked on:
+  - ~:artefact~ :: Default if unspecified.  Invokes the external process with
+    context value being each artefact collected into this sink.
+  - ~:document~ :: Invokes the external process once with context value being
+    the document currently being processed.
+
+The [[cmd-sink-example][following]] listing shows an example of invoking YARA
+on the binary content of artefacts added to the sink:
+
+#+CAPTION: ~CMD-SINK~ example
+#+NAME: cmd-sink-example
+#+begin_src sexpr
+  (define-sink invoke-yara (cmd-sink)
+    (:command "yara" "-C" "/path/to/your/rules.yarc"
+              (-> (extract bytes)
+                  (store-tmpfile)))
+    (:stdout :collect-string)
+    (:action maybe-add-note))
+#+end_src
+
+A more complete example (including the ~maybe-add-note~ process filter) is
+included in the [[#example-configuration][example configuration]].
+
 ** Filters
 :PROPERTIES:
 :CUSTOM_ID: filters
@@ -716,7 +793,7 @@ filter expressions are supported:
 
 - ~(extract <field>)~ ::
   Extract given field from the current context value, usually an artefact (see
-  [[#item-field-extractors]].
+  [[#item-field-extractors]]).
 
 - ~(-> <filter-expression>+)~ ::
   Replaces the context of each consecutive filter expression with the value of
@@ -748,13 +825,13 @@ filter expressions are supported:
 - ~(length)~ ::
   Returns the length of current context value.
 
-- ~(= <number-or-string>)~ ::
+- ~(= <number>|<string>)~ ::
   True if the current context value is equal to the given value.
 
-- ~(< <number-or-string>)~ ::
+- ~(< <number>|<string>)~ ::
   True if the current context value is less than the given value.
 
-- ~(> <number-or-string>)~ ::
+- ~(> <number>|<string>)~ ::
   True if the current context value is greater than the given value.
 
 - ~(starts-with? <subsequence>)~ ::
@@ -777,6 +854,10 @@ filter expressions are supported:
 - ~(mixed-case?)~ ::
   True if the context value has both lower and upper case letters.
 
+- ~(^ [<name>])~ ::
+  Current context value is stored as a variable ~<name>~, or just ~^~ if name
+  is not specified.  The stored value can then be used in actions.
+
 If an artefact matches the filter expression all actions are executed on it.
 The following actions are currently supported:
 
@@ -786,12 +867,27 @@ The following actions are currently supported:
 - ~(set-important)~ ::
   Mark artefact as important.
 
-- ~(set-note <string>)~ ::
-  Set artefact's ~note~ field.
+- ~(set-note <string>|<variable>)~ ::
+  Set artefact's ~note~ field.  The value can be a static string, or a variable
+  name referring to value stored using the ~^~ expression.
 
 - ~(discard)~ ::
   Artefact is discarded.  Filters that follow current one in the configuration
   file will not be applied.
+
+*** Process filters
+:PROPERTIES:
+:CUSTOM_ID: sec-process-filters
+:END:
+
+Process filters are only invoked from [[#CMD-SINK][command sinks]] (using the
+~:action~ attribute) and are used to post-process results of external
+programs.  Extra extractors useful in process filters are described in
+[[#sec-process-extractors]].  Syntax is the same as for artefact filters:
+
+#+begin_src sexpr
+  (define-process-filter <name> <filter-expression> <action>+)
+#+end_src
 
 ** Artefact export
 :PROPERTIES:
@@ -799,11 +895,11 @@ The following actions are currently supported:
 :END:
 
 After all artefacts are processed the ones that are not discarded in the
-process are saved in the database (~artefacts~ table).  If the artefact has
-been marked as important (using ~set-important~ action), the ~important~
-column is set to ~true~.  If the note field has been set (using ~set-note~
-action or automatically by successful user membership test), it is saved in
-the ~note~ column.
+process are stored in database (~artefacts~ table).  If the artefact has been
+marked as important (using ~set-important~ action), the ~important~ column is
+set to ~true~.  If the note field has been set (using ~set-note~ action or
+automatically by successful user membership test), it is saved in the ~note~
+column.
 
 Summary of what kinds of artefacts and how many is stored in ~analysis~
 table, ~summary~ column.  The number of discarded artefacts is stored in
@@ -858,6 +954,18 @@ table, ~summary~ column.  The number of discarded artefacts is stored in
            (extract artefact-descriptions))
     (:recipients "pastelyzer-notifications@your.org"))
 
+  (define-process-filter maybe-add-note
+      (-> (extract stdout)
+          (^ output)
+          (not (or (= "") (= "data"))))
+    (set-note output))
+
+  (define-sink run-file (cmd-sink)
+    (:command "file" "-b" "-")
+    (:stdin (extract bytes))
+    (:stdout :collect-string)
+    (:action maybe-add-note))
+
   (define-set important-ccs (cc-bins)
     :file "path/to/BIN-file")
 
@@ -867,7 +975,7 @@ table, ~summary~ column.  The number of discarded artefacts is stored in
     (collect-into misp-cc-event)
     (collect-into email))
 
-  ;; Get this from https://data.iana.org/TLD/tlds-alpha-by-domain.txt
+  ;;; Get this from https://data.iana.org/TLD/tlds-alpha-by-domain.txt
   (define-set known-tlds (super-domains)
     :file "tlds-alpha-by-domain.txt")
 
@@ -900,6 +1008,12 @@ table, ~summary~ column.  The number of discarded artefacts is stored in
                (length)
                (< 500)))
     (discard "Small binary"))
+
+  (define-artefact-filter .exe
+      (and (type? embedded-binary)
+           (-> (extract-bytes)
+               (starts-with? [4D 5A])))
+    (collect-into run-file))
 
   (define-artefact-filter keybase-proof
       (and (type? base64-blob)
@@ -1069,8 +1183,9 @@ positives.
 :END:
 
 A pseudo-domain consisting of two parts separated by a period.  The first part
-being 16 or 56 alphanumeric characters (consistency not checked), the second
-being ~onion~ (see [[https://en.wikipedia.org/wiki/.onion][Wikipedia entry]]).
+being =16= or =56= alphanumeric characters (consistency not checked), the
+second being ~onion~ (see [[https://en.wikipedia.org/wiki/.onion][Wikipedia
+entry]]).
 
 *** ~EMAIL~
 :PROPERTIES:
