@@ -56,17 +56,17 @@
     :initarg :stderr
     :reader finished-process-stderr)))
 
-(import 'finished-process (user-package))
-(export 'finished-process (user-package))
+(defmethod filter:extract ((field (eql 'usr::note)) (proc finished-process))
+  (pastelyzer:artefact-note (finished-process-artefact proc)))
 
-(defmethod usr::stdout ((proc finished-process))
+(defmethod filter:extract ((field (eql 'usr::stdout)) (proc finished-process))
   (finished-process-stdout proc))
 
-(defmethod usr::stderr ((proc finished-process))
-  (finished-process-stderr artefact))
+(defmethod filter:extract ((field (eql 'usr::stderr)) (proc finished-process))
+  (finished-process-stderr proc))
 
-(defmethod usr::status ((proc finished-process))
-  (finished-process-status artefact))
+(defmethod filter:extract ((field (eql 'usr::status)) (proc finished-process))
+  (finished-process-status proc))
 
 (defmethod sink:parse-sink-attribute
     ((proto cmd) (attribute (eql :target)) &rest args)
@@ -215,9 +215,6 @@
     (unless *cmd-dir*
       (error "STORE-TMPFILE called in invalid context."))
     (funcall cont (namestring (dump-to-tmpfile value *cmd-dir* (first body))))))
-
-(defmethod pastelyzer:artefact-note ((process finished-process))
-  (pastelyzer:artefact-note (finished-process-artefact process)))
 
 (defmethod (setf pastelyzer:artefact-note) (note (process finished-process))
   (setf (pastelyzer:artefact-note (finished-process-artefact process))

@@ -18,6 +18,7 @@
            #:apply-filter
            #:apply-filters
            #:collect-into
+           #:extract
            #:generate-filter-function
            #:make-function))
 
@@ -245,6 +246,12 @@
     (make-function type? (value cont)
       (funcall cont (eq type (class-name (class-of value)))))))
 
+(defgeneric extract (field object)
+  (:documentation "Used by EXTRACT filter expression."))
+
+(defmethod extract ((field t) (object t))
+  (error "Unknown extractor ~S for ~S" field object))
+
 (defmethod generate-filter-function ((operator (eql 'usr:extract)) &rest body)
   (check-type body (cons symbol null))
   (let ((accessor (find-symbol (symbol-name (first body)) (user-package))))
@@ -375,3 +382,84 @@
                                     (first action)
                                     (rest action)))
                            actions)))
+
+;;; Extractors.
+
+(defmethod extract ((field (eql 'usr::origin)) (object t))
+  (pastelyzer:paste-source object))
+
+(defmethod extract ((field (eql 'usr::source-url)) (object t))
+  (warn "SOURCE-URL extractor is deprecated, use ORIGIN instead.")
+  (extract 'usr::origin object))
+
+(defmethod extract ((field (eql 'usr::local-url)) (object t))
+  (pastelyzer::external-url-to object))
+
+(defmethod extract ((field (eql 'usr::remote-url)) (object t))
+  ;; Should cache this result.
+  (multiple-value-bind (source url raw-url)
+      (pastelyzer::paste-source object)
+    (declare (ignore source raw-url))
+    (when url
+      (puri:render-uri url nil))))
+
+(defmethod extract ((field (eql 'usr::remote-raw-url)) (object t))
+  ;; Should use the cached result.
+  (multiple-value-bind (source url raw-url)
+      (pastelyzer::paste-source object)
+    (declare (ignore source url))
+    (when raw-url
+      (puri:render-uri raw-url nil))))
+
+(defmethod extract ((field (eql 'usr::artefact-descriptions)) (sink sink:sink))
+  (with-output-to-string (out)
+    (let ((groups (sink:group-artefacts sink)))
+      (loop for group in groups
+            for (class unique important duplicate-count) = group
+            do (terpri out)
+               (pastelyzer::summarize-artefact-group out group)
+               (terpri out)
+               (terpri out)
+               (loop for bag being each hash-value in unique
+                     for artefact = (first bag)
+                     for string = (pastelyzer:artefact-description artefact)
+                     do (write-string string out)
+                        (terpri out))))))
+
+(defmethod extract ((field (eql 'usr::artefact-summary-by-class))
+                    (sink sink:sink))
+  (let ((groups (sink:group-artefacts sink)))
+    ;; TODO: Waiting for the artefact summarization refactoring.
+    (pastelyzer::summarize-artefacts groups :text)))
+
+(defmethod extract ((field (eql 'usr::digits))
+                    (artefact pastelyzer:bank-card-number))
+  (pastelyzer:bank-card-number-digits artefact))
+
+(defmethod extract ((field (eql 'usr::note))
+                    (artefact pastelyzer:artefact))
+  (pastelyzer:artefact-note artefact))
+
+(defmethod extract ((field (eql 'usr::important))
+                    (artefact pastelyzer:artefact))
+  (pastelyzer:important-artefact-p artefact))
+
+(defmethod extract ((field (eql 'usr::source-string))
+                    (artefact pastelyzer:artefact))
+  (pastelyzer:artefact-source artefact))
+
+(defmethod extract ((field (eql 'usr::source-context))
+                    (artefact pastelyzer:artefact))
+  (pastelyzer:artefact-source-seq artefact))
+
+(defmethod extract ((field (eql 'usr::context-before))
+                    (artefact pastelyzer:artefact))
+  (pastelyzer::artefact-context-before artefact))
+
+(defmethod extract ((field (eql 'usr::context-after))
+                    (artefact pastelyzer:artefact))
+  (pastelyzer::artefact-context-after artefact))
+
+(defmethod extract ((field (eql 'usr::bytes))
+                    (artefact pastelyzer:artefact))
+  (pastelyzer:embedded-binary-bytes artefact))

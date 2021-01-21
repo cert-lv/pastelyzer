@@ -21,9 +21,7 @@
                 #:resolved-ip-address
                 #:m3u-entry
                 #:uri
-                #:windows-internal
-
-                #:embedded-binary-bytes)
+                #:windows-internal)
   (:export #:define-sink
            #:define-artefact-filter
            #:collect-into
