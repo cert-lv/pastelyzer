@@ -1,7 +1,7 @@
 (in-package #:pastelyzer)
 
 ;;; System release version.
-(defvar *release* "0.10")
+(defvar *release* "0.11")
 
 ;;; Set by build script.
 (defvar *build-id* nil)
