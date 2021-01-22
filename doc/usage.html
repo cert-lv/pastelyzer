@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2020-06-15 Mon 12:37 -->
+<!-- 2021-01-22 Fri 14:52 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Pastelyzer</title>
@@ -255,16 +255,17 @@ for the JavaScript code in this tag.
 <li><a href="#running-pastelyzer">2. Running <code>pastelyzer</code></a>
 <ul>
 <li><a href="#common-cli-options">2.1. Common command-line options</a></li>
-<li><a href="#standalone-mode">2.2. Standalone mode</a>
+<li><a href="#interactive-mode">2.2. Interactive mode</a></li>
+<li><a href="#standalone-mode">2.3. Standalone mode</a>
 <ul>
-<li><a href="#prerequisites">2.2.1. Prerequisites</a></li>
-<li><a href="#standalone-options">2.2.2. Options</a></li>
-<li><a href="#environment-variables">2.2.3. Environment variables</a></li>
-<li><a href="#static-web-server-files">2.2.4. Static web server files</a></li>
-<li><a href="#submitting-documents">2.2.5. Submitting documents</a></li>
+<li><a href="#prerequisites">2.3.1. Prerequisites</a></li>
+<li><a href="#standalone-options">2.3.2. Options</a></li>
+<li><a href="#environment-variables">2.3.3. Environment variables</a></li>
+<li><a href="#static-web-server-files">2.3.4. Static web server files</a></li>
+<li><a href="#submitting-documents">2.3.5. Submitting documents</a></li>
 </ul>
 </li>
-<li><a href="#sec-reprocessing-documents">2.3. Reprocessing documents</a></li>
+<li><a href="#sec-reprocessing-documents">2.4. Reprocessing documents</a></li>
 </ul>
 </li>
 <li><a href="#configuration">3. Configuration</a>
@@ -272,8 +273,8 @@ for the JavaScript code in this tag.
 <li><a href="#syntax-overview">3.1. Syntax overview</a></li>
 <li><a href="#sec-user-sets">3.2. User sets</a>
 <ul>
-<li><a href="#org0532e53">3.2.1. <code>super-domains</code></a></li>
-<li><a href="#org06e0d0f">3.2.2. <code>ipv4-networks</code></a></li>
+<li><a href="#orgfffc128">3.2.1. <code>super-domains</code></a></li>
+<li><a href="#orgfab6f2f">3.2.2. <code>ipv4-networks</code></a></li>
 <li><a href="#cc-bins-set">3.2.3. <code>cc-bins</code></a></li>
 </ul>
 </li>
@@ -281,12 +282,20 @@ for the JavaScript code in this tag.
 <ul>
 <li><a href="#specifying-values">3.3.1. Specifying values</a></li>
 <li><a href="#templates">3.3.2. Templates</a></li>
-<li><a href="#WEB-SINK">3.3.3. <code>WEB-SINK</code></a></li>
-<li><a href="#SMTP-SINK">3.3.4. <code>SMTP-SINK</code></a></li>
-<li><a href="#MISP-SINK">3.3.5. <code>MISP-SINK</code></a></li>
+<li><a href="#sink-field-extractors">3.3.3. Document field extractors</a></li>
+<li><a href="#item-field-extractors">3.3.4. Artefact field extractors</a></li>
+<li><a href="#sec-process-extractors">3.3.5. Extractors valid in process filters</a></li>
+<li><a href="#WEB-SINK">3.3.6. <code>WEB-SINK</code></a></li>
+<li><a href="#SMTP-SINK">3.3.7. <code>SMTP-SINK</code></a></li>
+<li><a href="#MISP-SINK">3.3.8. <code>MISP-SINK</code></a></li>
+<li><a href="#CMD-SINK">3.3.9. <code>CMD-SINK</code></a></li>
 </ul>
 </li>
-<li><a href="#filters">3.4. Filters</a></li>
+<li><a href="#filters">3.4. Filters</a>
+<ul>
+<li><a href="#sec-process-filters">3.4.1. Process filters</a></li>
+</ul>
+</li>
 <li><a href="#sec-artefact-export">3.5. Artefact export</a></li>
 <li><a href="#example-configuration">3.6. Example configuration</a></li>
 </ul>
@@ -317,18 +326,18 @@ for the JavaScript code in this tag.
 </li>
 </ul>
 </li>
-<li><a href="#orgdf7dd04">5. API</a>
+<li><a href="#org623fb47">5. API</a>
 <ul>
-<li><a href="#org6157a69">5.1. Generic value search</a></li>
-<li><a href="#orgbc52059">5.2. Typed search</a></li>
-<li><a href="#org6135e93">5.3. Document information</a></li>
+<li><a href="#org0bc90cb">5.1. Generic value search</a></li>
+<li><a href="#orgc470492">5.2. Typed search</a></li>
+<li><a href="#orgdd10d7e">5.3. Document information</a></li>
 </ul>
 </li>
 </ul>
 </div>
 </div>
 
-<div id="outline-container-org7d5efce" class="outline-2">
+<div id="outline-container-orgfebdefa" class="outline-2">
 <h2 id="intro"><span class="section-number-2">1</span> Introduction</h2>
 <div class="outline-text-2" id="text-intro">
 <p>
@@ -347,37 +356,18 @@ Make sure you consult the documentation that corresponds to the version of
 </div>
 </div>
 
-<div id="outline-container-org254ba09" class="outline-2">
+<div id="outline-container-orgb7f1a65" class="outline-2">
 <h2 id="running-pastelyzer"><span class="section-number-2">2</span> Running <code>pastelyzer</code></h2>
 <div class="outline-text-2" id="text-running-pastelyzer">
 <p>
 The simplest way to use <code>pastelyzer</code> is on the command-line and to pass it one
-or more file names.  <code>pastelyzer</code> will analyze given documents and print all
-detected artefacts in a tree structure (see figure
-<a href="#orgd01a35c">below</a>).
-</p>
-
-
-<div id="orgd01a35c" class="figure">
-<p><img src="img/cli-33E400e1.png" alt="cli-33E400e1.png" width="100%" />
-</p>
-<p><span class="figure-number">Figure 1: </span>Sample CLI usage</p>
-</div>
-
-<p>
-Currently in this mode <code>pastelyzer</code> outputs what artefacts and where it has
-found.  In the future it will be possible to control what is extracted (i.e.,
-limit output to a subset of &ldquo;interesting&rdquo; artefact classes) and what to do
-with the results (i.e,. write to a file, or generate JSON).
-</p>
-
-<p>
-<code>pastelyzer</code> can also be run as a background service, and this mode is
-described in <a href="#standalone-mode">2.2</a> section below.
+or more file names.  <code>pastelyzer</code> can also be run as a background service.
+These modes and applicable command-line options are described in the sections
+below.
 </p>
 </div>
 
-<div id="outline-container-org398a6a4" class="outline-3">
+<div id="outline-container-orgb4e4b97" class="outline-3">
 <h3 id="common-cli-options"><span class="section-number-3">2.1</span> Common command-line options</h3>
 <div class="outline-text-3" id="text-common-cli-options">
 <dl class="org-dl">
@@ -398,8 +388,54 @@ addresses.  If <code>--no-resolve-domains</code> is present, domains are not res
 </div>
 </div>
 
-<div id="outline-container-orgcac744d" class="outline-3">
-<h3 id="standalone-mode"><span class="section-number-3">2.2</span> Standalone mode</h3>
+<div id="outline-container-orgd2a41da" class="outline-3">
+<h3 id="interactive-mode"><span class="section-number-3">2.2</span> Interactive mode</h3>
+<div class="outline-text-3" id="text-interactive-mode">
+<p>
+Unless specified otherwise <code>pastelyzer</code> operates in an interactive mode and
+processes documents specified on the command line, showing all detected
+artefacts in a tree structure (see figure <a href="#org7cbdc8d">below</a>).
+</p>
+
+
+<div id="org7cbdc8d" class="figure">
+<p><img src="img/cli-33E400e1.png" alt="cli-33E400e1.png" width="100%" />
+</p>
+<p><span class="figure-number">Figure 1: </span>Sample CLI usage</p>
+</div>
+
+<p>
+Each line in the tree structure contains the following information:
+</p>
+
+<ul class="org-ul">
+<li>Start and end character position of the artefact in the parent object.</li>
+<li>Number of additional instances of this artefact (if there are any, and if
+the <code>--show-duplicates</code> option is not given) in the form of <code>(+N)</code>, where
+<code>N</code> is the number of additional occurrences.</li>
+<li>Artefact class.</li>
+<li>Short description of the artefact (depends on the class).</li>
+</ul>
+
+<p>
+The following options apply to the interactive mode:
+</p>
+
+<dl class="org-dl">
+<dt><code>-C, --color</code></dt><dd>Enable colors in output (default if run interactively in a terminal).</dd>
+
+<dt><code>+C, --no-color</code></dt><dd>Disable colors in output.</dd>
+
+<dt><code>--extract-embedded</code></dt><dd>Embedded binary artefacts are extracted and saved in the current directory.</dd>
+
+<dt><code>--show-duplicates</code></dt><dd>Do not detect duplicate artefacts.  In this case all artefacts and their
+locations will be shown.</dd>
+</dl>
+</div>
+</div>
+
+<div id="outline-container-orgccc986c" class="outline-3">
+<h3 id="standalone-mode"><span class="section-number-3">2.3</span> Standalone mode</h3>
 <div class="outline-text-3" id="text-standalone-mode">
 <p>
 Standalone mode is selected by passing <code>server</code> as a command-line option.  In
@@ -411,21 +447,21 @@ discovered artefacts using <a href="#configuration">configuration</a>.  A sample
 </p>
 </div>
 
-<div id="outline-container-org2fee661" class="outline-4">
-<h4 id="prerequisites"><span class="section-number-4">2.2.1</span> Prerequisites</h4>
+<div id="outline-container-org852a143" class="outline-4">
+<h4 id="prerequisites"><span class="section-number-4">2.3.1</span> Prerequisites</h4>
 <div class="outline-text-4" id="text-prerequisites">
 <p>
 <code>pastelyzer</code> stores all received documents in a PostgreSQL (version <b>9.5</b> or
 later) database.  Database connection parameters are set using environment
-variables (see section <a href="#environment-variables">2.2.3</a>).  At the moment schema
+variables (see section <a href="#environment-variables">2.3.3</a>).  At the moment schema
 updates are managed by the application itself.  This means that all tables
 will be created automatically whenever <code>pastelyzer</code> is run in standalone mode.
 </p>
 </div>
 </div>
 
-<div id="outline-container-org41a1a40" class="outline-4">
-<h4 id="standalone-options"><span class="section-number-4">2.2.2</span> Options</h4>
+<div id="outline-container-orgb7b0109" class="outline-4">
+<h4 id="standalone-options"><span class="section-number-4">2.3.2</span> Options</h4>
 <div class="outline-text-4" id="text-standalone-options">
 <dl class="org-dl">
 <dt><code>-c, --config</code></dt><dd>Path to configuration file (see section <a href="#configuration">3</a>).</dd>
@@ -436,9 +472,9 @@ will be created automatically whenever <code>pastelyzer</code> is run in standal
 given then the web server is not started and it will not be possible to
 interact with the application using HTTP protocol.</dd>
 
-<dt><code>--server-ext-host</code>, <code>--server-ext-port</code></dt><dd>Web server host and port to use when generating links to documents in
-emails.  If not specified, links of the form <code>http://localhost/...</code> will be
-generated.</dd>
+<dt><code>--server-ext-host</code>, <code>--server-ext-port</code></dt><dd>Web server host and port to use when generating links to documents (see
+<code>local-url</code> <a href="#sink-field-extractors">extractor</a>).  If not specified, links
+of the form <code>http://localhost/...</code> will be generated.</dd>
 
 <dt><code>--[no-]process-broken</code></dt><dd>Process pastes with broken UTF-8 content<sup><a id="fnr.2" class="footref" href="#fn.2">2</a></sup> (in addition to trying to fix
 them; defaults to yes).  Specific sites can be blacklisted using an
@@ -447,8 +483,8 @@ environment variable (see <a href="#environment-variables"><code>IGNORED_PASTESI
 </div>
 </div>
 
-<div id="outline-container-orga4e1ebb" class="outline-4">
-<h4 id="environment-variables"><span class="section-number-4">2.2.3</span> Environment variables</h4>
+<div id="outline-container-org5c44a61" class="outline-4">
+<h4 id="environment-variables"><span class="section-number-4">2.3.3</span> Environment variables</h4>
 <div class="outline-text-4" id="text-environment-variables">
 <dl class="org-dl">
 <dt><code>DB_NAME</code></dt><dd>Database name.  Default: <code>pastelyzer</code>.</dd>
@@ -473,8 +509,8 @@ the HTTP <code>User-Agent</code> header value.</dd>
 </div>
 </div>
 
-<div id="outline-container-org2d6315f" class="outline-4">
-<h4 id="static-web-server-files"><span class="section-number-4">2.2.4</span> Static web server files</h4>
+<div id="outline-container-org7338719" class="outline-4">
+<h4 id="static-web-server-files"><span class="section-number-4">2.3.4</span> Static web server files</h4>
 <div class="outline-text-4" id="text-static-web-server-files">
 <p>
 The <code>public</code> directory in the source distribution is expected to be located in
@@ -485,8 +521,8 @@ file system because <code>pastelyzer</code> does not write to any files.
 </div>
 </div>
 
-<div id="outline-container-org3c9e3c0" class="outline-4">
-<h4 id="submitting-documents"><span class="section-number-4">2.2.5</span> Submitting documents</h4>
+<div id="outline-container-orgd7374eb" class="outline-4">
+<h4 id="submitting-documents"><span class="section-number-4">2.3.5</span> Submitting documents</h4>
 <div class="outline-text-4" id="text-submitting-documents">
 <p>
 If the web server is started (see <a href="#standalone-options"><code>--server-port</code></a>
@@ -515,8 +551,8 @@ curl 'http://localhost:8080/store' -F data=@/path/to/a/file
 </div>
 </div>
 
-<div id="outline-container-org58ba4c5" class="outline-3">
-<h3 id="sec-reprocessing-documents"><span class="section-number-3">2.3</span> Reprocessing documents</h3>
+<div id="outline-container-org459bcdb" class="outline-3">
+<h3 id="sec-reprocessing-documents"><span class="section-number-3">2.4</span> Reprocessing documents</h3>
 <div class="outline-text-3" id="text-sec-reprocessing-documents">
 <p>
 There are a number of circumstances when the documents that are already in the
@@ -550,7 +586,7 @@ information does not go to production systems.
 </div>
 </div>
 
-<div id="outline-container-org7a62acd" class="outline-2">
+<div id="outline-container-org90d2f2a" class="outline-2">
 <h2 id="configuration"><span class="section-number-2">3</span> Configuration</h2>
 <div class="outline-text-2" id="text-configuration">
 <p>
@@ -570,7 +606,7 @@ additional use cases.
 </p>
 </div>
 
-<div id="outline-container-org6c912b6" class="outline-3">
+<div id="outline-container-orgac5336c" class="outline-3">
 <h3 id="syntax-overview"><span class="section-number-3">3.1</span> Syntax overview</h3>
 <div class="outline-text-3" id="text-syntax-overview">
 <p>
@@ -592,11 +628,13 @@ and closing square brackets are expected to be space-separated hexadecimal
 <p>
 The following configuration directives are recognized (described in following
 sections): <code>define-set</code>, <code>define-sink</code> and <code>define-artefact-filter</code><sup><a id="fnr.6" class="footref" href="#fn.6">6</a></sup>.
+These directives, as well as other <i>symbolic</i> identifiers are <b>case
+insensitive</b>.
 </p>
 </div>
 </div>
 
-<div id="outline-container-orga4d2f51" class="outline-3">
+<div id="outline-container-org1faca1d" class="outline-3">
 <h3 id="sec-user-sets"><span class="section-number-3">3.2</span> User sets</h3>
 <div class="outline-text-3" id="text-sec-user-sets">
 <p>
@@ -651,18 +689,18 @@ Descriptions of defined set types follow.
 </p>
 </div>
 
-<div id="outline-container-org0532e53" class="outline-4">
-<h4 id="org0532e53"><span class="section-number-4">3.2.1</span> <code>super-domains</code></h4>
+<div id="outline-container-orgfffc128" class="outline-4">
+<h4 id="orgfffc128"><span class="section-number-4">3.2.1</span> <code>super-domains</code></h4>
 <div class="outline-text-4" id="text-3-2-1">
 <p>
 Each entry is a &ldquo;super-domain&rdquo; and can be used for sub-domain membership test.
-As an example listing <a href="#org1ca04ff">1</a> shows configuration to mark
+As an example listing <a href="#orgb25baf4">1</a> shows configuration to mark
 <code>domain</code> artefacts matching your organization as important (see
 <a href="#filters">filters</a> below):
 </p>
 
 <div class="org-src-container">
-<label class="org-src-name"><span class="listing-number">Listing 1: </span>Sample super-domain set</label><pre class="src src-sexpr" id="org1ca04ff">(<span style="color: #1874cd;">define-set</span> our-org (super-domains)
+<label class="org-src-name"><span class="listing-number">Listing 1: </span>Sample super-domain set</label><pre class="src src-sexpr" id="orgb25baf4">(<span style="color: #1874cd;">define-set</span> our-org (super-domains)
   <span style="color: #cd6600;">:entries</span> (<span style="color: #a52a2a;">"our.org"</span> <span style="color: #a52a2a;">"our-org.com"</span>))
 
 (<span style="color: #1874cd;">define-filter</span> our-domain
@@ -678,18 +716,18 @@ As an example listing <a href="#org1ca04ff">1</a> shows configuration to mark
 </div>
 </div>
 
-<div id="outline-container-org06e0d0f" class="outline-4">
-<h4 id="org06e0d0f"><span class="section-number-4">3.2.2</span> <code>ipv4-networks</code></h4>
+<div id="outline-container-orgfab6f2f" class="outline-4">
+<h4 id="orgfab6f2f"><span class="section-number-4">3.2.2</span> <code>ipv4-networks</code></h4>
 <div class="outline-text-4" id="text-3-2-2">
 <p>
 Each entry specifies an IPv4 network (in
 <a href="https://tools.ietf.org/html/rfc4632#section-3.1">CIDR notation</a>).  For
 example if you are not interested in local IP addresses you could use the
-configuration shown in listing <a href="#org6b0939a">2</a>:
+configuration shown in listing <a href="#orgc498eb5">2</a>:
 </p>
 
 <div class="org-src-container">
-<label class="org-src-name"><span class="listing-number">Listing 2: </span>Sample IPv4 networks set</label><pre class="src src-sexpr" id="org6b0939a">(<span style="color: #1874cd;">define-set</span> private-networks (ipv4-networks)
+<label class="org-src-name"><span class="listing-number">Listing 2: </span>Sample IPv4 networks set</label><pre class="src src-sexpr" id="orgc498eb5">(<span style="color: #1874cd;">define-set</span> private-networks (ipv4-networks)
   <span style="color: #cd6600;">:entries</span> (<span style="color: #a52a2a;">"10.0.0.0/8"</span> <span style="color: #a52a2a;">"172.16.0.0/12"</span> <span style="color: #a52a2a;">"192.168.0.0/16"</span>))
 
 (<span style="color: #1874cd;">define-filter</span> private-ip
@@ -701,7 +739,7 @@ configuration shown in listing <a href="#org6b0939a">2</a>:
 </div>
 </div>
 
-<div id="outline-container-org81898ce" class="outline-4">
+<div id="outline-container-orgf4b3648" class="outline-4">
 <h4 id="cc-bins-set"><span class="section-number-4">3.2.3</span> <code>cc-bins</code></h4>
 <div class="outline-text-4" id="text-cc-bins-set">
 <p>
@@ -714,16 +752,16 @@ ignored (in both prefix and placeholder parts).
 </p>
 
 <p>
-Listing <a href="#orge08998b">3</a> defines 5 bins for 2 banks.  The first bank uses
+Listing <a href="#org3654a71">3</a> defines 5 bins for 2 banks.  The first bank uses
 16-digit numbers that start with <code>123456</code>, <code>424242</code> and <code>111122</code>.  The second
 bank uses 15-digit numbers that start with <code>23</code> and <code>32</code>.  A set with the
 entries from this file can then be defined as shown in listing
-<a href="#org9313d74">4</a> (<code>:attach-comments</code> option defaults to <code>true</code> when
+<a href="#orge349376">4</a> (<code>:attach-comments</code> option defaults to <code>true</code> when
 reading bank card BINs).
 </p>
 
 <div class="org-src-container">
-<label class="org-src-name"><span class="listing-number">Listing 3: </span>Sample bank card BIN file</label><pre class="src src-text" id="orge08998b"># This is just an example.  The note before each block will be
+<label class="org-src-name"><span class="listing-number">Listing 3: </span>Sample bank card BIN file</label><pre class="src src-text" id="org3654a71"># This is just an example.  The note before each block will be
 # attached to all following entries.
 
 # National bank
@@ -738,19 +776,19 @@ reading bank card BINs).
 </div>
 
 <div class="org-src-container">
-<label class="org-src-name"><span class="listing-number">Listing 4: </span>Using sample bank card BIN file</label><pre class="src src-sexpr" id="org9313d74">(<span style="color: #1874cd;">define-set</span> special-bins (cc-bins)
+<label class="org-src-name"><span class="listing-number">Listing 4: </span>Using sample bank card BIN file</label><pre class="src src-sexpr" id="orge349376">(<span style="color: #1874cd;">define-set</span> special-bins (cc-bins)
   <span style="color: #cd6600;">:file</span> <span style="color: #a52a2a;">"path/to/above/file.ext"</span>)
 </pre>
 </div>
 
 <p>
 The same bins can also be defined in-line, as shown in listing
-<a href="#org6565e59">5</a> (notice that the note has to be specified for each
+<a href="#orgd0bda35">5</a> (notice that the note has to be specified for each
 entry individually):
 </p>
 
 <div class="org-src-container">
-<label class="org-src-name"><span class="listing-number">Listing 5: </span>Sample in-line bank card BINs</label><pre class="src src-sexpr" id="org6565e59">(<span style="color: #1874cd;">define-set</span> special-bins (cc-bins)
+<label class="org-src-name"><span class="listing-number">Listing 5: </span>Sample in-line bank card BINs</label><pre class="src src-sexpr" id="orgd0bda35">(<span style="color: #1874cd;">define-set</span> special-bins (cc-bins)
   <span style="color: #cd6600;">:entries</span> ((<span style="color: #a52a2a;">"1234 56xx xxxx xxxx"</span> <span style="color: #a52a2a;">"National bank"</span>)
             (<span style="color: #a52a2a;">"424242 xx xxxx xxxx"</span> <span style="color: #a52a2a;">"National bank"</span>)
             (<span style="color: #a52a2a;">"111122xxxxxxxxxx"</span>    <span style="color: #a52a2a;">"National bank"</span>)
@@ -762,7 +800,7 @@ entry individually):
 </div>
 </div>
 
-<div id="outline-container-org310a810" class="outline-3">
+<div id="outline-container-orgaf91e69" class="outline-3">
 <h3 id="sinks"><span class="section-number-3">3.3</span> Sinks</h3>
 <div class="outline-text-3" id="text-sinks">
 <p>
@@ -803,7 +841,7 @@ described in corresponding section below.
 </p>
 </div>
 
-<div id="outline-container-orge639fee" class="outline-4">
+<div id="outline-container-org3447c51" class="outline-4">
 <h4 id="specifying-values"><span class="section-number-4">3.3.1</span> Specifying values</h4>
 <div class="outline-text-4" id="text-specifying-values">
 <p>
@@ -816,7 +854,7 @@ Values can also be forms:
 </p>
 
 <dl class="org-dl">
-<dt><code>&lt;string&gt;</code></dt><dd>A string value stands for itself.</dd>
+<dt><code>"string"</code></dt><dd>A string value stands for itself.</dd>
 
 <dt><code>yes</code>, <code>true</code></dt><dd>A boolean true value.</dd>
 
@@ -834,7 +872,7 @@ there is no such environment variable.</dd>
 </div>
 </div>
 
-<div id="outline-container-orgccce357" class="outline-4">
+<div id="outline-container-org036db5d" class="outline-4">
 <h4 id="templates"><span class="section-number-4">3.3.2</span> Templates</h4>
 <div class="outline-text-4" id="text-templates">
 <p>
@@ -848,8 +886,8 @@ be generated using forms provided in the attribute.
 <dt><code>:fl</code></dt><dd>Fresh line: outputs a newline only if the last character was not a newline.</dd>
 
 <dt><code>(extract &lt;field&gt;)</code></dt><dd>Extracts <code>field</code> from the context variable.  See
-<a href="#sink-field-extractors">sink</a> and <a href="#item-field-extractors">item</a> field
-extractors below.</dd>
+<a href="#sink-field-extractors">document</a> and
+<a href="#item-field-extractors">artefact</a> field extractors below.</dd>
 
 <dt><code>(fmt &lt;format-string&gt; &lt;form&gt;+)</code></dt><dd>Formats given parameters using Common-lisp
 <a href="http://www.lispworks.com/documentation/HyperSpec/Body/f_format.htm">format</a>
@@ -862,12 +900,13 @@ processed.  Note: this is a hack, and most probably will change once we come
 up with a more general way to access this information.</dd>
 </dl>
 </div>
+</div>
 
-<div id="outline-container-org43baa3a" class="outline-5">
-<h5 id="sink-field-extractors"><span class="section-number-5">3.3.2.1</span> Sink (document) level field extractors:</h5>
-<div class="outline-text-5" id="text-sink-field-extractors">
+<div id="outline-container-org4f5b836" class="outline-4">
+<h4 id="sink-field-extractors"><span class="section-number-4">3.3.3</span> Document field extractors</h4>
+<div class="outline-text-4" id="text-sink-field-extractors">
 <dl class="org-dl">
-<dt><code>source-url</code></dt><dd>Source site of the document being processed.  E.g., <code>pastebin.com</code>.</dd>
+<dt><code>origin</code></dt><dd>Source site of the document being processed.  E.g., <code>pastebin.com</code>.</dd>
 
 <dt><code>remote-url</code></dt><dd>The URL of the document being processed (if available).</dd>
 
@@ -886,9 +925,9 @@ artefacts with this class collected in the sink.</dd>
 </div>
 </div>
 
-<div id="outline-container-org0214f75" class="outline-5">
-<h5 id="item-field-extractors"><span class="section-number-5">3.3.2.2</span> Item (artefact) level field extractors:</h5>
-<div class="outline-text-5" id="text-item-field-extractors">
+<div id="outline-container-org278a5f0" class="outline-4">
+<h4 id="item-field-extractors"><span class="section-number-4">3.3.4</span> Artefact field extractors</h4>
+<div class="outline-text-4" id="text-item-field-extractors">
 <dl class="org-dl">
 <dt><code>note</code></dt><dd>Note associated with an artefact.</dd>
 
@@ -911,10 +950,25 @@ separators.</dd>
 </dl>
 </div>
 </div>
+
+<div id="outline-container-org5944a9c" class="outline-4">
+<h4 id="sec-process-extractors"><span class="section-number-4">3.3.5</span> Extractors valid in process filters</h4>
+<div class="outline-text-4" id="text-sec-process-extractors">
+<p>
+The following extractors are only valid in <a href="#sec-process-filters">process
+filters</a>:
+</p>
+
+<dl class="org-dl">
+<dt><code>stdout</code></dt><dd>Standard output of the finished process.</dd>
+<dt><code>stderr</code></dt><dd>Standard error output of the finished process.</dd>
+<dt><code>status</code></dt><dd>Exit status of the finished process.</dd>
+</dl>
+</div>
 </div>
 
-<div id="outline-container-org9bc159a" class="outline-4">
-<h4 id="WEB-SINK"><span class="section-number-4">3.3.3</span> <code>WEB-SINK</code></h4>
+<div id="outline-container-org0205236" class="outline-4">
+<h4 id="WEB-SINK"><span class="section-number-4">3.3.6</span> <code>WEB-SINK</code></h4>
 <div class="outline-text-4" id="text-WEB-SINK">
 <p>
 This is the simplest sink.  It does not have any parameters.
@@ -931,8 +985,8 @@ Example:
 </div>
 </div>
 
-<div id="outline-container-orgdfb4aa4" class="outline-4">
-<h4 id="SMTP-SINK"><span class="section-number-4">3.3.4</span> <code>SMTP-SINK</code></h4>
+<div id="outline-container-org867058d" class="outline-4">
+<h4 id="SMTP-SINK"><span class="section-number-4">3.3.7</span> <code>SMTP-SINK</code></h4>
 <div class="outline-text-4" id="text-SMTP-SINK">
 <p>
 This sink is used to send emails.  Attributes:
@@ -954,8 +1008,8 @@ email.</dd>
 </div>
 </div>
 
-<div id="outline-container-org35844c6" class="outline-4">
-<h4 id="MISP-SINK"><span class="section-number-4">3.3.5</span> <code>MISP-SINK</code></h4>
+<div id="outline-container-org98a469a" class="outline-4">
+<h4 id="MISP-SINK"><span class="section-number-4">3.3.8</span> <code>MISP-SINK</code></h4>
 <div class="outline-text-4" id="text-MISP-SINK">
 <dl class="org-dl">
 <dt><code>(:server &lt;string&gt;)</code></dt><dd>Sets the MISP instance URL.</dd>
@@ -991,7 +1045,7 @@ following actions are supported:
 <dt><code>(add-tags &lt;string&gt;+)</code></dt><dd>Tag the event with the given tags.</dd>
 
 <dt><code>(add-attribute :category &lt;string&gt; :type &lt;string&gt; :value &lt;string&gt; :comment &lt;string&gt;)</code></dt><dd>Add an attribute to the event with the given <code>category</code>, <code>type</code>, <code>value</code>
-and <code>comment</code> (optional).  The subject of the action is sink (document).</dd>
+and <code>comment</code> (optional).  The context of the action is sink document.</dd>
 </dl></dd>
 
 <dt><code>(:item-action &lt;form&gt;)</code></dt><dd>An action to perform after the MISP event is created, and all document
@@ -1001,15 +1055,80 @@ artefact collected in the sink.  The only supported action is
 
 <dl class="org-dl">
 <dt><code>(add-attribute :category &lt;string&gt; :type &lt;string&gt; :value &lt;string&gt; :comment &lt;string&gt;)</code></dt><dd>Add an attribute to the event with the given <code>category</code>, <code>type</code>, <code>value</code>
-and <code>comment</code> (optional).  The subject (context) of the action is an
-artefact.</dd>
+and <code>comment</code> (optional).  The context of the action is an artefact.</dd>
 </dl></dd>
 </dl>
 </div>
 </div>
+
+<div id="outline-container-org4aa5932" class="outline-4">
+<h4 id="CMD-SINK"><span class="section-number-4">3.3.9</span> <code>CMD-SINK</code></h4>
+<div class="outline-text-4" id="text-CMD-SINK">
+<dl class="org-dl">
+<dt><code>(:action &lt;process-filter-name&gt;+)</code></dt><dd>Specifies one or more <a href="#sec-process-filters">process filters</a> to invoke on
+the result of this command.</dd>
+<dt><code>(:environment (&lt;name&gt; &lt;value&gt;)+)</code></dt><dd>Provides extra environment variables for the external process.  The process
+is invoked in an otherwise empty environment, with the following variables
+provided by <code>pastelyzer</code>:
+
+<dl class="org-dl">
+<dt><code>PASTELYZER_HOME</code></dt><dd>Directory where <code>pastelyzer</code> itself is running.</dd>
+<dt><code>PASTELYZER_SERVER</code></dt><dd>URI of the <code>pastelyzer</code> web server if the web server is enabled (i.e.,
+<code>--server-port</code> command line option is provided; see
+<a href="#standalone-options">command-line options</a>).</dd>
+</dl></dd>
+
+<dt><code>(:stdout :discard|:collect-bytes|:collect-string)</code></dt><dd></dd>
+
+<dt><code>(:stderr :discard|:collect-bytes|:collect-string)</code></dt><dd>What to do with standard output and error output of the executed process.
+Possible values are:
+<dl class="org-dl">
+<dt><code>:discard</code></dt><dd>Discard output (same as redirecting to <code>/dev/null</code>).</dd>
+<dt><code>:collect-bytes</code></dt><dd>Collect the output, and treat it as a binary blob.</dd>
+<dt><code>:collect-string</code></dt><dd>Collect the output, and treat it as a string (in
+UTF-8 encoding).</dd>
+</dl></dd>
+<dt><code>(:stdin)</code></dt><dd>Value is fed to the standard input of the child process.  Strings are
+converted to bytes using UTF-8 encoding.</dd>
+<dt><code>(:command &lt;command&gt; &lt;argument&gt;*)</code></dt><dd>Command to execute, followed by zero or more arguments.  The command is
+invoked in a temporary directory.  <code>&lt;command&gt;</code> specifies the path to the
+program that is to be executed, as a string.  Each <code>&lt;argument&gt;</code> can be a
+string or an expression that yields a string.  A very useful expression that
+works only in <code>CMD-SINK</code> is <code>store-tmpfile</code> which writes the current context
+value to a temporary file and returns the path to this file.</dd>
+<dt><code>(:target :artefact|:document)</code></dt><dd>Specifies the context value the external process is invoked on:
+<dl class="org-dl">
+<dt><code>:artefact</code></dt><dd>Default if unspecified.  Invokes the external process with
+context value being each artefact collected into this sink.</dd>
+<dt><code>:document</code></dt><dd>Invokes the external process once with context value being
+the document currently being processed.</dd>
+</dl></dd>
+</dl>
+
+<p>
+The <a href="#org25305c5">following</a> listing shows an example of invoking YARA
+on the binary content of artefacts added to the sink:
+</p>
+
+<div class="org-src-container">
+<label class="org-src-name"><span class="listing-number">Listing 6: </span><code>CMD-SINK</code> example</label><pre class="src src-sexpr" id="org25305c5">(<span style="color: #1874cd;">define-sink</span> invoke-yara (cmd-sink)
+  (<span style="color: #cd6600;">:command</span> <span style="color: #a52a2a;">"yara"</span> <span style="color: #a52a2a;">"-C"</span> <span style="color: #a52a2a;">"/path/to/your/rules.yarc"</span>
+            (-&gt; (extract bytes)
+                (store-tmpfile)))
+  (<span style="color: #cd6600;">:stdout</span> <span style="color: #cd6600;">:collect-string</span>)
+  (<span style="color: #cd6600;">:action</span> maybe-add-note))
+</pre>
 </div>
 
-<div id="outline-container-org0e2e394" class="outline-3">
+<p>
+A more complete example (including the <code>maybe-add-note</code> process filter) is
+included in the <a href="#example-configuration">example configuration</a>.
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgc5f0cfa" class="outline-3">
 <h3 id="filters"><span class="section-number-3">3.4</span> Filters</h3>
 <div class="outline-text-3" id="text-filters">
 <p>
@@ -1049,7 +1168,7 @@ class.</dd>
 <dt><code>(not &lt;filter-expression&gt;)</code></dt><dd>False if the given filter expression is true, false otherwise.</dd>
 
 <dt><code>(extract &lt;field&gt;)</code></dt><dd>Extract given field from the current context value, usually an artefact (see
-<a href="#item-field-extractors">3.3.2.2</a>.</dd>
+<a href="#item-field-extractors">3.3.4</a>).</dd>
 
 <dt><code>(-&gt; &lt;filter-expression&gt;+)</code></dt><dd><p>
 Replaces the context of each consecutive filter expression with the value of
@@ -1074,7 +1193,7 @@ value of <code>and</code> will be the value of second form: <code>-&gt;</code>.
 </p>
 
 <p>
-First it calls <code>(extract bytes)</code> (see <a href="#item-field-extractors">3.3.2.2</a>), and
+First it calls <code>(extract bytes)</code> (see <a href="#item-field-extractors">3.3.4</a>), and
 replaces the current context with returned value.  The next form is <code>or</code>,
 and for this form the context is the binary bytes of the current artefact
 (which we know is an <a href="#EMBEDDED-BINARY"><code>EMBEDDED-BINARY</code></a>).  The forms
@@ -1086,11 +1205,11 @@ will be the value of the <code>or</code> form applied to the byte content of the
 
 <dt><code>(length)</code></dt><dd>Returns the length of current context value.</dd>
 
-<dt><code>(= &lt;number-or-string&gt;)</code></dt><dd>True if the current context value is equal to the given value.</dd>
+<dt><code>(= &lt;number&gt;|&lt;string&gt;)</code></dt><dd>True if the current context value is equal to the given value.</dd>
 
-<dt><code>(&lt; &lt;number-or-string&gt;)</code></dt><dd>True if the current context value is less than the given value.</dd>
+<dt><code>(&lt; &lt;number&gt;|&lt;string&gt;)</code></dt><dd>True if the current context value is less than the given value.</dd>
 
-<dt><code>(&gt; &lt;number-or-string&gt;)</code></dt><dd>True if the current context value is greater than the given value.</dd>
+<dt><code>(&gt; &lt;number&gt;|&lt;string&gt;)</code></dt><dd>True if the current context value is greater than the given value.</dd>
 
 <dt><code>(starts-with? &lt;subsequence&gt;)</code></dt><dd>True if the context value is a sequence that starts with the given
 subsequence.</dd>
@@ -1105,7 +1224,10 @@ subsequence.</dd>
 has a comment attached and the context value is an artefact then the comment
 is automatically stored in the artefact&rsquo;s <code>note</code> field.</dd>
 
-<dt><code>(mixed-case? &lt;string&gt;)</code></dt><dd>True if the context value has both lower and upper case letters.</dd>
+<dt><code>(mixed-case?)</code></dt><dd>True if the context value has both lower and upper case letters.</dd>
+
+<dt><code>(^ [&lt;name&gt;])</code></dt><dd>Current context value is stored as a variable <code>&lt;name&gt;</code>, or just <code>^</code> if name
+is not specified.  The stored value can then be used in actions.</dd>
 </dl>
 
 <p>
@@ -1118,24 +1240,42 @@ The following actions are currently supported:
 
 <dt><code>(set-important)</code></dt><dd>Mark artefact as important.</dd>
 
-<dt><code>(set-note &lt;string&gt;)</code></dt><dd>Set artefact&rsquo;s <code>note</code> field.</dd>
+<dt><code>(set-note &lt;string&gt;|&lt;variable&gt;)</code></dt><dd>Set artefact&rsquo;s <code>note</code> field.  The value can be a static string, or a variable
+name referring to value stored using the <code>^</code> expression.</dd>
 
 <dt><code>(discard)</code></dt><dd>Artefact is discarded.  Filters that follow current one in the configuration
 file will not be applied.</dd>
 </dl>
 </div>
+
+<div id="outline-container-org37e070d" class="outline-4">
+<h4 id="sec-process-filters"><span class="section-number-4">3.4.1</span> Process filters</h4>
+<div class="outline-text-4" id="text-sec-process-filters">
+<p>
+Process filters are only invoked from <a href="#CMD-SINK">command sinks</a> (using the
+<code>:action</code> attribute) and are used to post-process results of external
+programs.  Extra extractors useful in process filters are described in
+<a href="#sec-process-extractors">3.3.5</a>.  Syntax is the same as for artefact filters:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sexpr">(<span style="color: #1874cd;">define-process-filter</span> &lt;name&gt; &lt;filter-expression&gt; &lt;action&gt;+)
+</pre>
+</div>
+</div>
+</div>
 </div>
 
-<div id="outline-container-org2bdc8e1" class="outline-3">
+<div id="outline-container-orgec28793" class="outline-3">
 <h3 id="sec-artefact-export"><span class="section-number-3">3.5</span> Artefact export</h3>
 <div class="outline-text-3" id="text-sec-artefact-export">
 <p>
 After all artefacts are processed the ones that are not discarded in the
-process are saved in the database (<code>artefacts</code> table).  If the artefact has
-been marked as important (using <code>set-important</code> action), the <code>important</code>
-column is set to <code>true</code>.  If the note field has been set (using <code>set-note</code>
-action or automatically by successful user membership test), it is saved in
-the <code>note</code> column.
+process are stored in database (<code>artefacts</code> table).  If the artefact has been
+marked as important (using <code>set-important</code> action), the <code>important</code> column is
+set to <code>true</code>.  If the note field has been set (using <code>set-note</code> action or
+automatically by successful user membership test), it is saved in the <code>note</code>
+column.
 </p>
 
 <p>
@@ -1146,7 +1286,7 @@ table, <code>summary</code> column.  The number of discarded artefacts is stored
 </div>
 </div>
 
-<div id="outline-container-org047908b" class="outline-3">
+<div id="outline-container-org20cb44d" class="outline-3">
 <h3 id="example-configuration"><span class="section-number-3">3.6</span> Example configuration</h3>
 <div class="outline-text-3" id="text-example-configuration">
 <div class="org-src-container">
@@ -1168,7 +1308,7 @@ table, <code>summary</code> column.  The number of discarded artefacts is stored
   (<span style="color: #cd6600;">:publish</span> yes)
   (<span style="color: #cd6600;">:title</span>
    (fmt <span style="color: #a52a2a;">"~@[~A: ~]~A probable card number~:P"</span>
-        (extract source-url)
+        (extract origin)
         (unique-count bank-card-number)))
   (<span style="color: #cd6600;">:sharing-group</span> <span style="color: #a52a2a;">"Finance"</span>)
   (<span style="color: #cd6600;">:document-action</span>
@@ -1176,7 +1316,7 @@ table, <code>summary</code> column.  The number of discarded artefacts is stored
   (<span style="color: #cd6600;">:document-action</span>
    (add-attribute <span style="color: #cd6600;">:category</span> <span style="color: #a52a2a;">"External analysis"</span>
                   <span style="color: #cd6600;">:type</span> <span style="color: #a52a2a;">"url"</span>
-                  <span style="color: #cd6600;">:value</span> (extract source-url)))
+                  <span style="color: #cd6600;">:value</span> (extract origin)))
   (<span style="color: #cd6600;">:item-action</span>
    (add-attribute <span style="color: #cd6600;">:category</span> <span style="color: #a52a2a;">"Financial fraud"</span>
                   <span style="color: #cd6600;">:type</span> <span style="color: #a52a2a;">"cc-number"</span>
@@ -1193,6 +1333,18 @@ table, <code>summary</code> column.  The number of discarded artefacts is stored
          (extract artefact-descriptions))
   (<span style="color: #cd6600;">:recipients</span> <span style="color: #a52a2a;">"pastelyzer-notifications@your.org"</span>))
 
+(<span style="color: #1874cd;">define-process-filter</span> maybe-add-note
+    (-&gt; (extract stdout)
+        (^ output)
+        (not (or (= <span style="color: #a52a2a;">""</span>) (= <span style="color: #a52a2a;">"data"</span>))))
+  (set-note output))
+
+(<span style="color: #1874cd;">define-sink</span> run-file (cmd-sink)
+  (<span style="color: #cd6600;">:command</span> <span style="color: #a52a2a;">"file"</span> <span style="color: #a52a2a;">"-b"</span> <span style="color: #a52a2a;">"-"</span>)
+  (<span style="color: #cd6600;">:stdin</span> (extract bytes))
+  (<span style="color: #cd6600;">:stdout</span> <span style="color: #cd6600;">:collect-string</span>)
+  (<span style="color: #cd6600;">:action</span> maybe-add-note))
+
 (<span style="color: #1874cd;">define-set</span> important-ccs (cc-bins)
   <span style="color: #cd6600;">:file</span> <span style="color: #a52a2a;">"path/to/BIN-file"</span>)
 
@@ -1202,7 +1354,7 @@ table, <code>summary</code> column.  The number of discarded artefacts is stored
   (collect-into misp-cc-event)
   (collect-into email))
 
-<span style="color: #8b8b83;">;; </span><span style="color: #8b8b83; font-style: italic;">Get this from https://data.iana.org/TLD/tlds-alpha-by-domain.txt</span>
+<span style="color: #8b8b83;">;;; </span><span style="color: #8b8b83; font-style: italic;">Get this from https://data.iana.org/TLD/tlds-alpha-by-domain.txt</span>
 (<span style="color: #1874cd;">define-set</span> known-tlds (super-domains)
   <span style="color: #cd6600;">:file</span> <span style="color: #a52a2a;">"tlds-alpha-by-domain.txt"</span>)
 
@@ -1235,6 +1387,12 @@ table, <code>summary</code> column.  The number of discarded artefacts is stored
              (length)
              (&lt; 500)))
   (discard <span style="color: #a52a2a;">"Small binary"</span>))
+
+(<span style="color: #1874cd;">define-artefact-filter</span> .exe
+    (and (type? embedded-binary)
+         (-&gt; (extract-bytes)
+             (starts-with? [4D 5A])))
+  (collect-into run-file))
 
 (<span style="color: #1874cd;">define-artefact-filter</span> keybase-proof
     (and (type? base64-blob)
@@ -1270,17 +1428,17 @@ table, <code>summary</code> column.  The number of discarded artefacts is stored
 </div>
 </div>
 
-<div id="outline-container-org6cdd598" class="outline-2">
+<div id="outline-container-orgbf0ae0d" class="outline-2">
 <h2 id="artefact-classes"><span class="section-number-2">4</span> Artefact classes</h2>
 <div class="outline-text-2" id="text-artefact-classes">
 <p>
 The list of artefact classes recognized by <code>pastelyzer</code> and their
-relationships are shown in listing <a href="#org836d48b">6</a>.  These artefact
+relationships are shown in listing <a href="#orgd8e9480">7</a>.  These artefact
 classes are described in the following sections.
 </p>
 
 <div class="org-src-container">
-<label class="org-src-name"><span class="listing-number">Listing 6: </span>Artefact relationships</label><pre class="src src-text" id="org836d48b">ARTEFACT
+<label class="org-src-name"><span class="listing-number">Listing 7: </span>Artefact relationships</label><pre class="src src-text" id="orgd8e9480">ARTEFACT
 ├─ BINARY-ARTEFACT
 │  ├─ COMPRESSED-BLOB
 │  └─ ENCODED-STRING
@@ -1288,7 +1446,6 @@ classes are described in the following sections.
    ├─ BANK-CARD-NUMBER
    ├─ CREDENTIAL
    ├─ DOMAIN
-   │  └─ ONION
    ├─ EMAIL
    ├─ EMBEDDED-BINARY
    │  ├─ BASE64-BLOB
@@ -1298,13 +1455,14 @@ classes are described in the following sections.
    │  ├─ IP-SERVICE
    │  └─ RESOLVED-IP-ADDRESS
    ├─ M3U-ENTRY
+   ├─ ONION
    ├─ URI
    └─ WINDOWS-INTERNAL
 </pre>
 </div>
 </div>
 
-<div id="outline-container-orge29a26d" class="outline-3">
+<div id="outline-container-org00780d1" class="outline-3">
 <h3 id="binary-artefacts"><span class="section-number-3">4.1</span> Binary artefacts</h3>
 <div class="outline-text-3" id="text-binary-artefacts">
 <p>
@@ -1316,7 +1474,7 @@ text.
 </p>
 </div>
 
-<div id="outline-container-org0f35d43" class="outline-4">
+<div id="outline-container-orgdfd2181" class="outline-4">
 <h4 id="COMPRESSED-BLOB"><span class="section-number-4">4.1.1</span> <code>COMPRESSED-BLOB</code></h4>
 <div class="outline-text-4" id="text-COMPRESSED-BLOB">
 <p>
@@ -1326,7 +1484,7 @@ deflate methods.
 </div>
 </div>
 
-<div id="outline-container-org32dd407" class="outline-4">
+<div id="outline-container-org36c79f9" class="outline-4">
 <h4 id="ENCODED-STRING"><span class="section-number-4">4.1.2</span> <code>ENCODED-STRING</code></h4>
 <div class="outline-text-4" id="text-ENCODED-STRING">
 <p>
@@ -1337,7 +1495,7 @@ Created if the <code>BINARY-ARTEFACT</code> bytes can be decoded as UTF-8 or UTF
 </div>
 </div>
 
-<div id="outline-container-org75ab519" class="outline-3">
+<div id="outline-container-org9523962" class="outline-3">
 <h3 id="string-artefacts"><span class="section-number-3">4.2</span> String artefacts</h3>
 <div class="outline-text-3" id="text-string-artefacts">
 <p>
@@ -1346,7 +1504,7 @@ Created if the <code>BINARY-ARTEFACT</code> bytes can be decoded as UTF-8 or UTF
 </p>
 </div>
 
-<div id="outline-container-orgdeb5f92" class="outline-4">
+<div id="outline-container-orgb71ded2" class="outline-4">
 <h4 id="BANK-CARD-NUMBER"><span class="section-number-4">4.2.1</span> <code>BANK-CARD-NUMBER</code></h4>
 <div class="outline-text-4" id="text-BANK-CARD-NUMBER">
 <p>
@@ -1354,7 +1512,7 @@ Created if the <code>BINARY-ARTEFACT</code> bytes can be decoded as UTF-8 or UTF
 following patterns:
 </p>
 
-<table id="orgcff4a91" border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+<table id="org08d0682" border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 <caption class="t-above"><span class="table-number">Table 1:</span> Bank card number patterns</caption>
 
 <colgroup>
@@ -1412,11 +1570,11 @@ change, and we want to avoid updating the software when they do.
 </div>
 </div>
 
-<div id="outline-container-org9f2d9a2" class="outline-4">
+<div id="outline-container-orgf26b331" class="outline-4">
 <h4 id="CREDENTIAL"><span class="section-number-4">4.2.2</span> <code>CREDENTIAL</code></h4>
 <div class="outline-text-4" id="text-CREDENTIAL">
 <p>
-An username/passphrase pair, separated by colon (<code>:</code>), semicolon (<code>;</code>),
+A username/passphrase pair, separated by colon (<code>:</code>), semicolon (<code>;</code>),
 vertical bar (<code>|</code>), comma (<code>,</code>) or tab character.  At the moment regular
 expressions are used to match both.  Even though the character repertoire for
 passphrases is quite generous, there are some limitations:
@@ -1436,7 +1594,7 @@ the future.
 </div>
 </div>
 
-<div id="outline-container-org7a03d6b" class="outline-4">
+<div id="outline-container-org218d884" class="outline-4">
 <h4 id="DOMAIN"><span class="section-number-4">4.2.3</span> <code>DOMAIN</code></h4>
 <div class="outline-text-4" id="text-DOMAIN">
 <p>
@@ -1453,18 +1611,19 @@ positives.
 </div>
 </div>
 
-<div id="outline-container-org009f351" class="outline-4">
+<div id="outline-container-org0137a53" class="outline-4">
 <h4 id="ONION"><span class="section-number-4">4.2.4</span> <code>ONION</code></h4>
 <div class="outline-text-4" id="text-ONION">
 <p>
 A pseudo-domain consisting of two parts separated by a period.  The first part
-being 16 or 56 alphanumeric characters (consistency not checked), the second
-being <code>onion</code> (see <a href="https://en.wikipedia.org/wiki/.onion">Wikipedia entry</a>).
+being <code>16</code> or <code>56</code> alphanumeric characters (consistency not checked), the
+second being <code>onion</code> (see <a href="https://en.wikipedia.org/wiki/.onion">Wikipedia
+entry</a>).
 </p>
 </div>
 </div>
 
-<div id="outline-container-orgd00d0c4" class="outline-4">
+<div id="outline-container-org65d574c" class="outline-4">
 <h4 id="EMAIL"><span class="section-number-4">4.2.5</span> <code>EMAIL</code></h4>
 <div class="outline-text-4" id="text-EMAIL">
 <p>
@@ -1477,7 +1636,7 @@ characters are accepted as domain part.
 </div>
 </div>
 
-<div id="outline-container-org8e86141" class="outline-4">
+<div id="outline-container-org5ae693c" class="outline-4">
 <h4 id="EMBEDDED-BINARY"><span class="section-number-4">4.2.6</span> <code>EMBEDDED-BINARY</code></h4>
 <div class="outline-text-4" id="text-EMBEDDED-BINARY">
 <p>
@@ -1485,7 +1644,7 @@ All embedded binary artefacts (currently <a href="#BASE64-BLOB"><code>BASE64-BLO
 <a href="#HEX-BLOB"><code>HEX-BLOB</code></a> and <a href="#BINARY-BLOB"><code>BINARY-BLOB</code></a>) are
 specializations of this artefact class.  The textual representation is
 processed and resulting binary data is available as the <code>BYTES</code> field (see
-section <a href="#item-field-extractors">3.3.2.2</a>).
+section <a href="#item-field-extractors">3.3.4</a>).
 </p>
 
 <p>
@@ -1495,7 +1654,7 @@ created.
 </p>
 </div>
 
-<div id="outline-container-org919acdb" class="outline-5">
+<div id="outline-container-org8517090" class="outline-5">
 <h5 id="BASE64-BLOB"><span class="section-number-5">4.2.6.1</span> <code>BASE64-BLOB</code></h5>
 <div class="outline-text-5" id="text-BASE64-BLOB">
 <p>
@@ -1505,7 +1664,7 @@ sequence of bytes.  Example: <code>TVqQ</code>.
 </div>
 </div>
 
-<div id="outline-container-org2790e77" class="outline-5">
+<div id="outline-container-org3d5d0f0" class="outline-5">
 <h5 id="HEX-BLOB"><span class="section-number-5">4.2.6.2</span> <code>HEX-BLOB</code></h5>
 <div class="outline-text-5" id="text-HEX-BLOB">
 <p>
@@ -1521,7 +1680,7 @@ Example: <code>0x4d, 0x5a, 0x90</code>.
 </div>
 </div>
 
-<div id="outline-container-orga92b291" class="outline-5">
+<div id="outline-container-orgb078367" class="outline-5">
 <h5 id="BINARY-BLOB"><span class="section-number-5">4.2.6.3</span> <code>BINARY-BLOB</code></h5>
 <div class="outline-text-5" id="text-BINARY-BLOB">
 <p>
@@ -1532,7 +1691,7 @@ a multiple of 8).  Example: <code>010011010101101010010000</code>.
 </div>
 </div>
 
-<div id="outline-container-org70a1372" class="outline-4">
+<div id="outline-container-org80095b3" class="outline-4">
 <h4 id="IP-ADDRESS"><span class="section-number-4">4.2.7</span> <code>IP-ADDRESS</code></h4>
 <div class="outline-text-4" id="text-IP-ADDRESS">
 <p>
@@ -1543,7 +1702,7 @@ Artefact class for IPv4 addresses.  Only addresses that belong to one of the
 </div>
 </div>
 
-<div id="outline-container-org523d6f9" class="outline-4">
+<div id="outline-container-orgc7644ad" class="outline-4">
 <h4 id="IP-SERVICE"><span class="section-number-4">4.2.8</span> <code>IP-SERVICE</code></h4>
 <div class="outline-text-4" id="text-IP-SERVICE">
 <p>
@@ -1553,7 +1712,7 @@ created for IPv4 address:port combination (e.g., <code>1.2.3.4:8080</code>).
 </div>
 </div>
 
-<div id="outline-container-org3d27e96" class="outline-4">
+<div id="outline-container-org7dbda0a" class="outline-4">
 <h4 id="RESOLVED-IP-ADDRESS"><span class="section-number-4">4.2.9</span> <code>RESOLVED-IP-ADDRESS</code></h4>
 <div class="outline-text-4" id="text-RESOLVED-IP-ADDRESS">
 <p>
@@ -1564,7 +1723,7 @@ addresses that are obtained by resolving domain names using system resolver
 </div>
 </div>
 
-<div id="outline-container-org51f3605" class="outline-4">
+<div id="outline-container-org5595585" class="outline-4">
 <h4 id="M3U-ENTRY"><span class="section-number-4">4.2.10</span> <code>M3U-ENTRY</code></h4>
 <div class="outline-text-4" id="text-M3U-ENTRY">
 <p>
@@ -1573,7 +1732,7 @@ Titles of playlist entries (lines starting with <code>#EXTINF:</code>).
 </div>
 </div>
 
-<div id="outline-container-orgd8fcf1e" class="outline-4">
+<div id="outline-container-org19520ef" class="outline-4">
 <h4 id="URI"><span class="section-number-4">4.2.11</span> <code>URI</code></h4>
 <div class="outline-text-4" id="text-URI">
 <p>
@@ -1583,14 +1742,14 @@ URIs matched using the syntax provided in
 </div>
 </div>
 
-<div id="outline-container-org5b7f0c8" class="outline-4">
+<div id="outline-container-org50ca1d5" class="outline-4">
 <h4 id="WINDOWS-INTERNAL"><span class="section-number-4">4.2.12</span> <code>WINDOWS-INTERNAL</code></h4>
 <div class="outline-text-4" id="text-WINDOWS-INTERNAL">
 <p>
-One of the strings from the following <a href="#org1ea6175">table</a>:
+One of the strings from the following <a href="#org496ba65">table</a>:
 </p>
 
-<table id="org1ea6175" border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+<table id="org496ba65" border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 <caption class="t-above"><span class="table-number">Table 2:</span> Low-level Windows functions</caption>
 
 <colgroup>
@@ -1655,8 +1814,8 @@ One of the strings from the following <a href="#org1ea6175">table</a>:
 </div>
 </div>
 
-<div id="outline-container-orgdf7dd04" class="outline-2">
-<h2 id="orgdf7dd04"><span class="section-number-2">5</span> API</h2>
+<div id="outline-container-org623fb47" class="outline-2">
+<h2 id="org623fb47"><span class="section-number-2">5</span> API</h2>
 <div class="outline-text-2" id="text-5">
 <p>
 Besides the already <a href="#submitting-documents">mentioned</a> endpoint to store
@@ -1690,12 +1849,12 @@ The following are <b>NOT</b> good:
 
 <p>
 Artefacts are stored in <code>artefacts</code> table, in <code>value</code> column.  Artefacts that
-use <code>extra</code> column are listed in table <a href="#org8805181">3</a>.  Note that
+use <code>extra</code> column are listed in table <a href="#org53a1a74">3</a>.  Note that
 the entry for <code>EMBEDDED-BINARY</code> applies to its sub-classes (<code>BASE64-BLOB</code>,
 <code>HEX-BLOB</code> and <code>BINARY-BLOB</code>).
 </p>
 
-<table id="org8805181" border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+<table id="org53a1a74" border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 <caption class="t-above"><span class="table-number">Table 3:</span> Artefact classes using <code>extra</code> column</caption>
 
 <colgroup>
@@ -1746,8 +1905,8 @@ specified as the <code>limit</code> parameter value.
 </p>
 </div>
 
-<div id="outline-container-org6157a69" class="outline-3">
-<h3 id="org6157a69"><span class="section-number-3">5.1</span> Generic value search</h3>
+<div id="outline-container-org0bc90cb" class="outline-3">
+<h3 id="org0bc90cb"><span class="section-number-3">5.1</span> Generic value search</h3>
 <div class="outline-text-3" id="text-5-1">
 <p>
 The first query endpoint is <code>/artefacts</code> which can be used to search all
@@ -1766,7 +1925,7 @@ the following fields:
 </p>
 
 <dl class="org-dl">
-<dt><code>type</code></dt><dd>One of the classes shown in listing <a href="#org836d48b">6</a>.</dd>
+<dt><code>type</code></dt><dd>One of the classes shown in listing <a href="#orgd8e9480">7</a>.</dd>
 <dt><code>value</code></dt><dd>Value of the <code>value</code> column.</dd>
 <dt><code>extra</code></dt><dd>Value of the <code>extra</code> column, when present.</dd>
 <dt><code>important</code></dt><dd><code>true</code> if the <code>important</code> column has a <code>true</code> value.</dd>
@@ -1777,7 +1936,7 @@ account <code>--server-ext-host</code> and <code>--server-ext-port</code>
 </dl>
 
 <p>
-Example requests and possible :
+Example requests:
 </p>
 
 <pre class="example">
@@ -1826,15 +1985,15 @@ curl 'http://pastelyzer.your.org/artefacts' -F 'extra=4D5A%' | jq .
 </div>
 </div>
 
-<div id="outline-container-orgbc52059" class="outline-3">
-<h3 id="orgbc52059"><span class="section-number-3">5.2</span> Typed search</h3>
+<div id="outline-container-orgc470492" class="outline-3">
+<h3 id="orgc470492"><span class="section-number-3">5.2</span> Typed search</h3>
 <div class="outline-text-3" id="text-5-2">
 <p>
 The other endpoint is <code>/artefacts/typed</code>, where artefacts can be searched by
-their class as summarized in table <a href="#org36dd0c3">4</a>.
+their class as summarized in table <a href="#org1bc0845">4</a>.
 </p>
 
-<table id="org36dd0c3" border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+<table id="org1bc0845" border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 <caption class="t-above"><span class="table-number">Table 4:</span> Searching artefacts by type</caption>
 
 <colgroup>
@@ -1893,12 +2052,12 @@ their class as summarized in table <a href="#org36dd0c3">4</a>.
 <p>
 Fields in the result records are named depending on the artefact type.  This
 is nothing more than a straight forward mapping from database columns to
-record fields, as summarized in the table <a href="#org2f1f808">5</a>.  As with
+record fields, as summarized in the table <a href="#org84a8de1">5</a>.  As with
 generic search the <code>important</code> field is only included if its value is <code>true</code>,
-and <code>note</code> field is only include if it has a value.
+and <code>note</code> field is only included if it has a value.
 </p>
 
-<table id="org2f1f808" border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+<table id="org84a8de1" border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 <caption class="t-above"><span class="table-number">Table 5:</span> Typed artefact record fields</caption>
 
 <colgroup>
@@ -2048,8 +2207,8 @@ curl 'http://pastelyzer.your.org/artefacts/typed' \
 </div>
 </div>
 
-<div id="outline-container-org6135e93" class="outline-3">
-<h3 id="org6135e93"><span class="section-number-3">5.3</span> Document information</h3>
+<div id="outline-container-orgdd10d7e" class="outline-3">
+<h3 id="orgdd10d7e"><span class="section-number-3">5.3</span> Document information</h3>
 <div class="outline-text-3" id="text-5-3">
 <p>
 The URIs to <code>pastelyzer</code> in returned data records (values of <code>location</code> and
@@ -2062,11 +2221,11 @@ curl 'http://pastelyzer.your.org/content/54321/' | jq .
 
 
 <p>
-The result will look similar to one shown in listing <a href="#org2822cfa">7</a>.
+The result will look similar to one shown in listing <a href="#org0fde850">8</a>.
 </p>
 
 <div class="org-src-container">
-<label class="org-src-name"><span class="listing-number">Listing 7: </span>Document metadata</label><pre class="src src-json" id="org2822cfa">{
+<label class="org-src-name"><span class="listing-number">Listing 8: </span>Document metadata</label><pre class="src src-json" id="org0fde850">{
   <span style="color: #1874cd;">"type"</span>: <span style="color: #a52a2a;">"content"</span>,
   <span style="color: #1874cd;">"id"</span>: <span style="color: #6e8b3d;">54321</span>,
   <span style="color: #1874cd;">"location"</span>: <span style="color: #a52a2a;">"http://localhost:8080/content/54321/"</span>,
@@ -2146,7 +2305,7 @@ Only the username part of the credential.
 </div></div>
 <div id="postamble" class="status">
 <p class="author">Author: Jānis Džeriņš</p>
-<p class="date">Created: 2020-06-15 Mon 12:37</p>
+<p class="date">Created: 2021-01-22 Fri 14:52</p>
 </div>
 </body>
 </html>
