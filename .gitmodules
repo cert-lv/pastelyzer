@@ -4,9 +4,6 @@
 [submodule "deps/cl-ppcre"]
 	path = deps/cl-ppcre
 	url = https://github.com/jdz/cl-ppcre.git
-[submodule "deps/cl-base64"]
-	path = deps/cl-base64
-	url = https://github.com/jdz/cl-base64.git
 [submodule "deps/cl-log"]
 	path = deps/cl-log
 	url = https://github.com/jdz/cl-log.git
